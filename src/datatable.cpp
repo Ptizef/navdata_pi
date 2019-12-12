@@ -71,7 +71,7 @@ void DataTable::InitDataTable()
     //init text controls sizing trip data
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
-    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %y")), &w, NULL, 0, 0, &font); // Time width text control size
+    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %Y")), &w, NULL, 0, 0, &font); // Time width text control size
     m_pStartDate->SetMinSize( wxSize(w, -1) );
     GetTextExtent( wxDateTime::Now().Format(_T("at %H:%M:%S")), &w, NULL, 0, 0, &font); // Time width text control size
     m_pStartTime->SetMinSize( wxSize(w, -1) );
@@ -80,7 +80,7 @@ void DataTable::InitDataTable()
     GetTextExtent( _T("00h 00m"), &w, NULL, 0, 0, &font); // Lenght width text control size
     m_pTimeValue->SetMinSize( wxSize(w, -1) );
     //set default col size
-    GetTextExtent( _T("Jan01 00:00"), &w, NULL, 0, 0, &font);
+    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, NULL, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
     //Set scroll step X
     m_pDataTable->SetScrollLineX(w);
@@ -104,7 +104,7 @@ void DataTable::InitDataTable()
     }
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
     //put cursor outside the grid
-    m_pDataTable->SetGridCursor( -1,-1);
+    m_pDataTable->SetGridCursor(m_pDataTable->GetNumberRows() -1, 0);
     //set scroll step Y
     m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
 }
@@ -166,7 +166,10 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
                     //vmg
                     if( !std::isnan(shipcog) && !std::isnan(shipsog) ){
                         double vmg = shipsog * cos( ( brg - shipcog ) * PI / 180. );
-                        speed = vmg;
+                        if( m_pDataTable->GetSpeedAsSog() )
+                            speed = shipsog;
+                        else
+                            speed = vmg;
                     }
                     trng = rng;
                 } else {// following legs
@@ -190,7 +193,7 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
                     wxDateTime dtnow, eta;
                     dtnow.SetToCurrent();
                     eta = dtnow.Add( tttg_span );
-                    teta_s = tttg_sec > SECONDS_PER_DAY ?
+                    teta_s = eta.GetDateOnly() > wxDateTime::Today() ?
                             eta.Format(_T("%b%d %H:%M")) : eta.Format(_T("%H:%M"));
                 }
                 else
@@ -241,8 +244,13 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
             vis = true;
         }
         if( !guid.IsEmpty() ) vis = true;
-        if( vis )
+        if( vis ){
             m_pDataTable->MakeCellVisible(0, m_selectCol);
+            if( !m_pDataTable->IsVisible( 0, m_selectCol, true ) ){
+                if( m_selectCol < m_pDataTable->GetNumberCols())
+                    m_pDataTable->MakeCellVisible(0, m_selectCol + 1 );
+            }
+        }
     }
     //close counters
     m_pDataTable->EndBatch();

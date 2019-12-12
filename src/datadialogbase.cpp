@@ -33,7 +33,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
     m_pStartDText = new wxStaticText( this, wxID_ANY, _("Trip Started"), wxDefaultPosition, wxSize( -1, -1 ), 0);
     m_pStartDText->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartDText, 0, wxTOP|wxEXPAND, 5 );
+    m_pfgSizer03->Add( m_pStartDText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pStartDate = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pStartDate->Wrap( -1 );
@@ -41,7 +41,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
     m_pStartDTextat = new wxStaticText( this, wxID_ANY, _("at"), wxDefaultPosition, wxSize( -1, -1 ), 0);
     m_pStartDTextat->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartDTextat, 0, wxALIGN_RIGHT|wxTOP|wxEXPAND, 5 );
+    m_pfgSizer03->Add( m_pStartDTextat, 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pStartTime = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pStartTime->Wrap( -1 );
@@ -55,7 +55,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
     m_pTimetText = new wxStaticText( this, wxID_ANY, _("Time"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pTimetText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pTimetText, 0, wxTop|wxEXPAND, 5 );
+    m_pfgSizer04->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pTimeValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pTimeValue->Wrap( -1 );
@@ -63,7 +63,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
     m_pDistText = new wxStaticText( this, wxID_ANY, _("Dist"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pDistText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pDistText, 0, wxTOP|wxEXPAND, 5 );
+    m_pfgSizer04->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pDistValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pDistValue->Wrap( -1 );
@@ -71,7 +71,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
     m_pSpeedText = new wxStaticText( this, wxID_ANY, _("Avg.speed:"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pSpeedText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pSpeedText, 0, wxTOP|wxEXPAND, 5 );
+    m_pfgSizer04->Add( m_pSpeedText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pSpeedValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pSpeedValue->Wrap( -1 );

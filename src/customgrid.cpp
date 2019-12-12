@@ -70,6 +70,7 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     double x = (double)w * 6.5;
     SetRowLabelSize((int)x);
     m_blink = true;
+    m_withSog = false;
 
 #ifdef __WXOSX__
     m_bLeftDown = false;
@@ -78,8 +79,8 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     //connect events at dialog level
     Connect(wxEVT_SCROLLWIN_THUMBTRACK, wxScrollEventHandler( CustomGrid::OnScroll ), NULL, this );
     Connect(wxEVT_SIZE, wxSizeEventHandler( CustomGrid::OnResize ), NULL, this );
-    //Connect(wxEVT_GRID_LABEL_LEFT_CLICK, wxGridEventHandler( CustomGrid::OnMouseRollOverColLabel ), NULL, this );
-    //connect eventsC at grid windows level
+    Connect(wxEVT_GRID_LABEL_LEFT_CLICK, wxGridEventHandler( CustomGrid::OnLabelClik ), NULL, this );
+    //connect events at grid windows level
     GetGridWindow()->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
     GetGridWindow()->Connect(wxEVT_LEFT_UP, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
     GetGridWindow()->Connect(wxEVT_MOTION, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
@@ -148,8 +149,13 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
     int x = (m_rowLabelWidth / 2) - (w / 2);
     int y = (m_colLabelHeight / 2) - (h / 2);
     dc.DrawRectangle(x, y, w, h);
-    dc.DrawLabel( _("SOG"), wxRect(x, y, w+3, h+1),
-            wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+    if( m_withSog )
+        dc.DrawLabel( _("SOG"), wxRect(x, y, w+3, h+1),
+                wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+    else
+        dc.DrawLabel( _("VMG"), wxRect(x, y, w+3, h+1),
+                wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
@@ -158,9 +164,11 @@ void CustomGrid::OnScroll( wxScrollEvent& event )
     event.Skip();
 }
 
-void CustomGrid::OnRefreshTimer( wxTimerEvent& event )
+void CustomGrid::OnLabelClik( wxGridEvent& event)
 {
-    ForceRefresh();
+    ClearSelection();
+    if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND )
+        m_withSog = !m_withSog;
 }
 
 void CustomGrid::OnResize( wxSizeEvent& event )

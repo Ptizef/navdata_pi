@@ -53,23 +53,22 @@ public:
 
     ~CustomGrid();
 
-    void GetFirstVisibleCell( int& frow, int& fcol );
-    void GetLastVisibleCell( int& lrow, int& lcol );
+    bool GetSpeedAsSog() { return m_withSog; }
 
     DataTable* m_gParent;
 
 private:
     void DrawColLabel( wxDC& dc, int col );
-  //  void DrawRowLabel( wxDC& dc, int row );
+    void GetFirstVisibleCell( int& frow, int& fcol );
+    void GetLastVisibleCell( int& lrow, int& lcol );
     void DrawCornerLabel(wxDC & dc);
     void OnScroll( wxScrollEvent& event );
     void OnResize( wxSizeEvent& event );
     void OnMouseRollOverColLabel( wxMouseEvent& event);
     void OnMouseEvent( wxMouseEvent& event );
-    void OnRefreshTimer( wxTimerEvent& event );
-    //bool IsRowVisible( int row );
-    //int  GetRowIndex( int row );
-    int GetColIndex( int col );
+    void OnRefreshTimer( wxTimerEvent& event ) {ForceRefresh();}
+    void OnLabelClik( wxGridEvent& event);
+    int  GetColIndex( int col );
 
     wxTimer  m_tRefreshTimer;
     wxColour m_greenColour;
@@ -77,6 +76,7 @@ private:
     wxColour m_yellowColour;
     wxColour m_redColour;
     bool     m_blink;
+    bool     m_withSog;
 
 #ifdef __WXOSX__
     bool     m_bLeftDown;
