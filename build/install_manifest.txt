@@ -1,0 +1,1 @@
+/usr/lib/opencpn/libnavdata_pi.so

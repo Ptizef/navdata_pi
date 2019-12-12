@@ -1,0 +1,4 @@
+# Hashes of file build rules.
+ad81cbbc80ee27ca23a31c1d3348f47d CMakeFiles/navdata-po-update
+ad81cbbc80ee27ca23a31c1d3348f47d CMakeFiles/navdata-pot-update
+a44365359d4cf1c7b17fcb28e4977cf5 po/navdata_pi.pot.dummy
