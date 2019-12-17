@@ -1,3 +1,4 @@
+build
 *~
 *.kdev*
 *.patch
@@ -16,4 +17,3 @@ buildwin/*.exe
 buildwin/*.crt
 NSIS.template.in
 *.user
-.gitignore
