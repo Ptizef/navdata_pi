@@ -74,7 +74,7 @@ public:
     void UpdateTripData();
     void DrawWptName(int index, wxSize size, wxPoint pos);
     void SetTableSizePosition();
-    //wxBitmap GetScaledBitmap( wxBitmap bmp, wxString svgfile, double scfactor ) { return m_pGDialog->GetScaledBitmap(bmp, svgfile, scfactor); }
+    void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
     void CloseDialog();
 
     wxTimer    m_NameTimer;  //timer to hide long wpt name
@@ -87,16 +87,14 @@ private:
                                   double wptprevlat, double wptprevlon,
                                   double glat, double glon,
                                   double *brg, double *nrng);
-    //void SetGLOptions( opengl, GLenum texrectform) { t_g_bopengl = opengl, t_g_texture_rectangle_format = texrectform; }
+    void MakeVisibleCol( int col );
     void OnSize(wxSizeEvent &event );
     void OnNameTimer( wxTimerEvent & event );
-    void OnUpdate( wxTimerEvent & event );
     void OnClose( wxCloseEvent& event );
     void OnOKButton( wxCommandEvent& event );
 
     wxGridCellAttr *m_pDataCol;
-    wxString       m_SelectedPointGuid;
-    unsigned int   m_Istarted;
+    bool           m_targetFlag;
     int            m_oldIndex;
 
 };

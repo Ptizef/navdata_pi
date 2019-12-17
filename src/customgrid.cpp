@@ -51,25 +51,12 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     EnableDragColMove( false );
     EnableDragColSize( false );
     EnableDragRowSize( false );
-    //col label background colour settings
-    GetGlobalColor(_T("GREEN1"), &m_greenColour);  //selected point colour
-    GetGlobalColor(_T("DILG0"), &m_greyColour);    //default colour
-    GetGlobalColor(_T("YELO1"), &m_yellowColour);  //active point colour
-    GetGlobalColor(_T("URED"), &m_redColour);      //active and selected point colour
-    //init rows pref
     //init labels attr
-    wxFont labelfont = GetOCPNGUIScaledFont_PlugIn( _T("Dialog") ).MakeBold();
-    SetLabelFont(labelfont);
-    SetLabelBackgroundColour(m_greyColour);
-    wxColour colour;
-    GetGlobalColor(_T("DILG3"), &colour);
-    SetLabelTextColour( colour );
-    //set row label size
-    int w;
-    GetTextExtent(_T("Ab"), &w, NULL, 0, 0, &labelfont);
-    double x = (double)w * 6.5;
-    SetRowLabelSize((int)x);
-    m_blink = true;
+    GetGlobalColor(_T("DILG0"), &m_labelBackgroundColour);
+    GetGlobalColor(_T("DILG3"), &m_labelTextColour );
+    GetGlobalColor(_T("YELO1"), &m_yellowColour);
+    GetGlobalColor(_T("URED"), &m_redColour);
+    //init useful variable
     m_withSog = false;
 
 #ifdef __WXOSX__
@@ -90,8 +77,8 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
         GetGridColLabelWindow()->Bind( wxEVT_MOTION, &CustomGrid::OnMouseRollOverColLabel,this);
         GetGridColLabelWindow()->Bind( wxEVT_LEAVE_WINDOW, &CustomGrid::OnMouseRollOverColLabel,this);
     }
-    //timer event
-    m_tRefreshTimer.Connect(wxEVT_TIMER, wxTimerEventHandler( CustomGrid::OnRefreshTimer ), NULL, this);
+    //connect timer event
+    m_refreshTimer.Connect(wxEVT_TIMER, wxTimerEventHandler( CustomGrid::OnRefreshTimer ), NULL, this);
 }
 
  CustomGrid::~CustomGrid()
@@ -100,67 +87,65 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
 
 void CustomGrid::DrawColLabel( wxDC& dc, int col )
 {
-    //init dc font and colours
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog")).MakeBold();
-    dc.SetFont( font );
-    //draw lines around the label area
-    dc.SetPen(GetDefaultGridLinePen());
-    dc.SetBrush(wxBrush(m_greyColour, wxBRUSHSTYLE_SOLID));
-    dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
-    //draw background
-    dc.SetPen(GetDefaultGridLinePen());
-    dc.SetBrush(wxBrush(m_greyColour, wxBRUSHSTYLE_SOLID));
-    dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
-    int d = m_colLabelHeight / 3;
-    if( (col == 0 && m_gParent->m_selectCol == wxNOT_FOUND )
-            || col == m_gParent->m_selectCol ){
-        if( m_blink ) {
-            dc.SetBrush(wxBrush(m_redColour, wxBRUSHSTYLE_SOLID));
-            dc.DrawCircle(GetColLeft(col) + d, d, d);
-            dc.SetBrush(wxBrush(m_yellowColour, wxBRUSHSTYLE_SOLID));
-            dc.DrawCircle(GetColLeft(col) + d, d, d/2);
-            m_blink = false;
-        } else
-            m_blink = true;
-    }
-    //draw label (only the width available)
+    //draw label only inside width available
     int w;
     wxString label = GetColLabelValue(col);
-    GetTextExtent( label, &w, NULL, 0, 0, &font);
+    GetTextExtent( label, &w, NULL, 0, 0, &m_labelFont);
     if( w > (GetColWidth(col) - 2)){
         int len =  label.Len() * ((double)(GetColWidth(col) - 2) / (double)w);
         label = GetColLabelValue(col).Mid(0, len);
     }
+    //draw
+    dc.SetFont( m_labelFont );
+    dc.SetPen(GetDefaultGridLinePen());
+    dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+    dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
+    int d = m_colLabelHeight / 3;
+    if( (col == 0 && m_gParent->m_selectCol == wxNOT_FOUND )
+            || col == m_gParent->m_selectCol ){
+        static bool blink;
+        if( !blink ) {
+            dc.SetBrush(wxBrush(m_redColour, wxBRUSHSTYLE_SOLID));
+            dc.DrawCircle(GetColLeft(col) + d, d, d);
+            dc.SetBrush(wxBrush(m_yellowColour, wxBRUSHSTYLE_SOLID));
+            dc.DrawCircle(GetColLeft(col) + d, d, d/2);
+            blink = true;
+        } else
+            blink = false;
+    }
+    dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
     dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
                             m_colLabelHeight - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
 }
 
 void CustomGrid::DrawCornerLabel( wxDC& dc )
 {
-    dc.SetPen(GetDefaultGridLinePen());
-	dc.SetBrush( wxBrush( m_labelBackgroundColour, wxBRUSHSTYLE_SOLID ) );
-    dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight );
-    dc.SetBrush( wxBrush( m_greyColour, wxBRUSHSTYLE_SOLID ) );
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
+    //set drawing
     int w, h;
-    GetTextExtent( _("SOG"), &w, &h, 0, 0, &font);
+    GetTextExtent( _("SOG"), &w, &h, 0, 0, &m_labelFont);
     w += 6;
     h += 2;
     int x = (m_rowLabelWidth / 2) - (w / 2);
     int y = (m_colLabelHeight / 2) - (h / 2);
-    dc.DrawRectangle(x, y, w, h);
-    if( m_withSog )
-        dc.DrawLabel( _("SOG"), wxRect(x, y, w+3, h+1),
+    wxString s = m_withSog? _T("SOG") : _T("VMG");
+    //draw corner
+    dc.SetPen(GetDefaultGridLinePen());
+    dc.SetBrush( wxBrush( m_labelBackgroundColour, wxBRUSHSTYLE_SOLID ) );
+    dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight );
+    //draw button
+    wxColour c;
+    c.SetRGB( 0x00cecece );
+    dc.SetBrush( wxBrush( c, wxBRUSHSTYLE_SOLID ) );
+    dc.DrawRectangle(x - 5 , y - 1, w + 10, h + 2);
+    dc.SetFont( m_labelFont );
+    dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
+    dc.DrawLabel( s, wxRect(x, y, w, h),
                 wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
-    else
-        dc.DrawLabel( _("VMG"), wxRect(x, y, w+3, h+1),
-                wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
-
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
 {
-    m_tRefreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+    m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
     event.Skip();
 }
 
@@ -173,7 +158,7 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
 
 void CustomGrid::OnResize( wxSizeEvent& event )
 {
-    m_tRefreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+    m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
     event.Skip();
 }
 
@@ -208,10 +193,8 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
         } else
             refresh = true;
     }
-    if( refresh )// {
-        //m_gParent->m_oldIndex = -1;
+    if( refresh )
         m_gParent->m_NameTimer.Start( 1, wxTIMER_ONE_SHOT );
-   // }
 }
 
 int CustomGrid::GetColIndex( int col )
@@ -255,6 +238,7 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
     }
 #endif
     if(event.Dragging()){
+        m_gParent->SetTargetFlag( false );
         int frow, fcol, lrow, lcol;
         GetFirstVisibleCell(frow, fcol);
         GetLastVisibleCell(lrow, lcol);
@@ -291,12 +275,11 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
                 s_pevt.y = pevt.y;
                 if( lrow < m_numRows - 1 ){
                     MakeCellVisible(lrow + 1, fcol);
-                    MakeCellVisible(frow + 1, fcol);      //workaroud for what seems curious moving 2 rows instead of 1 in previous function
-                    rfh = true;
+                    MakeCellVisible(frow + 1, fcol);      //workaroud for what seems curious moving 2 rows instead of 1 in previous line
                 }
             }
             if(rfh)
-                m_tRefreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+                m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
         }
     }
 }

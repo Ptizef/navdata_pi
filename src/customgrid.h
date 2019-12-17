@@ -34,8 +34,8 @@
 
 #include <wx/grid.h>
 #include "ocpn/ocpn_plugin.h"
-#include <wx/graphics.h>
-#include <vector>
+//#include <wx/graphics.h>
+//#include <vector>
 
 class CustomRenderer;
 class DataTable;
@@ -53,29 +53,27 @@ public:
 
     ~CustomGrid();
 
+    void GetFirstVisibleCell( int& frow, int& fcol );
     bool GetSpeedAsSog() { return m_withSog; }
 
     DataTable* m_gParent;
 
 private:
     void DrawColLabel( wxDC& dc, int col );
-    void GetFirstVisibleCell( int& frow, int& fcol );
-    void GetLastVisibleCell( int& lrow, int& lcol );
     void DrawCornerLabel(wxDC & dc);
+    //void GetFirstVisibleCell( int& frow, int& fcol );
+    void GetLastVisibleCell( int& lrow, int& lcol );
+    int  GetColIndex( int col );
     void OnScroll( wxScrollEvent& event );
     void OnResize( wxSizeEvent& event );
     void OnMouseRollOverColLabel( wxMouseEvent& event);
     void OnMouseEvent( wxMouseEvent& event );
     void OnRefreshTimer( wxTimerEvent& event ) {ForceRefresh();}
     void OnLabelClik( wxGridEvent& event);
-    int  GetColIndex( int col );
 
-    wxTimer  m_tRefreshTimer;
-    wxColour m_greenColour;
-    wxColour m_greyColour;
+    wxTimer  m_refreshTimer;
     wxColour m_yellowColour;
     wxColour m_redColour;
-    bool     m_blink;
     bool     m_withSog;
 
 #ifdef __WXOSX__

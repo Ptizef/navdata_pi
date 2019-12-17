@@ -49,6 +49,8 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 {
     delete p;
 }
+// static variables
+wxString       m_SelectedPointGuid;
 
 //-------------------------------------------------------
 //          PlugIn initialization and de-init
@@ -63,8 +65,9 @@ navdata_pi::navdata_pi(void *ppimgr)
 
 navdata_pi::~navdata_pi(void)
 {
-      delete _img_no_active_route;
-      delete _img_active_route;
+    delete _img_active;
+    delete _img_toggled;
+    delete _img_inactive;
  }
 
 int navdata_pi::Init(void)
@@ -79,24 +82,25 @@ int navdata_pi::Init(void)
 
       //LoadConfig();
 
+      m_ToolIconType = 0xffff;
+
+      m_SelectedPointGuid = wxEmptyString;
       m_gTrkGuid = wxEmptyString;
       m_ActiveRouteGuid = wxEmptyString;
       m_gMustRotate = false;
       m_gHasRotated = false;
       m_gRotateLenght = 0;
 
-      wxString normalIcon = _T("");
-      //toggledIcon = _T("");
-      //rolloverIcon = _T("");
-
-      // Create the PlugIn icons
-      initialize_images();
+      m_leftclick_tool_id = -1;
 
       //    This PlugIn needs a toolbar icon, so request its insertion
-      m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_no_active_route, _img_no_active_route,
-            wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
-
-     // SetToolbarToolViz( m_leftclick_tool_id, false);
+      wxString active, toggled, inactive;
+      if( GetSVGFileIcons( active, toggled, inactive ))
+          m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
+                    wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+      else
+          m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_inactive,
+                                    wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
       return (WANTS_TOOLBAR_CALLBACK   |
               INSTALLS_TOOLBAR_TOOL    |
@@ -140,7 +144,7 @@ int navdata_pi::GetPlugInVersionMinor()
 
 wxBitmap *navdata_pi::GetPlugInBitmap()
 {
-      return _img_active_route;
+      return _img_active;;
 }
 
 wxString navdata_pi::GetCommonName()
@@ -272,9 +276,13 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         if ( rnumErrors == 0 )  {
             // get route GUID values from the JSON message
             m_ActiveRouteGuid = root[_T("GUID")].AsString();
-            SetToolbarItemState( m_leftclick_tool_id, true );
-            SetToolbarToolBitmaps( m_leftclick_tool_id, _img_active_route, _img_active_route);
-            //SetToolbarToolViz( m_leftclick_tool_id, true);
+            wxString active, toggled, inactive;
+            if( GetSVGFileIcons( active, toggled, inactive ))
+                SetToolbarToolBitmapsSVG(m_leftclick_tool_id, active,
+                                     active, toggled );
+            else
+                SetToolbarToolBitmaps(m_leftclick_tool_id, _img_active,
+                                     _img_toggled );
         }
     }
 
@@ -333,12 +341,16 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
     {
         m_ActivePointGuid = wxEmptyString;
         m_ActiveRouteGuid = wxEmptyString;
-        SetToolbarItemState( m_leftclick_tool_id, false );
-        SetToolbarToolViz( m_leftclick_tool_id, false);
-        if(m_pTable){
+        //SetToolbarItemState( m_leftclick_tool_id, false );
+        wxString active, toggled, inactive;
+        if( GetSVGFileIcons( active, toggled, inactive ))
+            SetToolbarToolBitmapsSVG(m_leftclick_tool_id, inactive,
+                                 inactive, inactive );
+        else
+            SetToolbarToolBitmaps(m_leftclick_tool_id, _img_inactive,
+                                 _img_inactive );
+        if(m_pTable)
             CloseDataTable();
-        SetToolbarToolBitmaps( m_leftclick_tool_id,_img_no_active_route, _img_no_active_route);
-        }
     }
 
     else if(message_id == _T("OCPN_TRK_DEACTIVATED"))
@@ -433,6 +445,24 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
     }
 }
 
+bool navdata_pi::GetSVGFileIcons( wxString& active, wxString& toggled, wxString& inactive )
+{
+    //find share path
+    wxString shareLocn =*GetpSharedDataLocation() +
+                _T("plugins") + wxFileName::GetPathSeparator() +
+                _T("navdata_pi") + wxFileName::GetPathSeparator()
+                +_T("data") + wxFileName::GetPathSeparator();
+    //find svg files
+    active = shareLocn + _T("active.svg");
+    toggled = shareLocn + _T("toggled.svg");
+    inactive = shareLocn + _T("inactive.svg");
+    if(wxFile::Exists( active) && wxFile::Exists( toggled )
+            && wxFile::Exists( inactive ) )
+        return true;
+
+    return false;
+}
+
 double navdata_pi::GetMag(double a)
 {
     if(!std::isnan(m_gWmmVar)) {
@@ -453,14 +483,15 @@ void navdata_pi::OnToolbarToolCallback(int id)
 {
 
     if( m_ActiveRouteGuid == wxEmptyString ) {
-        OCPNMessageBox_PlugIn(m_pParentWin, _("No Active Route yet!"), _("Warning!") );
+        OCPNMessageBox_PlugIn(m_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
         SetToolbarItemState( m_leftclick_tool_id, false );
         return;
      }
 
-    if( m_pTable )
+    if( m_pTable ){
         CloseDataTable();
-    else {
+    } else {
+    SetToolbarItemState( m_leftclick_tool_id, true );
 
     LoadocpnConfig();
 
@@ -469,6 +500,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
                            wxDefaultSize, style, this );
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
     SetDialogFont( m_pTable, &font );//Apply global font
+    DimeWindow( m_pTable ); //apply colour sheme
     m_pTable->InitDataTable();
     m_pTable->UpdateRouteData( m_ActiveRouteGuid, m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     m_pTable->UpdateTripData();
@@ -513,6 +545,7 @@ void navdata_pi::SetDialogFont( wxWindow *dialog, wxFont *font)
 
 void navdata_pi::CloseDataTable()
 {
+    SetToolbarItemState( m_leftclick_tool_id, false );
     if( m_pTable ) {
         m_pTable->CloseDialog();
         delete m_pTable;

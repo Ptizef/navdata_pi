@@ -98,20 +98,24 @@ public:
       int GetSpeedFormat() {return m_ocpnSpeedFormat;}
       void CloseDataTable();
       wxString GetActiveRouteGUID(){ return m_ActiveRouteGuid;}
-//    The override PlugIn Methods
-      int GetToolbarToolCount(void);
 
-private:  
+private:
+      //    The override PlugIn Methods
       void SetPluginMessage(wxString &message_id, wxString &message_body);
+      int GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
       void SetPositionFix(PlugIn_Position_Fix &pfix);
+
       void OnTripLenghtTimer(wxTimerEvent & event);
       void OnRotateTimer( wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       void SetDialogFont( wxWindow *dialog, wxFont *font);
+      bool GetSVGFileIcons(wxString& active, wxString& toggled, wxString &inactive );
 
       int m_leftclick_tool_id;
+      wxString m_shareLocn;
+      unsigned int m_ToolIconType;
 
       //data table variables
       DataTable   *m_pTable;
@@ -125,7 +129,7 @@ private:
       //Route & wpoint variables
       wxString    m_ActiveRouteGuid;
       wxString    m_ActivePointGuid;
-      wxString    m_SelectedPointGuid;
+
 
       //ocpn options variables
       int         m_ocpnDistFormat;
@@ -134,6 +138,8 @@ private:
       bool        m_ocpnShowMag;
 
       //Track variables
+      wxTimer     m_lenghtTimer;
+      wxTimer     m_rotateTimer;
       wxString    m_gTrkGuid;
       wxDateTime  m_gTrkStart;
       wxDateTime  m_gTrkRotate;
@@ -145,10 +151,5 @@ private:
       wxTimeSpan  m_gTrkRunning;    
       double      m_oldtpLat;
       double      m_oldtpLon;
-
-      wxTimer     m_lenghtTimer;
-      wxTimer     m_rotateTimer;
-
-      wxString m_shareLocn;
 };
 #endif //_NAVDATA_PI_H_

@@ -32,13 +32,14 @@
 #endif //precompiled headers
 
 #include <wx/glcanvas.h>
-#include <wx/graphics.h>
+//#include <wx/graphics.h>
 #include <wx/progdlg.h>
 #include <wx/grid.h>
 #include "navdata_pi.h"
 #include <wx/tokenzr.h>
 
-extern double m_cursor_lat, m_cursor_lon;
+//extern double m_cursor_lat, m_cursor_lon;
+extern wxString       m_SelectedPointGuid;
 
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
@@ -59,15 +60,7 @@ void DataTable::InitDataTable()
     this->Bind( wxEVT_SIZE, &DataTable::OnSize, this);
 
     //init some variables
-    m_Istarted = 2;
     m_oldIndex = wxNOT_FOUND; //indew of long wpt name to be entrerely viewed
-
-    //get previously selected wpt
-    wxFileConfig *pConf = GetOCPNConfigObject();
-    if (pConf) {
-        pConf->SetPath(_T("/Settings/NAVDATA"));
-        pConf->Read(_T("SelectedWayPointGuid"), &m_SelectedPointGuid);
-    }//
     //init text controls sizing trip data
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
@@ -102,6 +95,7 @@ void DataTable::InitDataTable()
         m_pDataTable->AppendRows();
         m_pDataTable->SetRowLabelValue(i, s[i] );
     }
+    m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
     //put cursor outside the grid
     m_pDataTable->SetGridCursor(m_pDataTable->GetNumberRows() -1, 0);
@@ -114,8 +108,10 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
 {
     //find if a wpt has been selected. if not, keep the last one
     wxString guid = GetSelectedWaypointGUID_Plugin(  );
-    if( !guid.IsEmpty() )
+    if( !guid.IsEmpty() ){
         m_SelectedPointGuid = guid;
+        m_targetFlag = true;
+    }
     m_selectCol = wxNOT_FOUND;
     //
     //find active route and wpts
@@ -235,22 +231,11 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
     //
     if( m_selectCol == wxNOT_FOUND ){
         if ( !m_SelectedPointGuid.IsEmpty() )
-            m_pDataTable->MakeCellVisible(0, 0);
+            MakeVisibleCol( 0 );
         m_SelectedPointGuid = wxEmptyString;
     } else {
-        bool vis = false;
-        if( m_Istarted > 0 ){
-            m_Istarted--;
-            vis = true;
-        }
-        if( !guid.IsEmpty() ) vis = true;
-        if( vis ){
-            m_pDataTable->MakeCellVisible(0, m_selectCol);
-            if( !m_pDataTable->IsVisible( 0, m_selectCol, true ) ){
-                if( m_selectCol < m_pDataTable->GetNumberCols())
-                    m_pDataTable->MakeCellVisible(0, m_selectCol + 1 );
-            }
-        }
+        if( m_targetFlag  )
+            MakeVisibleCol( m_selectCol );
     }
     //close counters
     m_pDataTable->EndBatch();
@@ -287,6 +272,15 @@ void DataTable::UpdateTripData()
     m_pSpeedValue->SetLabel( _T("----") );
 }
 
+void DataTable::MakeVisibleCol( int col )
+{
+    int row, fcol;
+    m_pDataTable->GetFirstVisibleCell( row, fcol );
+    if( m_pDataTable->IsVisible(row, col, true) ) return;
+    m_pDataTable->MakeCellVisible( row, m_pDataTable->GetNumberCols() - 1 );
+    m_pDataTable->MakeCellVisible( row, col );
+}
+
 void DataTable::DrawWptName( int index, wxSize size, wxPoint pos )
 {
     if( index != m_oldIndex && m_oldIndex != -1 )
@@ -297,32 +291,16 @@ void DataTable::DrawWptName( int index, wxSize size, wxPoint pos )
 
     wxFont font =  GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
 
-    wxClientDC *m_pcdc = new wxClientDC(wxDynamicCast( this, wxWindow));
-    if( m_pcdc ) {
-        wxColour clb;
-        GetGlobalColor( _T("DILG1"), &clb );
-        wxBrush brush;
-        brush.SetColour(clb);
-
+    wxClientDC *cdc = new wxClientDC(wxDynamicCast( this, wxWindow));
+    if( cdc ) {
         wxColour clf;
         GetGlobalColor( _T("BLUE2"), &clf );
         wxPen pen;
         pen.SetStyle( wxPENSTYLE_SOLID );
         pen.SetColour( clf );
-
-#if wxUSE_GRAPHICS_CONTEXT
-        wxGraphicsContext *m_pgdc = wxGraphicsContext::Create(*m_pcdc);
-        if( m_pgdc ){
-            m_pgdc->SetFont( font, clf );
-            m_pgdc->SetPen( pen );
-            m_pgdc->DrawText( name, pos.x, pos.y );
-        } else
-#endif
-        {
-            m_pcdc->SetFont( font );
-            m_pcdc->SetTextForeground( clf );
-            m_pcdc->DrawText( name, pos.x, pos.y );
-        }
+        cdc->SetFont( font );
+        cdc->SetTextForeground( clf );
+        cdc->DrawText( name, pos.x, pos.y );
         if( IsTouchInterface_PlugIn() )
             m_NameTimer.Start( 1000, wxTIMER_ONE_SHOT );
     }
@@ -398,6 +376,7 @@ void DataTable::OnSize( wxSizeEvent& event )
         }
         node = node->GetNext();
     }
+    m_targetFlag = true;
     event.Skip();
 }
 
@@ -424,7 +403,6 @@ void DataTable::CloseDialog()
         pConf->Write( _T ( "DataTablePosition_y" ), p.y );
         pConf->Write( _T ( "DataTableWidth" ), s.GetWidth() );
         pConf->Write( _T ( "DataTableHeight" ), s.GetHeight() );
-        pConf->Write( _T ("SelectedWayPointGuid"), m_SelectedPointGuid);
     }
 }
 
