@@ -17,4 +17,4 @@ buildwin/*.lib
 buildwin/*.exe
 buildwin/*.crt
 NSIS.template.in
-*.user
+.gitignore
