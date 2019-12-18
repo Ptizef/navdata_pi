@@ -76,6 +76,7 @@ public:
     void SetTableSizePosition();
     void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
     void CloseDialog();
+    wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
 
     wxTimer    m_NameTimer;  //timer to hide long wpt name
     int        m_selectCol;
@@ -96,6 +97,7 @@ private:
     wxGridCellAttr *m_pDataCol;
     bool           m_targetFlag;
     int            m_oldIndex;
+    wxPoint2DDouble  m_SelPointPos;
 
 };
 #endif //__DATATABLE_H__

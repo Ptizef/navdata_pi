@@ -61,14 +61,13 @@
 #define     TIME_TYPE_LMT 2
 #define     TIME_TYPE_COMPUTER 3
 
-#define     TRACKPOINT_ONE            1
+#define     TRACKPOINT_FIRST            1
+#define     OFFSET_LAT     1e-6
 
 #define     TIMER_INTERVAL_HOUR   3600000  //3600 s 1 hour
 #define     TIMER_INTERVAL_10SECOND 10000  //10 s
 #define     TIMER_INTERVAL_SECOND    1000  //1 s
 #define     TIMER_INTERVAL_MSECOND      1  //1 ms
-
-#define     OFFSET_LAT     1e-6
 
 #if !wxUSE_GRAPHICS_CONTEXT
 #define wxGCDC wxDC
@@ -91,23 +90,31 @@ public:
       wxString GetCommonName();
       wxString GetShortDescription();
       wxString GetLongDescription();
-
+      //
       double GetMag(double a);
       bool GetShowMag() {return m_ocpnShowMag;}
       int GetDistFormat() {return m_ocpnDistFormat;}
       int GetSpeedFormat() {return m_ocpnSpeedFormat;}
       void CloseDataTable();
-      wxString GetActiveRouteGUID(){ return m_ActiveRouteGuid;}
+      wxString GetActiveRouteGUID(){return m_ActiveRouteGuid;}
 
 private:
       //    The override PlugIn Methods
+      bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
+      bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
+      bool RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp);
+      bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
       void SetPositionFix(PlugIn_Position_Fix &pfix);
-
+      bool MouseEventHook( wxMouseEvent &event );
+      //bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
+      //bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
+      //
       void OnTripLenghtTimer(wxTimerEvent & event);
       void OnRotateTimer( wxTimerEvent & event);
+      void OnSelectGuidTimer( wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       void SetDialogFont( wxWindow *dialog, wxFont *font);
@@ -127,9 +134,9 @@ private:
       double      m_gWmmVar;
 
       //Route & wpoint variables
+      wxTimer     m_selectTimer;
       wxString    m_ActiveRouteGuid;
       wxString    m_ActivePointGuid;
-
 
       //ocpn options variables
       int         m_ocpnDistFormat;

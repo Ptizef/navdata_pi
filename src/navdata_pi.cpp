@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  *
  * Project:  OpenCPN
  * Purpose:  ROUTE Plugin
@@ -33,7 +33,7 @@
 
 #include "navdata_pi.h"
 #include "icons.h"
-#include <wx/list.h>
+//#include <wx/list.h>
 
 #include "wx/jsonreader.h"
 #include "wx/jsonwriter.h"
@@ -51,6 +51,17 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 }
 // static variables
 wxString       m_SelectedPointGuid;
+
+wxWindow *GetCanvas()
+{
+    wxWindow *wx;
+    // If multicanvas are active, render the overlay on the right canvas only
+    if(GetCanvasCount() > 1)            // multi?
+        wx = GetCanvasByIndex(1);
+    else
+        wx = GetOCPNCanvasWindow();
+    return wx;
+}
 
 //-------------------------------------------------------
 //          PlugIn initialization and de-init
@@ -72,42 +83,44 @@ navdata_pi::~navdata_pi(void)
 
 int navdata_pi::Init(void)
 {
-      m_lenghtTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
-      m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
+    m_lenghtTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
+    m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
+    m_selectTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnSelectGuidTimer), NULL, this );
+    //m_selectTimer.Bind(wxEVT_TIMER, &navdata_pi::OnSelectGuidTimer, this );
 
-      AddLocaleCatalog( _T("opencpn-navdata_pi") );
-      m_pParentWin = GetOCPNCanvasWindow();
+    AddLocaleCatalog( _T("opencpn-navdata_pi") );
+    m_pParentWin = GetOCPNCanvasWindow();
 
-      m_pTable = NULL;
+    m_pTable = NULL;
 
       //LoadConfig();
 
-      m_ToolIconType = 0xffff;
+    m_SelectedPointGuid = wxEmptyString;
+    m_gTrkGuid = wxEmptyString;
+    m_ActiveRouteGuid = wxEmptyString;
+    m_gMustRotate = false;
+    m_gHasRotated = false;
+    m_gRotateLenght = 0;
 
-      m_SelectedPointGuid = wxEmptyString;
-      m_gTrkGuid = wxEmptyString;
-      m_ActiveRouteGuid = wxEmptyString;
-      m_gMustRotate = false;
-      m_gHasRotated = false;
-      m_gRotateLenght = 0;
-
-      m_leftclick_tool_id = -1;
-
-      //    This PlugIn needs a toolbar icon, so request its insertion
-      wxString active, toggled, inactive;
-      if( GetSVGFileIcons( active, toggled, inactive ))
-          m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
+    //    This PlugIn needs a toolbar icon, so request its insertion
+    wxString active, toggled, inactive;
+    if( GetSVGFileIcons( active, toggled, inactive ))
+        m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
                     wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
-      else
-          m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_inactive,
+    else
+        m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_inactive,
                                     wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
-      return (WANTS_TOOLBAR_CALLBACK   |
-              INSTALLS_TOOLBAR_TOOL    |
-              WANTS_PREFERENCES        |
-              WANTS_PLUGIN_MESSAGING   |
-              WANTS_NMEA_EVENTS        |
-              WANTS_CONFIG
+    return (WANTS_OVERLAY_CALLBACK          |
+            WANTS_ONPAINT_VIEWPORT          |
+            WANTS_OPENGL_OVERLAY_CALLBACK   |
+            WANTS_TOOLBAR_CALLBACK          |
+            INSTALLS_TOOLBAR_TOOL           |
+            WANTS_PREFERENCES               |
+            WANTS_PLUGIN_MESSAGING          |
+            WANTS_NMEA_EVENTS               |
+            WANTS_CONFIG                    |
+            WANTS_MOUSE_EVENTS
            );
 }
 
@@ -218,7 +231,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             if( NodeNr >= m_gNodeNbr ){ //skip track point already treated
                 double lat = root[_T("lat")].AsDouble();
                 double lon = root[_T("lon")].AsDouble();
-                if( NodeNr > TRACKPOINT_ONE ){
+                if( NodeNr > TRACKPOINT_FIRST ){
                     /*if more than one track point, compute total lenght*/
                     const double deltaLat = m_oldtpLat - lat;
                     if ( fabs( deltaLat ) > OFFSET_LAT )
@@ -249,7 +262,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                         dist = DistGreatCircle_Plugin( m_oldtpLat + copysign( OFFSET_LAT, deltaLat ), m_oldtpLon,  m_gLat, m_gLon );
                     if( dist < .001 ) dist = 0.; //no movement
                 }// m_gNodeNbr > TotalNodes
-                if( TotalNodes == TRACKPOINT_ONE ){
+                if( TotalNodes == TRACKPOINT_FIRST ){
                     if( !m_gHasRotated )
                         if( dist == 0. ) //no movement
                             m_gTrkStart = wxDateTime::Now();
@@ -382,6 +395,96 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
         m_pTable->UpdateRouteData( m_ActiveRouteGuid,
                   m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
+    RequestRefresh( GetCanvas() );
+}
+
+bool navdata_pi::MouseEventHook( wxMouseEvent &event )
+{
+    if( !event.RightDown() )
+        return false;
+
+    if( m_pTable )
+       m_selectTimer.Start(10, wxTIMER_ONE_SHOT);
+
+    return false;
+}
+
+bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
+{
+    // If multicanvas are active, render the overlay on the right canvas only
+    if(GetCanvasCount() > 1 && canvasIndex != 1) {            // multi?
+        return false;
+    }
+
+    return RenderOverlay( dc, vp);
+}
+
+bool navdata_pi::RenderOverlay( wxDC &dc, PlugIn_ViewPort *vp )
+{
+    if( !m_pTable )
+        return false;
+    if( m_ActivePointGuid.IsEmpty() )
+        return false;
+
+    wxPoint2DDouble ll = m_pTable->GetSelPointPos();
+    wxPoint p;
+    GetCanvasPixLL( vp, &p, ll.m_x, ll.m_y );
+    p.x += 10;
+    p.y += 10;
+    static bool blink;
+    if( !blink ) {
+        wxColour yellow, red;
+        GetGlobalColor(_T("YELO1"), &yellow);
+        GetGlobalColor(_T("URED"), &red);
+        dc.SetBrush(wxBrush(red, wxBRUSHSTYLE_SOLID));
+        dc.DrawCircle(p, 20);
+        dc.SetBrush(wxBrush(yellow, wxBRUSHSTYLE_SOLID));
+        dc.DrawCircle(p, 10);
+        blink = true;
+    } else
+        blink = false;
+
+    return true;
+}
+
+bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
+{
+    // If multicanvas are active, render the overlay on the right canvas only
+    if(GetCanvasCount() > 1 && canvasIndex != 1) {            // multi?
+        return false;
+    }
+
+    return RenderGLOverlay( pcontext, vp);
+}
+
+bool navdata_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
+{
+    if( !m_pTable )
+        return false;
+    if( m_ActivePointGuid.IsEmpty() )
+        return false;
+    wxClientDC *cdc = new wxClientDC(wxDynamicCast( GetCanvas(), wxWindow));
+    if( cdc ) {
+        wxPoint2DDouble ll = m_pTable->GetSelPointPos();
+        wxPoint p;
+        GetCanvasPixLL( vp, &p, ll.m_x, ll.m_y );
+        p.x += 10;
+        p.y += 10;
+        static bool blink;
+        //if( !blink ) {
+            wxColour yellow, red;
+            GetGlobalColor(_T("YELO1"), &yellow);
+            GetGlobalColor(_T("URED"), &red);
+            cdc->SetBrush(wxBrush(red, wxBRUSHSTYLE_SOLID));
+            cdc->DrawCircle(p, 20);
+            cdc->SetBrush(wxBrush(yellow, wxBRUSHSTYLE_SOLID));
+            cdc->DrawCircle(p, 10);
+            //blink = true;
+        //} else
+            //blink = false;
+        return true;
+    }
+    return false;
 }
 
 void navdata_pi::OnTripLenghtTimer( wxTimerEvent & event)
@@ -445,6 +548,22 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
     }
 }
 
+void navdata_pi::OnSelectGuidTimer( wxTimerEvent & event)
+{
+    wxString guid = GetSelectedWaypointGUID_Plugin(  );
+    if( guid.IsEmpty() )
+        return;
+    if( guid != m_SelectedPointGuid ){
+        m_SelectedPointGuid = guid;
+        if( m_pTable ){
+            m_pTable->SetTargetFlag( true );
+            m_pTable->UpdateRouteData( m_ActiveRouteGuid,
+                                m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        }
+    }
+    RequestRefresh( GetCanvas() );
+}
+
 bool navdata_pi::GetSVGFileIcons( wxString& active, wxString& toggled, wxString& inactive )
 {
     //find share path
@@ -483,7 +602,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
 {
 
     if( m_ActiveRouteGuid == wxEmptyString ) {
-        OCPNMessageBox_PlugIn(m_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
+        OCPNMessageBox_PlugIn( GetCanvas(), _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
         SetToolbarItemState( m_leftclick_tool_id, false );
         return;
      }
@@ -496,7 +615,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
     LoadocpnConfig();
 
     long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER;
-    m_pTable = new DataTable(m_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
+    m_pTable = new DataTable( GetCanvas(), wxID_ANY, wxEmptyString, wxDefaultPosition,
                            wxDefaultSize, style, this );
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
     SetDialogFont( m_pTable, &font );//Apply global font

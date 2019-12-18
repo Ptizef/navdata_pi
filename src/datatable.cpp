@@ -106,14 +106,8 @@ void DataTable::InitDataTable()
 void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
                 double shiplat, double shiplon, double shipcog, double shipsog )
 {
-    //find if a wpt has been selected. if not, keep the last one
-    wxString guid = GetSelectedWaypointGUID_Plugin(  );
-    if( !guid.IsEmpty() ){
-        m_SelectedPointGuid = guid;
-        m_targetFlag = true;
-    }
     m_selectCol = wxNOT_FOUND;
-    //
+
     //find active route and wpts
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( routeGuid );
@@ -141,8 +135,12 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
                 double brg, rng, speed, nrng;
                 speed = 0.; nrng = 0.;
                 AddDataCol( ncols );
-                if( wpt->m_GUID == m_SelectedPointGuid )
-                    if( ncols > ACTIVE_POINT_IDX ) m_selectCol = ncols;
+                if( wpt->m_GUID == m_SelectedPointGuid ){
+                    if( ncols > ACTIVE_POINT_IDX ){
+                        m_selectCol = ncols;
+                        m_SelPointPos = wxPoint2DDouble( wpt->m_lat, wpt->m_lon );
+                    }
+                }
                 m_pDataTable->SetColLabelValue( ncols, wpt->m_MarkName );
                 if( ncols == ACTIVE_POINT_IDX ){ //active leg from ownship to active point
                     //rng, brg

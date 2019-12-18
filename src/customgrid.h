@@ -37,7 +37,11 @@
 //#include <wx/graphics.h>
 //#include <vector>
 
-class CustomRenderer;
+#if !wxUSE_GRAPHICS_CONTEXT
+#define wxGCDC wxDC
+#endif
+
+//class CustomRenderer;
 class DataTable;
 
 //------------------------------------------------------------------------------------
