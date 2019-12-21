@@ -33,7 +33,7 @@
 #endif //precompiled headers
 
 #include <wx/grid.h>
-#include <wx/list.h>
+//#include <wx/list.h>
 
 #include "datadialogbase.h"
 //#include "navdata_pi.h"

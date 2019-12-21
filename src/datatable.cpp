@@ -31,7 +31,7 @@
   #include "wx/wx.h"
 #endif //precompiled headers
 
-#include <wx/glcanvas.h>
+//#include <wx/glcanvas.h>
 //#include <wx/graphics.h>
 #include <wx/progdlg.h>
 #include <wx/grid.h>
@@ -138,7 +138,8 @@ void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
                 if( wpt->m_GUID == m_SelectedPointGuid ){
                     if( ncols > ACTIVE_POINT_IDX ){
                         m_selectCol = ncols;
-                        m_SelPointPos = wxPoint2DDouble( wpt->m_lat, wpt->m_lon );
+                        m_SelPointPos.m_x = wpt->m_lat;
+                        m_SelPointPos.m_y = wpt->m_lon;
                     }
                 }
                 m_pDataTable->SetColLabelValue( ncols, wpt->m_MarkName );

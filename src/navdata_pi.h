@@ -43,7 +43,7 @@
 #include "ocpn/ocpn_plugin.h"
 
 #include "version.h"
-#include <vector>
+//#include <vector>
 
 #include "datatable.h"
 
@@ -118,11 +118,12 @@ private:
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       void SetDialogFont( wxWindow *dialog, wxFont *font);
-      bool GetSVGFileIcons(wxString& active, wxString& toggled, wxString &inactive );
+      wxString GetSVGPath();
 
       int m_leftclick_tool_id;
       wxString m_shareLocn;
       unsigned int m_ToolIconType;
+      int          m_Blinktimer;
 
       //data table variables
       DataTable   *m_pTable;
