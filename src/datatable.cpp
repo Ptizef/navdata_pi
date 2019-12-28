@@ -39,7 +39,9 @@
 #include <wx/tokenzr.h>
 
 //extern double m_cursor_lat, m_cursor_lon;
+extern wxString       m_ActiveRouteGuid;
 extern wxString       m_SelectedPointGuid;
+extern wxString       m_shareLocn;
 
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
@@ -103,14 +105,14 @@ void DataTable::InitDataTable()
     m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
 }
 
-void DataTable::UpdateRouteData(wxString routeGuid, wxString pointGuid,
+void DataTable::UpdateRouteData( wxString pointGuid,
                 double shiplat, double shiplon, double shipcog, double shipsog )
 {
     m_selectCol = wxNOT_FOUND;
 
     //find active route and wpts
     std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( routeGuid );
+    r = GetRoute_Plugin( m_ActiveRouteGuid );
     //set label route name in title
     SetTitle( r.get()->m_NameString );
     //populate cols
@@ -354,6 +356,9 @@ void DataTable::SetTableSizePosition()
 
 void DataTable::OnSize( wxSizeEvent& event )
 {
+    static wxSize sz;
+    int wz = m_pDataTable->GetRowLabelSize() + m_pDataTable->GetColSize(0);
+    int cz = this->GetClientSize().x;
     int width = 0;
     int nbw = 0.;
     m_pfgSizer04->SetCols( 6 );
@@ -365,7 +370,7 @@ void DataTable::OnSize( wxSizeEvent& event )
             width += item->GetSize().x;
             nbw++;
             if( nbw%2 == 0 ) {
-                if( width > this->GetClientSize().x ){
+                if( width > cz ){
                     int col = wxMax( 2, (nbw - 2) );
                     m_pfgSizer04->SetCols( col );
                     m_pfgSizer03->SetCols( col );
@@ -375,6 +380,9 @@ void DataTable::OnSize( wxSizeEvent& event )
         }
         node = node->GetNext();
     }
+    if( wz > cz )
+        this->SetMinSize( sz );
+    sz = event.GetSize();
     m_targetFlag = true;
     event.Skip();
 }

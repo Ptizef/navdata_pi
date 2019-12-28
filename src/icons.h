@@ -14,5 +14,7 @@ extern wxBitmap *_img_inactive;
 extern wxBitmap *_img_toggled;
 extern wxBitmap *_img_activewpt;
 extern wxBitmap *_img_targetwpt;
+extern wxBitmap *_img_VMG;
+extern wxBitmap *_img_SOG;
 
 #endif /* ICONS_H */

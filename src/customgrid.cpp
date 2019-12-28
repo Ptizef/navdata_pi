@@ -32,6 +32,13 @@
 #define SCROLL_SENSIBILITY    20
 
 #include "navdata_pi.h"
+#include "icons.h"
+
+extern wxString m_shareLocn;
+extern wxString m_ActiveRouteGuid;
+extern int      m_Blink;
+
+
 
 //------------------------------------------------------------------------------
 //          custom grid implementation
@@ -95,24 +102,35 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
         int len =  label.Len() * ((double)(GetColWidth(col) - 2) / (double)w);
         label = GetColLabelValue(col).Mid(0, len);
     }
-    //draw
+    //draw rectangle
     dc.SetFont( m_labelFont );
     dc.SetPen(GetDefaultGridLinePen());
     dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
     dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
-    int d = m_colLabelHeight / 3;
+    //draw selected or active mark
     if( (col == 0 && m_gParent->m_selectCol == wxNOT_FOUND )
             || col == m_gParent->m_selectCol ){
-        static bool blink;
-        if( !blink ) {
-            dc.SetBrush(wxBrush(m_redColour, wxBRUSHSTYLE_SOLID));
-            dc.DrawCircle(GetColLeft(col) + d, d, d);
-            dc.SetBrush(wxBrush(m_yellowColour, wxBRUSHSTYLE_SOLID));
-            dc.DrawCircle(GetColLeft(col) + d, d, d/2);
-            blink = true;
-        } else
-            blink = false;
+         if( m_Blink & 1 ) {
+            wxImage image;
+            if( col == 0  )
+                image = _img_activewpt->ConvertToImage();
+            else
+                image = _img_targetwpt->ConvertToImage();
+
+            unsigned char *i = image.GetData();
+            if (i == 0)
+                return;
+            int w = image.GetWidth();
+            int h = image.GetHeight();
+            double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
+            w *= scale;
+            h *= scale;
+            wxBitmap scaled;
+            scaled =  wxBitmap(image.Scale( w, h) );
+            dc.DrawBitmap( scaled, GetColLeft(col), 0 );
+         }
     }
+    //draw label
     dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
     dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
                             m_colLabelHeight - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
@@ -120,27 +138,30 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
 
 void CustomGrid::DrawCornerLabel( wxDC& dc )
 {
-    //set drawing
-    int w, h;
-    GetTextExtent( _("SOG"), &w, &h, 0, 0, &m_labelFont);
-    w += 6;
-    h += 2;
-    int x = (m_rowLabelWidth / 2) - (w / 2);
-    int y = (m_colLabelHeight / 2) - (h / 2);
-    wxString s = m_withSog? _T("SOG") : _T("VMG");
-    //draw corner
+    //draw corner rectangle
     dc.SetPen(GetDefaultGridLinePen());
     dc.SetBrush( wxBrush( m_labelBackgroundColour, wxBRUSHSTYLE_SOLID ) );
     dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight );
     //draw button
-    wxColour c;
-    c.SetRGB( 0x00cecece );
-    dc.SetBrush( wxBrush( c, wxBRUSHSTYLE_SOLID ) );
-    dc.DrawRectangle(x - 5 , y - 1, w + 10, h + 2);
-    dc.SetFont( m_labelFont );
-    dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
-    dc.DrawLabel( s, wxRect(x, y, w, h),
-                wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+    wxImage image;
+    if( m_withSog )
+        image = _img_SOG->ConvertToImage();
+    else
+        image = _img_VMG->ConvertToImage();
+
+    unsigned char *i = image.GetData();
+    if (i == 0)
+        return;
+    int w = image.GetWidth();
+    int h = image.GetHeight();
+    double scale = ((((double)m_colLabelHeight - 10)/h)*4)/4;
+    w *= scale;
+    h *= scale;
+    int x = m_rowLabelWidth - (w+5);
+    wxBitmap scaled;
+    scaled =  wxBitmap(image.Scale( w, h) );
+    dc.DrawBitmap( scaled, x, 5);
+
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
@@ -202,7 +223,7 @@ int CustomGrid::GetColIndex( int col )
     int rw,c;
     GetFirstVisibleCell( rw, c );
     std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( m_gParent->pPlugin->GetActiveRouteGUID() );
+    r = GetRoute_Plugin( m_ActiveRouteGuid );
     wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
     int i = 0;
     while( node ){

@@ -33,9 +33,7 @@
 
 #include "navdata_pi.h"
 #include "icons.h"
-//#include <wx/list.h>
-//#include <wx/openGL>
-//#include <wx/glcanvas.h>
+
 #include "GL/gl.h"
 
 #include "wx/jsonreader.h"
@@ -53,7 +51,10 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
     delete p;
 }
 // static variables
+wxString       m_shareLocn;
+wxString       m_ActiveRouteGuid;
 wxString       m_SelectedPointGuid;
+int            m_Blink;
 
 int NextPow2(int size)
 {
@@ -101,17 +102,22 @@ int navdata_pi::Init(void)
 
     m_pTable = NULL;
 
-      //LoadConfig();
-
     m_SelectedPointGuid = wxEmptyString;
     m_gTrkGuid = wxEmptyString;
     m_ActiveRouteGuid = wxEmptyString;
     m_gMustRotate = false;
     m_gHasRotated = false;
     m_gRotateLenght = 0;
+    m_Blink = 0;
+
+    //find and store share path
+    m_shareLocn =*GetpSharedDataLocation() +
+                    _T("plugins") + wxFileName::GetPathSeparator() +
+                    _T("navdata_pi") + wxFileName::GetPathSeparator()
+                    +_T("data") + wxFileName::GetPathSeparator();
 
     //    This PlugIn needs a toolbar icon, so request its insertion
-    wxString inactive = GetSVGPath() + _T("inactive.svg");
+    wxString inactive = m_shareLocn + _T("inactive.svg");
     if( wxFile::Exists( inactive) )
         m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
                     wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
@@ -297,8 +303,8 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         if ( rnumErrors == 0 )  {
             // get route GUID values from the JSON message
             m_ActiveRouteGuid = root[_T("GUID")].AsString();
-            wxString active = GetSVGPath() + _T("active.svg");
-            wxString toggled = GetSVGPath() + _T("toggled.svg");
+            wxString active = m_shareLocn + _T("active.svg");
+            wxString toggled = m_shareLocn + _T("toggled.svg");
             if( wxFile::Exists( active) && wxFile::Exists( toggled) )
                 SetToolbarToolBitmapsSVG(m_leftclick_tool_id, active,
                                      active, toggled );
@@ -340,7 +346,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         if ( pnumErrors == 0 ){
             m_ActivePointGuid = p1root[_T("GUID")].AsString();
             if( m_pTable )
-                m_pTable->UpdateRouteData( m_ActiveRouteGuid, m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
         }
     }
 
@@ -353,7 +359,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             if( p2root.HasMember(_T("Next_WP"))){
                 m_ActivePointGuid = p2root[_T("GUID")].AsString();
                 if( m_pTable )
-                    m_pTable->UpdateRouteData( m_ActiveRouteGuid, m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                    m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
             }
         }
 
@@ -364,7 +370,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         m_ActivePointGuid = wxEmptyString;
         m_ActiveRouteGuid = wxEmptyString;
         //SetToolbarItemState( m_leftclick_tool_id, false );
-        wxString inactive = GetSVGPath() + _T("inactive.svg");
+        wxString inactive = m_shareLocn + _T("inactive.svg");
         if( wxFile::Exists( inactive) )
             SetToolbarToolBitmapsSVG(m_leftclick_tool_id, inactive,
                                  inactive, inactive );
@@ -400,9 +406,9 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     m_gLon = pfix.Lon;
     m_gCog = pfix.Cog;
     m_gSog = pfix.Sog;
+    m_Blink++;
     if( m_pTable ){
-        m_pTable->UpdateRouteData( m_ActiveRouteGuid,
-                  m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
     RequestRefresh( m_pParentWin );
 }
@@ -420,107 +426,89 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    if( !m_pTable ) return false;
-    if( m_pTable->m_selectCol == wxNOT_FOUND ) return false;
     // If multicanvas are active, render the overlay on the right canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 1) {            // multi?
+    if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
         return false;
-    }
 
-    return RenderOverlay( dc, vp);
-}
-
-bool navdata_pi::RenderOverlay( wxDC &dc, PlugIn_ViewPort *vp )
-{
     if( !m_pTable ) return false;
     if( m_pTable->m_selectCol == wxNOT_FOUND ) return false;
-    float scale =  GetOCPNChartScaleFactor_Plugin();
-    int  imgw = _img_targetwpt->GetWidth();
-    int  imgh = _img_targetwpt->GetHeight();
 
-    wxString file = GetSVGPath() + _T("targetwpt.svg");
-   // wxBitmap *bmp = NULL;
-     wxBitmap bmp;
-     wxImage image;
-    if( wxFile::Exists( file ) ){
-        bmp = GetBitmapFromSVGFile( file, imgw, imgh);
-        image = bmp.ConvertToImage();
-    } else
-        image = _img_targetwpt->ConvertToImage();
-    unsigned char *d = image.GetData();
-    if (d == 0) {
-        return false;
-    }
-    wxPoint2DDouble pp = m_pTable->GetSelPointPos();
-    wxPoint r;
-    GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
-    //draw
-    int w = imgw * scale;
-    int h = imgh * scale;
-    int x = r.x - (w/2);
-    int y = r.y - (h/2);
-    static bool blink;
- //   if( blink ) {
+    if( m_Blink & 1 ) {
+        wxDC *pdc;
+        pdc = &dc;
+        float scale =  GetOCPNChartScaleFactor_Plugin();
+        int  imgw = _img_targetwpt->GetWidth();
+        int  imgh = _img_targetwpt->GetHeight();
+/*       wxImage image;
+        wxString file = m_shareLocn + _T("targetwpt.svg");
+        if( wxFile::Exists( file ) ){
+            wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
+            image = bmp.ConvertToImage();
+        } else*/
+        wxImage image= _img_targetwpt->ConvertToImage();
+        unsigned char *d = image.GetData();
+        if (d == 0)
+            return false;
+
+        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
+        wxPoint r;
+        GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
+        //draw
+        imgw *= scale;
+        imgh *= scale;
+        int x = r.x - (imgw/2);
+        int y = r.y - (imgh/2);
         wxBitmap scaled_Bitmap;
-        scaled_Bitmap =  wxBitmap(image.Scale(w, h), wxIMAGE_QUALITY_HIGH);
-        dc.DrawBitmap( scaled_Bitmap, x, y );
-        blink = false;
- //   } else
-  //      blink = true;
-
+        scaled_Bitmap =  wxBitmap(image.Scale(imgw, imgh) );
+        pdc->DrawBitmap( scaled_Bitmap, x, y );
+    }
     return true;
 }
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
 {
+    // If multicanvas are active, render the overlay on the right canvas only
+    if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
+        return false;
+
     if( !m_pTable ) return false;
     if( m_pTable->m_selectCol == wxNOT_FOUND ) return false;
-    // If multicanvas are active, render the overlay on the right canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 1) {            // multi?
-        return false;
-    }
 
-    return RenderGLOverlay( pcontext, vp);
-}
+    if( m_Blink & 1 ) {
+        float scale =  GetOCPNChartScaleFactor_Plugin();
+/*        wxImage image;
+        int  imgw = _img_targetwpt->GetWidth();
+        int  imgh = _img_targetwpt->GetHeight();
+        wxString file = m_shareLocn + _T("targetwpt.svg");
+        if( wxFile::Exists( file ) ){
+            wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
+            image = bmp.ConvertToImage();
+        } else*/
+        wxImage image = _img_targetwpt->ConvertToImage();
+        unsigned char *d = image.GetData();
+        if (d == 0)
+            return false;
 
-bool navdata_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
-{
-    float scale =  GetOCPNChartScaleFactor_Plugin();
-    int  imgw = _img_targetwpt->GetWidth() * scale;
-    int  imgh = _img_targetwpt->GetHeight() * scale;
+        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
+        wxPoint r;
+        GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
+        //create texture
+        int w = image.GetWidth(), h = image.GetHeight();
+        wxRect r1 = wxRect( r.x - w/2, r.y - h/2, w, h );
+        unsigned int IconTexture;
+        glGenTextures(1, &IconTexture);
+        glBindTexture(GL_TEXTURE_2D, IconTexture);
 
-    wxString file = GetSVGPath() + _T("targetwpt.svg");
-    wxBitmap *pbm = NULL;
-    if( wxFile::Exists( file ) )
-        *pbm = GetBitmapFromSVGFile( file, imgw, imgh);
-    else
-        pbm = _img_targetwpt;
-    wxImage image = pbm->ConvertToImage();
-    unsigned char *d = image.GetData();
-    if (d == 0) {
-        return false;
-    }
-    wxPoint2DDouble pp = m_pTable->GetSelPointPos();
-    wxPoint r;
-    GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
-    //create texture
-    int w = image.GetWidth(), h = image.GetHeight();
-    wxRect r1 = wxRect( r.x - w/2, r.y - h/2, w, h );
-    unsigned int IconTexture;
-    glGenTextures(1, &IconTexture);
-    glBindTexture(GL_TEXTURE_2D, IconTexture);
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-
-    unsigned char *a = image.GetAlpha();
-    unsigned char mr, mg, mb;
-    if (!a)
-        image.GetOrFindMaskColour( &mr, &mg, &mb );
-
-    unsigned char *e = new unsigned char[4 * w * h];
-    for( int y = 0; y < h; y++ ) {
+        unsigned char *a = image.GetAlpha();
+        unsigned char mr, mg, mb;
+        if(!a)
+            image.GetOrFindMaskColour( &mr, &mg, &mb );
+        unsigned char *e = new unsigned char[4 * w * h];
+        for( int y = 0; y < h; y++ ) {
             for( int x = 0; x < w; x++ ) {
                 unsigned char r, g, b;
                 int off = ( y * w + x );
@@ -530,21 +518,17 @@ bool navdata_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
                 e[off * 4 + 0] = r;
                 e[off * 4 + 1] = g;
                 e[off * 4 + 2] = b;
-                e[off * 4 + 3] =  a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
+                e[off * 4 + 3] = *a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
             }
-    }
-    unsigned int glw = NextPow2(w);
-    unsigned int glh = NextPow2(h);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glw, glh,
+        }
+        unsigned int glw = NextPow2(w);
+        unsigned int glh = NextPow2(h);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glw, glh,
                  0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h,
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h,
                     GL_RGBA, GL_UNSIGNED_BYTE, e);
-
-    delete [] e;
-
-    //draw
-    static bool blink;
-    if( blink ) {
+        delete []e;
+        //draw
         glBindTexture(GL_TEXTURE_2D, IconTexture);
 
         glEnable(GL_TEXTURE_2D);
@@ -571,10 +555,6 @@ bool navdata_pi::RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp)
 
         glDisable(GL_BLEND);
         glDisable(GL_TEXTURE_2D);
-        blink = false;
-    }
-    else{
-        blink = true;
     }
     return true;
 }
@@ -649,14 +629,13 @@ void navdata_pi::OnSelectGuidTimer( wxTimerEvent & event)
         m_SelectedPointGuid = guid;
         if( m_pTable ){
             m_pTable->SetTargetFlag( true );
-            m_pTable->UpdateRouteData( m_ActiveRouteGuid,
-                                m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+            m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
         }
     }
     RequestRefresh( m_pParentWin );
 }
-
-wxString navdata_pi::GetSVGPath()
+/*
+wxString navdata_pi::m_shareLocn
 {
     //find share path
     wxString shareLocn =*GetpSharedDataLocation() +
@@ -664,17 +643,8 @@ wxString navdata_pi::GetSVGPath()
                 _T("navdata_pi") + wxFileName::GetPathSeparator()
                 +_T("data") + wxFileName::GetPathSeparator();
     return shareLocn;
- /*   //find svg files
-    active = shareLocn + _T("active.svg");
-    toggled = shareLocn + _T("toggled.svg");
-    inactive = shareLocn + _T("inactive.svg");
-    if(wxFile::Exists( active) && wxFile::Exists( toggled )
-            && wxFile::Exists( inactive ) )
-        return true;
-
-    return false;*/
 }
-
+*/
 double navdata_pi::GetMag(double a)
 {
     if(!std::isnan(m_gWmmVar)) {
@@ -714,7 +684,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
     SetDialogFont( m_pTable, &font );//Apply global font
     DimeWindow( m_pTable ); //apply colour sheme
     m_pTable->InitDataTable();
-    m_pTable->UpdateRouteData( m_ActiveRouteGuid, m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+    m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     m_pTable->UpdateTripData();
     m_pTable->SetTableSizePosition();
     m_pTable->Show();

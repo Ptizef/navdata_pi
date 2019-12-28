@@ -35,21 +35,20 @@
   #include <wx/glcanvas.h>
 #endif //precompiled headers
 
-//#include "wx/jsonreader.h"
-//#include "wx/jsonwriter.h"
-
 #include <wx/fileconf.h>
 
 #include "ocpn/ocpn_plugin.h"
 
 #include "version.h"
-//#include <vector>
-
 #include "datatable.h"
 
 //----------------------------------------------------------------------------------------------------------
 //    The PlugIn Class Definition
 //----------------------------------------------------------------------------------------------------------
+
+#ifndef ocpnUSE_SVG
+    #define ocpnUSE_SVG 0
+#endif
 
 #define     MY_API_VERSION_MAJOR    1
 
@@ -68,10 +67,6 @@
 #define     TIMER_INTERVAL_10SECOND 10000  //10 s
 #define     TIMER_INTERVAL_SECOND    1000  //1 s
 #define     TIMER_INTERVAL_MSECOND      1  //1 ms
-
-#if !wxUSE_GRAPHICS_CONTEXT
-#define wxGCDC wxDC
-#endif
 
 class navdata_pi : public opencpn_plugin_116, wxTimer
 {
@@ -96,21 +91,18 @@ public:
       int GetDistFormat() {return m_ocpnDistFormat;}
       int GetSpeedFormat() {return m_ocpnSpeedFormat;}
       void CloseDataTable();
-      wxString GetActiveRouteGUID(){return m_ActiveRouteGuid;}
 
 private:
       //    The override PlugIn Methods
-      bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
+     // bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
-      bool RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp);
+     // bool RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
       void SetPositionFix(PlugIn_Position_Fix &pfix);
       bool MouseEventHook( wxMouseEvent &event );
-      //bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
-      //bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
       //
       void OnTripLenghtTimer(wxTimerEvent & event);
       void OnRotateTimer( wxTimerEvent & event);
@@ -118,12 +110,9 @@ private:
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       void SetDialogFont( wxWindow *dialog, wxFont *font);
-      wxString GetSVGPath();
 
-      int m_leftclick_tool_id;
-      wxString m_shareLocn;
+      int          m_leftclick_tool_id;
       unsigned int m_ToolIconType;
-      int          m_Blinktimer;
 
       //data table variables
       DataTable   *m_pTable;
@@ -136,7 +125,6 @@ private:
 
       //Route & wpoint variables
       wxTimer     m_selectTimer;
-      wxString    m_ActiveRouteGuid;
       wxString    m_ActivePointGuid;
 
       //ocpn options variables

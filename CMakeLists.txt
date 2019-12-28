@@ -34,7 +34,7 @@ MESSAGE (STATUS "*** Building ${PACKAGE_NAME} ***")
 
 MESSAGE (STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-INCLUDE("cmake/PluginConfigure.cmake")
+#INCLUDE("cmake/PluginConfigure.cmake")
 
 IF (PREFIX)
 	SET(CMAKE_INSTALL_PREFIX ${PREFIX})
@@ -99,6 +99,7 @@ INCLUDE_DIRECTORIES(
 SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON})
 ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC})
 
+INCLUDE("cmake/PluginConfigure.cmake")
 INCLUDE("cmake/PluginInstall.cmake")
 INCLUDE("cmake/PluginLocalization.cmake")
 INCLUDE("cmake/PluginPackage.cmake")

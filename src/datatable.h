@@ -47,11 +47,11 @@
 #endif
 #define SECONDS_PER_DAY     86400
 #define ACTIVE_POINT_IDX    0
-
+/*
 #if !wxUSE_GRAPHICS_CONTEXT
 #define wxGCDC wxDC
 #endif
-
+*/
 class navdata_pi;
 
 //----------------------------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ public:
      ~DataTable(){ delete m_pDataTable; }
 
     void InitDataTable();
-    void UpdateRouteData(wxString routeGuid, wxString pointGuid,
+    void UpdateRouteData(wxString pointGuid,
                     double shiplon, double shiplat, double shipcog, double shipsog );
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
