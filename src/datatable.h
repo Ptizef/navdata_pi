@@ -45,13 +45,13 @@
 #ifndef PI
 #define PI        3.1415926535897931160E0      /* pi */
 #endif
-#define SECONDS_PER_DAY     86400
-#define ACTIVE_POINT_IDX    0
-/*
-#if !wxUSE_GRAPHICS_CONTEXT
-#define wxGCDC wxDC
-#endif
-*/
+#define SECONDS_PER_DAY         86400
+#define ACTIVE_POINT_IDX        0
+#define DOUBLE_BORDER_WIDTH     10
+#define SINGLE_BORDER_WIDTH     5
+#define DIALOG_BORDER_HEIGHT    25
+
+
 class navdata_pi;
 
 //----------------------------------------------------------------------------------------------------------
@@ -73,13 +73,12 @@ public:
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
     void DrawWptName(int index, wxSize size, wxPoint pos);
-    void SetTableSizePosition();
+    void SetTableSizePosition(bool ComputeNumber );
     void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
 
     wxTimer    m_NameTimer;  //timer to hide long wpt name
-    int        m_selectCol;
 
 private:
     void AddDataCol(int num_cols);
@@ -90,14 +89,37 @@ private:
                                   double *brg, double *nrng);
     void MakeVisibleCol( int col );
     void OnSize(wxSizeEvent &event );
+    int  SetTripDataSpaceHeight(int dialogWidth );
     void OnNameTimer( wxTimerEvent & event );
     void OnClose( wxCloseEvent& event );
-    void OnOKButton( wxCommandEvent& event );
+    //void OnOKButton( wxCommandEvent& event );
 
     wxGridCellAttr *m_pDataCol;
     bool           m_targetFlag;
     int            m_oldIndex;
     wxPoint2DDouble  m_SelPointPos;
+    int            m_numVisCols;
+    int            m_numVisRows;
+    bool           m_InvaidateSizeEvent;
+    wxPoint        m_dialPosition;
+   // bool           g_withSog;
+
+
 
 };
+
+//----------------------------------------------------------------------------------------------------------
+//    Settings dialog Specification
+//----------------------------------------------------------------------------------------------------------
+class Settings: public SettingsBase
+{
+private:
+    void OnOKButton( wxCommandEvent& event );
+
+public:
+    Settings(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style );
+
+     ~Settings(){}
+};
+
 #endif //__DATATABLE_H__

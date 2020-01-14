@@ -34,9 +34,12 @@
 #include "navdata_pi.h"
 #include "icons.h"
 
-extern wxString m_shareLocn;
-extern wxString m_ActiveRouteGuid;
-extern int      m_Blink;
+extern wxString g_shareLocn;
+extern wxString g_activeRouteGuid;
+extern int      g_blinkTrigger;
+extern int      g_selectedPointCol;
+extern bool     g_showTripData;
+extern bool     g_withSog;
 
 
 
@@ -61,10 +64,6 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     //init labels attr
     GetGlobalColor(_T("DILG0"), &m_labelBackgroundColour);
     GetGlobalColor(_T("DILG3"), &m_labelTextColour );
-    GetGlobalColor(_T("YELO1"), &m_yellowColour);
-    GetGlobalColor(_T("URED"), &m_redColour);
-    //init useful variable
-    m_withSog = false;
 
 #ifdef __WXOSX__
     m_bLeftDown = false;
@@ -108,20 +107,34 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
     dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
     dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
     //draw selected or active mark
-    if( (col == 0 && m_gParent->m_selectCol == wxNOT_FOUND )
-            || col == m_gParent->m_selectCol ){
-         if( m_Blink & 1 ) {
+    if( (col == 0 && g_selectedPointCol == wxNOT_FOUND )
+            || col == g_selectedPointCol ){
+         if( g_blinkTrigger & 1 ) {
             wxImage image;
-            if( col == 0  )
-                image = _img_activewpt->ConvertToImage();
-            else
-                image = _img_targetwpt->ConvertToImage();
+            int w = 0, h = 0;
+            if( col == 0  ){
+                w = _img_activewpt->GetWidth();
+                h = _img_activewpt->GetHeight();
+                wxString file = g_shareLocn + _T("activewpt.svg");
+                if( wxFile::Exists( file ) ){
+                    wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
+                    image = bmp.ConvertToImage();
+                } else
+                    image = _img_activewpt->ConvertToImage();
+            } else {
+                w = _img_targetwpt->GetWidth();
+                h = _img_targetwpt->GetHeight();
+                wxString file = g_shareLocn + _T("targetwpt.svg");
+                if( wxFile::Exists( file ) ){
+                    wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
+                    image = bmp.ConvertToImage();
+                } else
+                    image = _img_targetwpt->ConvertToImage();
+            }
 
             unsigned char *i = image.GetData();
             if (i == 0)
                 return;
-            int w = image.GetWidth();
-            int h = image.GetHeight();
             double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
             w *= scale;
             h *= scale;
@@ -140,28 +153,29 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
 {
     //draw corner rectangle
     dc.SetPen(GetDefaultGridLinePen());
-    dc.SetBrush( wxBrush( m_labelBackgroundColour, wxBRUSHSTYLE_SOLID ) );
-    dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight );
-    //draw button
+    dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+    dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight);
+    //draw setting button
     wxImage image;
-    if( m_withSog )
-        image = _img_SOG->ConvertToImage();
-    else
-        image = _img_VMG->ConvertToImage();
-
+    int w = _img_setting->GetWidth();
+    int h = _img_setting->GetHeight();
+    wxString file = g_shareLocn + _T("setting.svg");
+    if( wxFile::Exists( file ) ){
+        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
+        image = bmp.ConvertToImage();
+    } else
+        image = _img_setting->ConvertToImage();
     unsigned char *i = image.GetData();
     if (i == 0)
         return;
-    int w = image.GetWidth();
-    int h = image.GetHeight();
-    double scale = ((((double)m_colLabelHeight - 10)/h)*4)/4;
+    double scale = ((((double)m_colLabelHeight/1.5)/h)*4)/4;
     w *= scale;
     h *= scale;
-    int x = m_rowLabelWidth - (w+5);
+    int x = (m_rowLabelWidth/2) - (w/2);
+    int y = (m_colLabelHeight-h)/2;
     wxBitmap scaled;
     scaled =  wxBitmap(image.Scale( w, h) );
-    dc.DrawBitmap( scaled, x, 5);
-
+    dc.DrawBitmap( scaled, x, y );
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
@@ -173,8 +187,24 @@ void CustomGrid::OnScroll( wxScrollEvent& event )
 void CustomGrid::OnLabelClik( wxGridEvent& event)
 {
     ClearSelection();
-    if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND )
-        m_withSog = !m_withSog;
+    if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND ){
+        int x = event.GetPosition().x;
+        int o = m_rowLabelWidth / 4;
+        if( x > o || x < (m_rowLabelWidth - o ) ){
+           bool showTrip = g_showTripData;
+
+            Settings *dialog = new Settings( m_parent, wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
+
+            dialog->ShowModal();
+
+            if( showTrip != g_showTripData )
+                m_pParent->SetTableSizePosition( true );
+
+            wxString s = g_withSog? _("SOG"): _("VMG");
+            SetRowLabelValue( 3, _("TTG") + _T("@") + s );
+            SetRowLabelValue( 4, _("ETA") + _T("@") + s );
+        }
+    }
 }
 
 void CustomGrid::OnResize( wxSizeEvent& event )
@@ -198,7 +228,7 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
             if( w > GetColSize(index) ){
                 //compute best position
                 wxPoint p = GetPosition();
-                wxSize  s = m_gParent->GetSize();
+                wxSize  s = m_pParent->GetSize();
                 int x = p.x + GetRowLabelSize() + (GetDefaultColSize() * col) + (GetDefaultColSize() / 2 );
                 x -= (w/2);
                 int y = p.y - h;
@@ -207,7 +237,7 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
                     if( x < 0 )
                         x = 0;
                 }
-                m_gParent->DrawWptName( index, wxSize(w, y), wxPoint(x, y) );
+                m_pParent->DrawWptName( index, wxSize(w, y), wxPoint(x, y) );
                 return;
             } else
                refresh = true;
@@ -215,7 +245,7 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
             refresh = true;
     }
     if( refresh )
-        m_gParent->m_NameTimer.Start( 1, wxTIMER_ONE_SHOT );
+        m_pParent->m_NameTimer.Start( 1, wxTIMER_ONE_SHOT );
 }
 
 int CustomGrid::GetColIndex( int col )
@@ -223,7 +253,7 @@ int CustomGrid::GetColIndex( int col )
     int rw,c;
     GetFirstVisibleCell( rw, c );
     std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( m_ActiveRouteGuid );
+    r = GetRoute_Plugin( g_activeRouteGuid );
     wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
     int i = 0;
     while( node ){
@@ -259,7 +289,7 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
     }
 #endif
     if(event.Dragging()){
-        m_gParent->SetTargetFlag( false );
+        m_pParent->SetTargetFlag( false );
         int frow, fcol, lrow, lcol;
         GetFirstVisibleCell(frow, fcol);
         GetLastVisibleCell(lrow, lcol);
@@ -303,6 +333,25 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
                 m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
         }
     }
+}
+
+//find the number of visible cols
+int CustomGrid::GetNumVisibleCols()
+{
+    int frow = 0, fcol;
+    int ncols = 0;
+    bool vis = false;
+    for(fcol = 0; fcol < m_numCols; fcol++){
+        for(frow = 0; frow < m_numRows; frow++) {
+            if(IsVisible(frow, fcol)){
+                vis = true;
+                break;
+            } else
+                vis = false;
+        }
+        if( vis ) ncols++;
+    }
+    return ncols;
 }
 
 //find the first top/left visible cell coords

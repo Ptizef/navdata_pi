@@ -116,7 +116,7 @@ private:
 
       //data table variables
       DataTable   *m_pTable;
-      wxWindow    *m_pParentWin;
+      //wxWindow    *g_pParentWin;
       double      m_gLat;
       double      m_gLon;
       double      m_gCog;
@@ -125,7 +125,7 @@ private:
 
       //Route & wpoint variables
       wxTimer     m_selectTimer;
-      wxString    m_ActivePointGuid;
+      wxString    m_activePointGuid;
 
       //ocpn options variables
       int         m_ocpnDistFormat;

@@ -41,7 +41,7 @@
 #include "customgrid.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Class GRIBTableBase
+/// Class DataTableBase
 ///////////////////////////////////////////////////////////////////////////////
 class DataTableBase : public wxDialog
 {
@@ -60,22 +60,38 @@ class DataTableBase : public wxDialog
         wxStaticText* m_pSpeedValue;
         wxFlexGridSizer* m_pfgSizer03;
         wxFlexGridSizer* m_pfgSizer04;
-
+        wxFlexGridSizer* m_pTripSizer;
 
 		// Virtual event handlers, overide them in your derived class
-		virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
-        //virtual void OnClick( wxGridEvent& event ) { event.Skip(); }
-        //virtual void OnRangeClick( wxGridRangeSelectEvent& event ) { event.Skip(); }
-		virtual void OnOKButton( wxCommandEvent& event ) { event.Skip(); }
-
+        //virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
 
 	public:
 		CustomGrid* m_pDataTable;
-        wxButton* m_pButtonTableOK;
 
-        DataTableBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Navigation Data"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxDEFAULT_DIALOG_STYLE|wxMAXIMIZE_BOX|wxRESIZE_BORDER );
+        DataTableBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Navigation Data"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxRESIZE_BORDER );
         ~DataTableBase();
-
 };
 
 #endif //__DATADIALOGBASE_H__
+
+///////////////////////////////////////////////////////////////////////////////
+/// Class SettingsBase
+///////////////////////////////////////////////////////////////////////////////
+class SettingsBase : public wxDialog
+{
+    private:
+
+    protected:
+        wxCheckBox*     m_pShowTripData;
+        wxRadioBox*     m_pShowspeed;
+        wxButton*       m_pSettingsOK;
+
+        SettingsBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Settings"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 )
+                , long style = wxCAPTION );
+
+        ~SettingsBase(){}
+
+};
+
+
+

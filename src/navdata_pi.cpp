@@ -51,10 +51,14 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
     delete p;
 }
 // static variables
-wxString       m_shareLocn;
-wxString       m_ActiveRouteGuid;
-wxString       m_SelectedPointGuid;
-int            m_Blink;
+wxWindow       *g_pParentWin;
+wxString       g_shareLocn;
+wxString       g_activeRouteGuid;
+wxString       g_selectedPointGuid;
+int            g_blinkTrigger;
+int            g_selectedPointCol;
+bool           g_showTripData;
+bool           g_withSog;
 
 int NextPow2(int size)
 {
@@ -81,8 +85,12 @@ navdata_pi::navdata_pi(void *ppimgr)
 navdata_pi::~navdata_pi(void)
 {
     delete _img_active;
-    delete _img_toggled;
     delete _img_inactive;
+    delete _img_toggled;
+    delete _img_target;
+    delete _img_activewpt;
+    delete _img_targetwpt;
+    delete _img_setting;
  }
 
 int navdata_pi::Init(void)
@@ -96,28 +104,28 @@ int navdata_pi::Init(void)
 
     // If multicanvas are active, render the overlay on the right canvas only
     if(GetCanvasCount() > 1)            // multi?
-        m_pParentWin = GetCanvasByIndex(1);
+        g_pParentWin = GetCanvasByIndex(1);
     else
-        m_pParentWin = GetOCPNCanvasWindow();
+        g_pParentWin = GetOCPNCanvasWindow();
 
     m_pTable = NULL;
 
-    m_SelectedPointGuid = wxEmptyString;
+    g_selectedPointGuid = wxEmptyString;
     m_gTrkGuid = wxEmptyString;
-    m_ActiveRouteGuid = wxEmptyString;
+    g_activeRouteGuid = wxEmptyString;
     m_gMustRotate = false;
     m_gHasRotated = false;
     m_gRotateLenght = 0;
-    m_Blink = 0;
+    g_blinkTrigger = 0;
 
     //find and store share path
-    m_shareLocn =*GetpSharedDataLocation() +
+    g_shareLocn =*GetpSharedDataLocation() +
                     _T("plugins") + wxFileName::GetPathSeparator() +
                     _T("navdata_pi") + wxFileName::GetPathSeparator()
                     +_T("data") + wxFileName::GetPathSeparator();
 
     //    This PlugIn needs a toolbar icon, so request its insertion
-    wxString inactive = m_shareLocn + _T("inactive.svg");
+    wxString inactive = g_shareLocn + _T("inactive.svg");
     if( wxFile::Exists( inactive) )
         m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
                     wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
@@ -194,18 +202,7 @@ int navdata_pi::GetToolbarToolCount(void)
 {
       return 1;
 }
-/*
-bool navdata_pi::LoadConfig(void)
-{
-    wxFileConfig *pConf = GetOCPNConfigObject();
-    if(pConf)
-    {
-            return true;
-    } else
 
-        return false;
-}
-*/
 void navdata_pi::LoadocpnConfig()
 {
       wxFileConfig *pConf = GetOCPNConfigObject();
@@ -218,17 +215,6 @@ void navdata_pi::LoadocpnConfig()
           pConf->Read(_T("SpeedFormat"), &m_ocpnSpeedFormat, 0);
       }
 }
-
-/*bool navdata_pi::SaveConfig(void)
-{
-    wxFileConfig *pConf = GetOCPNConfigObject();
-    if(pConf)
-    {
-        return true;
-    }
-    else
-        return false;
-}*/
 
 void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 {
@@ -302,9 +288,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         int rnumErrors = reader.Parse( message_body, &root );
         if ( rnumErrors == 0 )  {
             // get route GUID values from the JSON message
-            m_ActiveRouteGuid = root[_T("GUID")].AsString();
-            wxString active = m_shareLocn + _T("active.svg");
-            wxString toggled = m_shareLocn + _T("toggled.svg");
+            g_activeRouteGuid = root[_T("GUID")].AsString();
+            wxString active = g_shareLocn + _T("active.svg");
+            wxString toggled = g_shareLocn + _T("toggled.svg");
             if( wxFile::Exists( active) && wxFile::Exists( toggled) )
                 SetToolbarToolBitmapsSVG(m_leftclick_tool_id, active,
                                      active, toggled );
@@ -344,9 +330,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         wxJSONReader p1reader;
         int pnumErrors = p1reader.Parse( message_body, &p1root );
         if ( pnumErrors == 0 ){
-            m_ActivePointGuid = p1root[_T("GUID")].AsString();
+            m_activePointGuid = p1root[_T("GUID")].AsString();
             if( m_pTable )
-                m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
         }
     }
 
@@ -357,9 +343,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         int p2numErrors = p2reader.Parse( message_body, &p2root );
         if ( p2numErrors == 0 ) {
             if( p2root.HasMember(_T("Next_WP"))){
-                m_ActivePointGuid = p2root[_T("GUID")].AsString();
+                m_activePointGuid = p2root[_T("GUID")].AsString();
                 if( m_pTable )
-                    m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                    m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
             }
         }
 
@@ -367,10 +353,10 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 
     else if(message_id == _T("OCPN_RTE_DEACTIVATED") || message_id == _T("OCPN_RTE_ENDED") )
     {
-        m_ActivePointGuid = wxEmptyString;
-        m_ActiveRouteGuid = wxEmptyString;
+        m_activePointGuid = wxEmptyString;
+        g_activeRouteGuid = wxEmptyString;
         //SetToolbarItemState( m_leftclick_tool_id, false );
-        wxString inactive = m_shareLocn + _T("inactive.svg");
+        wxString inactive = g_shareLocn + _T("inactive.svg");
         if( wxFile::Exists( inactive) )
             SetToolbarToolBitmapsSVG(m_leftclick_tool_id, inactive,
                                  inactive, inactive );
@@ -406,11 +392,11 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     m_gLon = pfix.Lon;
     m_gCog = pfix.Cog;
     m_gSog = pfix.Sog;
-    m_Blink++;
+    g_blinkTrigger++;
     if( m_pTable ){
-        m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
-    RequestRefresh( m_pParentWin );
+    RequestRefresh( g_pParentWin );
 }
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
@@ -431,21 +417,21 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
         return false;
 
     if( !m_pTable ) return false;
-    if( m_pTable->m_selectCol == wxNOT_FOUND ) return false;
+    if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
-    if( m_Blink & 1 ) {
+    if( g_blinkTrigger & 1 ) {
         wxDC *pdc;
         pdc = &dc;
         float scale =  GetOCPNChartScaleFactor_Plugin();
-        int  imgw = _img_targetwpt->GetWidth();
-        int  imgh = _img_targetwpt->GetHeight();
-/*       wxImage image;
-        wxString file = m_shareLocn + _T("targetwpt.svg");
+        int  imgw = _img_target->GetWidth();
+        int  imgh = _img_target->GetHeight();
+        wxImage image;
+        wxString file = g_shareLocn + _T("target.svg");
         if( wxFile::Exists( file ) ){
             wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
             image = bmp.ConvertToImage();
-        } else*/
-        wxImage image= _img_targetwpt->ConvertToImage();
+        } else
+            image = _img_target->ConvertToImage();
         unsigned char *d = image.GetData();
         if (d == 0)
             return false;
@@ -472,23 +458,22 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
         return false;
 
     if( !m_pTable ) return false;
-    if( m_pTable->m_selectCol == wxNOT_FOUND ) return false;
+    if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
-    if( m_Blink & 1 ) {
+    if( g_blinkTrigger & 1 ) {
         float scale =  GetOCPNChartScaleFactor_Plugin();
-/*        wxImage image;
-        int  imgw = _img_targetwpt->GetWidth();
-        int  imgh = _img_targetwpt->GetHeight();
-        wxString file = m_shareLocn + _T("targetwpt.svg");
+        wxImage image;
+        int  imgw = _img_target->GetWidth();
+        int  imgh = _img_target->GetHeight();
+        wxString file = g_shareLocn + _T("target.svg");
         if( wxFile::Exists( file ) ){
             wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
             image = bmp.ConvertToImage();
-        } else*/
-        wxImage image = _img_targetwpt->ConvertToImage();
+        } else
+            image = _img_target->ConvertToImage();
         unsigned char *d = image.GetData();
         if (d == 0)
             return false;
-
         wxPoint2DDouble pp = m_pTable->GetSelPointPos();
         wxPoint r;
         GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
@@ -518,7 +503,7 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
                 e[off * 4 + 0] = r;
                 e[off * 4 + 1] = g;
                 e[off * 4 + 2] = b;
-                e[off * 4 + 3] = *a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
+                e[off * 4 + 3] =  a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
             }
         }
         unsigned int glw = NextPow2(w);
@@ -542,7 +527,7 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
 
         float ws = r1.width * scale;
         float hs = r1.height * scale;
-        float xs = r.x - ws/2.;
+        float xs = r.x - (ws/2.);
         float ys = r.y - hs/2.;
         float u = (float)w/glw, v = (float)h/glh;
 
@@ -625,26 +610,16 @@ void navdata_pi::OnSelectGuidTimer( wxTimerEvent & event)
     wxString guid = GetSelectedWaypointGUID_Plugin(  );
     if( guid.IsEmpty() )
         return;
-    if( guid != m_SelectedPointGuid ){
-        m_SelectedPointGuid = guid;
+    if( guid != g_selectedPointGuid ){
+        g_selectedPointGuid = guid;
         if( m_pTable ){
             m_pTable->SetTargetFlag( true );
-            m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+            m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
         }
     }
-    RequestRefresh( m_pParentWin );
+    RequestRefresh( g_pParentWin );
 }
-/*
-wxString navdata_pi::m_shareLocn
-{
-    //find share path
-    wxString shareLocn =*GetpSharedDataLocation() +
-                _T("plugins") + wxFileName::GetPathSeparator() +
-                _T("navdata_pi") + wxFileName::GetPathSeparator()
-                +_T("data") + wxFileName::GetPathSeparator();
-    return shareLocn;
-}
-*/
+
 double navdata_pi::GetMag(double a)
 {
     if(!std::isnan(m_gWmmVar)) {
@@ -664,8 +639,8 @@ double navdata_pi::GetMag(double a)
 void navdata_pi::OnToolbarToolCallback(int id)
 {
 
-    if( m_ActiveRouteGuid == wxEmptyString ) {
-        OCPNMessageBox_PlugIn( m_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
+    if( g_activeRouteGuid == wxEmptyString ) {
+        OCPNMessageBox_PlugIn( g_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
         SetToolbarItemState( m_leftclick_tool_id, false );
         return;
      }
@@ -677,16 +652,16 @@ void navdata_pi::OnToolbarToolCallback(int id)
 
     LoadocpnConfig();
 
-    long style = wxDEFAULT_DIALOG_STYLE|wxRESIZE_BORDER;
-    m_pTable = new DataTable( m_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
+    long style = wxCAPTION|wxRESIZE_BORDER;
+    m_pTable = new DataTable( g_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
                            wxDefaultSize, style, this );
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
     SetDialogFont( m_pTable, &font );//Apply global font
     DimeWindow( m_pTable ); //apply colour sheme
     m_pTable->InitDataTable();
-    m_pTable->UpdateRouteData( m_ActivePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+    m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     m_pTable->UpdateTripData();
-    m_pTable->SetTableSizePosition();
+    m_pTable->SetTableSizePosition( false );
     m_pTable->Show();
     if( !m_gTrkGuid.IsEmpty() )
         m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );

@@ -22,10 +22,9 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     fgSizer01->SetFlexibleDirection( wxBOTH );
     fgSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
 
-    wxFlexGridSizer* fgSizer02;
-    fgSizer02 = new wxFlexGridSizer( 0, 1, 0, 0 );
-    fgSizer02->SetFlexibleDirection( wxBOTH );
-    fgSizer02->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
+    m_pTripSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
+    m_pTripSizer->SetFlexibleDirection( wxBOTH );
+    m_pTripSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
 
     m_pfgSizer03 = new wxFlexGridSizer( 0, 4, 0, 0 );
     m_pfgSizer03->SetFlexibleDirection( wxBOTH );
@@ -47,7 +46,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     m_pStartTime->Wrap( -1 );
     m_pfgSizer03->Add( m_pStartTime, 0, wxALL|wxEXPAND, 5 );
 
-    fgSizer02->Add( m_pfgSizer03, 1, wxEXPAND, 0 );
+    m_pTripSizer->Add( m_pfgSizer03, 1, wxEXPAND, 0 );
 
     m_pfgSizer04 = new wxFlexGridSizer( 0, 6, 0, 0 );
     m_pfgSizer04->SetFlexibleDirection( wxBOTH );
@@ -77,9 +76,9 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     m_pSpeedValue->Wrap( -1 );
     m_pfgSizer04->Add( m_pSpeedValue, 0, wxALL|wxEXPAND, 5 );
 
-    fgSizer02->Add( m_pfgSizer04, 1, wxEXPAND, 0 );
+    m_pTripSizer->Add( m_pfgSizer04, 1, wxEXPAND, 0 );
 
-    fgSizer01->Add( fgSizer02, 1, wxEXPAND, 0 );
+    fgSizer01->Add( m_pTripSizer, 1, wxEXPAND, 0 );
 
     wxFlexGridSizer* fgSizer05;
     fgSizer05 = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -92,17 +91,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     m_pDataTable->SetDefaultCellAlignment( wxALIGN_CENTRE, wxALIGN_TOP );
     fgSizer05->Add( m_pDataTable, 0, wxALL|wxEXPAND, 5 );
 
-
     fgSizer01->Add( fgSizer05, 1, wxEXPAND, 5 );
-
-	wxStdDialogButtonSizer *m_pButtonTable = new wxStdDialogButtonSizer();
-	m_pButtonTableOK = new wxButton( this, wxID_OK, _("Close") );
-	m_pButtonTableOK->SetFont( GetOCPNGUIScaledFont_PlugIn(_T("Dialog")) );
-	m_pButtonTable->AddButton( m_pButtonTableOK );
-	m_pButtonTable->Realize();
-
-    fgSizer01->Add( m_pButtonTable, 1, wxEXPAND, 5 );
-
 
     Sizer01->Add( fgSizer01, 1, wxEXPAND, 5 );
 
@@ -115,14 +104,55 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     DimeWindow( this );                                     //aplly global colours scheme
 
     // Connect Events
-    Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DataTableBase::OnClose ) );
-    m_pButtonTableOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DataTableBase::OnOKButton ), NULL, this );
+    //Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DataTableBase::OnClose ) );
 }
 
 DataTableBase::~DataTableBase()
 {
 	// Disconnect Events
-    Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DataTableBase::OnClose ) );
-    m_pButtonTableOK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DataTableBase::OnOKButton ), NULL, this );
+    //Disconnect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DataTableBase::OnClose ) );
+}
+
+SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
+{
+    this->SetSizeHints( wxSize( -1,-1 ), wxSize( -1,-1 ) );
+
+    wxBoxSizer* Sizer01;
+    Sizer01 = new wxBoxSizer( wxVERTICAL );
+
+    wxFlexGridSizer* fgSizer01;
+    fgSizer01 = new wxFlexGridSizer( 0, 1, 0, 0 );
+    fgSizer01->AddGrowableRow( 1 );
+    fgSizer01->SetFlexibleDirection( wxBOTH );
+    fgSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
+
+    m_pShowTripData = new wxCheckBox( this, wxID_ANY, _("Show Trip Data"), wxDefaultPosition, wxDefaultSize, 0 );
+    fgSizer01->Add( m_pShowTripData, 0, wxALL, 5 );
+
+    wxString s[] = { _("at VMG"), _("at SOG") };
+    m_pShowspeed = new wxRadioBox( this, wxID_ANY, _("Compute and Show TTG & ETA"), wxDefaultPosition, wxDefaultSize,
+                                   2, s, 0, wxRA_SPECIFY_ROWS );
+    fgSizer01->Add( m_pShowspeed, 0, wxALL, 5 );
+
+    wxStdDialogButtonSizer *m_pSettings = new wxStdDialogButtonSizer();
+    m_pSettingsOK = new wxButton( this, wxID_OK, _("Close") );
+    m_pSettingsOK->SetFont( GetOCPNGUIScaledFont_PlugIn(_T("Dialog")) );
+    m_pSettings->AddButton( m_pSettingsOK );
+    m_pSettings->Realize();
+
+    fgSizer01->Add( m_pSettings, 1, wxEXPAND, 5 );
+
+    Sizer01->Add( fgSizer01, 1, wxEXPAND, 5 );this->SetSizer( Sizer01 );
+    this->Layout();
+    Sizer01->Fit( this );
+
+    this->Centre( wxBOTH );
+
+    DimeWindow( this );                                     //aplly global colours scheme
 
 }
+
+
+
+
+

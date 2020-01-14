@@ -39,10 +39,13 @@
 #include <wx/tokenzr.h>
 
 //extern double m_cursor_lat, m_cursor_lon;
-extern wxString       m_ActiveRouteGuid;
-extern wxString       m_SelectedPointGuid;
-extern wxString       m_shareLocn;
-
+extern wxWindow       *g_pParentWin;
+extern wxString       g_activeRouteGuid;
+extern wxString       g_selectedPointGuid;
+extern wxString       g_shareLocn;
+extern int            g_selectedPointCol;
+extern bool           g_showTripData;
+extern bool           g_withSog;
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
 //----------------------------------------------------------------------------------------------------------
@@ -55,14 +58,27 @@ DataTable::DataTable(wxWindow *parent, wxWindowID id, const wxString& title, con
 
 void DataTable::InitDataTable()
 {
-    m_pDataTable->m_gParent = this;
+    m_pDataTable->m_pParent = this;
 
     //init timers
     m_NameTimer.Bind(wxEVT_TIMER, &DataTable::OnNameTimer, this);
     this->Bind( wxEVT_SIZE, &DataTable::OnSize, this);
 
+    //init size & position from previously saved variables
+    wxFileConfig *pConf = GetOCPNConfigObject();
+    if (pConf) {
+        pConf->SetPath(_T("/Settings/NAVDATA"));
+        pConf->Read(_T("DataTablePosition_x"), &m_dialPosition.x, 0);
+        pConf->Read(_T("DataTablePosition_y"), &m_dialPosition.y, 0);
+        pConf->Read(_T("NumberColVisibles"), &m_numVisCols, 0);
+        pConf->Read(_T("ShowTripData"), &g_showTripData,1);
+        pConf->Read(_T("ShowTTCETAatVMG"), &g_withSog,0);
+    }
+    m_numVisRows = 5;
+
     //init some variables
     m_oldIndex = wxNOT_FOUND; //indew of long wpt name to be entrerely viewed
+
     //init text controls sizing trip data
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
@@ -75,8 +91,10 @@ void DataTable::InitDataTable()
     GetTextExtent( _T("00h 00m"), &w, NULL, 0, 0, &font); // Lenght width text control size
     m_pTimeValue->SetMinSize( wxSize(w, -1) );
     //set default col size
-    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, NULL, 0, 0, &font);
+    int h;
+    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, &h, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
+    m_pDataTable->SetDefaultRowSize( h + 4, true);
     //Set scroll step X
     m_pDataTable->SetScrollLineX(w);
     //init cell attr
@@ -92,10 +110,15 @@ void DataTable::InitDataTable()
     wxString sl;
     sl.Append(_("RNG")).Append(_T("(")).Append(getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat())).Append(_T(")"));
     const wxString s[] = { sl, _("BRG"), _("Total RNG") ,_("TTG"), _("ETA"), _T("END") };
+    wxString v = wxEmptyString;
     for( int i = 0;; i++ ){
-        if( s[i] == _T("END") ) break;
         m_pDataTable->AppendRows();
-        m_pDataTable->SetRowLabelValue(i, s[i] );
+        if( i == 3 || i == 4 ){
+            wxString s = g_withSog? _("SOG"): _("VMG");
+            v = _T(" @ ") + s;
+        }
+        m_pDataTable->SetRowLabelValue(i, s[i] + v );
+        if( s[i + 1] == _T("END") ) break;
     }
     m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
@@ -108,11 +131,11 @@ void DataTable::InitDataTable()
 void DataTable::UpdateRouteData( wxString pointGuid,
                 double shiplat, double shiplon, double shipcog, double shipsog )
 {
-    m_selectCol = wxNOT_FOUND;
+    g_selectedPointCol = wxNOT_FOUND;
 
     //find active route and wpts
     std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( m_ActiveRouteGuid );
+    r = GetRoute_Plugin( g_activeRouteGuid );
     //set label route name in title
     SetTitle( r.get()->m_NameString );
     //populate cols
@@ -137,9 +160,9 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                 double brg, rng, speed, nrng;
                 speed = 0.; nrng = 0.;
                 AddDataCol( ncols );
-                if( wpt->m_GUID == m_SelectedPointGuid ){
+                if( wpt->m_GUID == g_selectedPointGuid ){
                     if( ncols > ACTIVE_POINT_IDX ){
-                        m_selectCol = ncols;
+                        g_selectedPointCol = ncols;
                         m_SelPointPos.m_x = wpt->m_lat;
                         m_SelPointPos.m_y = wpt->m_lon;
                     }
@@ -163,7 +186,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                     //vmg
                     if( !std::isnan(shipcog) && !std::isnan(shipsog) ){
                         double vmg = shipsog * cos( ( brg - shipcog ) * PI / 180. );
-                        if( m_pDataTable->GetSpeedAsSog() )
+                        if( g_withSog )
                             speed = shipsog;
                         else
                             speed = vmg;
@@ -209,7 +232,10 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                         m_pDataTable->SetCellValue( sbrg, j, ncols );
                         break;
                     case 2:
-                        m_pDataTable->SetCellValue(FormatDistance( trng ), j, ncols );
+                        if( ncols == 0 )
+                            m_pDataTable->SetCellValue(_T("---"), j, ncols );
+                        else
+                            m_pDataTable->SetCellValue(FormatDistance( trng ), j, ncols );
                         break;
                     case 3:
                         m_pDataTable->SetCellValue(tttg_s, j, ncols );
@@ -230,14 +256,15 @@ void DataTable::UpdateRouteData( wxString pointGuid,
     if( ex > 0 )
         m_pDataTable->DeleteCols( ncols, ex );
     //
-    if( m_selectCol == wxNOT_FOUND ){
-        if ( !m_SelectedPointGuid.IsEmpty() )
+    if( g_selectedPointCol == wxNOT_FOUND ){
+        if ( !g_selectedPointGuid.IsEmpty() )
             MakeVisibleCol( 0 );
-        m_SelectedPointGuid = wxEmptyString;
+        g_selectedPointGuid = wxEmptyString;
     } else {
         if( m_targetFlag  )
-            MakeVisibleCol( m_selectCol );
+            MakeVisibleCol( g_selectedPointCol );
     }
+
     //close counters
     m_pDataTable->EndBatch();
     m_pDataCol->DecRef();              // Give up pointer contrl to Grid
@@ -245,6 +272,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
 
 void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan times )
 {
+    if( !g_showTripData ) return;
         m_pStartDate->SetLabel( starttime.Format(_T("%b %d %Y")) );
         m_pStartTime->SetLabel( starttime.Format(_T("%H:%M:%S")) );
         tdist = toUsrDistance_Plugin( tdist, pPlugin->GetDistFormat());
@@ -266,6 +294,7 @@ void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan t
 
 void DataTable::UpdateTripData()
 {
+    if( !g_showTripData ) return;
     m_pStartDate->SetLabel( _T("----") );
     m_pStartTime->SetLabel( _T("----") );
     m_pDistValue->SetLabel( _T("----") );
@@ -313,54 +342,95 @@ void DataTable::OnNameTimer( wxTimerEvent & event )
     Refresh();
 }
 
-void DataTable::SetTableSizePosition()
+void DataTable::SetTableSizePosition(bool newVisColNumber )
 {
-    //Get size & position previously saved
-    int x = -1, y = -1, w = -1, h = -1;
-    wxFileConfig *pConf = GetOCPNConfigObject();
-    if (pConf) {
-        pConf->SetPath(_T("/Settings/NAVDATA"));
-        pConf->Read(_T("DataTablePosition_x"), &x);
-        pConf->Read(_T("DataTablePosition_y"), &y);
-        pConf->Read(_T("DataTableWidth"), &w);
-        pConf->Read(_T("DataTableHeight"), &h);
-    }
-    wxPoint final_pos = GetOCPNCanvasWindow()->ClientToScreen(wxPoint(x, y));
-    //1)compute necessary size for the grid
-    int wn = m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetColSize(0) * m_pDataTable->GetNumberCols());
-    int hn = m_pDataTable->GetColLabelSize() + (m_pDataTable->GetRowSize(0) * (m_pDataTable->GetNumberRows() + 8 ));
-    //2)compute optimal proposed size
-    int wo = wxMin(w, wn );
-    int ho = wxMin(h, hn );
-    //3)find avalable space and position
-    wxSize scw = wxSize(GetOCPNCanvasWindow()->GetSize().GetX(), (GetOCPNCanvasWindow()->GetSize().GetY() - GetChartbarHeight()));
-    wxPoint pcw = GetOCPNCanvasWindow()->ClientToScreen(GetOCPNCanvasWindow()->GetPosition());
-    /*4)be sure the space is enough and compute new size and position
-    if necessary*/
-    if( !(wxRect(pcw, scw).Contains(wxRect(final_pos, wxSize(wo, ho)))) ){
-        w = (scw.GetWidth() * 9) / 10;//10% less than canvas
-        h = (scw.GetHeight() * 9) / 10;//10% less than canvas
-        w = wxMin( w , wn ) ; h = wxMin( h , hn );
-        x = (scw.GetWidth() - w) / 3;
-        y = scw.GetHeight() / 30; //near top
-        final_pos = GetOCPNCanvasWindow()->ClientToScreen( wxPoint( x, y ) );
-    }else{
-        w = wo;
-        h = ho;
-    }
-    //5)set size and position
-    this->SetClientSize(w, h);
-    this->Move(final_pos);
+    m_InvaidateSizeEvent = true;
+    if( newVisColNumber )
+        m_numVisCols = m_pDataTable->GetNumVisibleCols();
+
+
+    m_pTripSizer->Show( g_showTripData );
+
+    this->SetMinSize( wxSize(-1, -1) );
+    this->Layout();
+
+    if( m_numVisCols < 1 ) m_numVisCols = m_pDataTable->GetNumberCols();
+
+    wxPoint pos = g_pParentWin->ClientToScreen(m_dialPosition);
+
+    //1)find avalable space and position ( 80% of canvas size )
+    int scw = g_pParentWin->GetSize().GetWidth() * 0.8;
+    int sch = (g_pParentWin->GetSize().GetHeight() - GetChartbarHeight()) * 0.8;
+
+    //2)compute necessary size for the grid and adapt size & position to the available space
+    //2.1 X axis
+    int wn = DOUBLE_BORDER_WIDTH + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * m_numVisCols);
+    //4)be sure the space is enough and compute new size and position if necessary
+        if( pos.x + wn > scw || pos.x < 1 ){
+            pos.x = (g_pParentWin->GetSize().GetWidth() - scw) / 2;
+            if( wn > scw ){
+                for( int i = m_numVisCols; i > 0; i-- ){
+                    if( DOUBLE_BORDER_WIDTH + (m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * i) ) <= scw ) {
+                        m_numVisCols = i; this->SetMinSize( wxSize(-1, -1) );
+                        break;
+                    }
+                }
+                wn = DOUBLE_BORDER_WIDTH + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * m_numVisCols);
+            }
+        }
+    //2.2) Y axis
+    int h = SetTripDataSpaceHeight( wn );
+    int hn = h + m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * m_numVisRows);
+    if( pos.y + hn > sch || pos.y < 1 ){
+        pos.y = (g_pParentWin->GetSize().GetHeight() - GetChartbarHeight() - sch) / 2;
+        if( hn > sch ){
+            for( int j = m_numVisRows; j > 0; j-- ){
+                if( ( h + m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * j) ) <= sch ) {
+                    m_numVisRows = j;
+                    break;
+                }
+            }
+            hn = h + m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * m_numVisRows);
+        }
+    }//
+
+    //3) set size and position
+    m_dialPosition = g_pParentWin->ScreenToClient(pos);
+    this->SetClientSize( wn, hn );
+    this->Move(pos);
     this->Refresh();
 }
 
 void DataTable::OnSize( wxSizeEvent& event )
 {
-    static wxSize sz;
-    int wz = m_pDataTable->GetRowLabelSize() + m_pDataTable->GetColSize(0);
-    int cz = this->GetClientSize().x;
+    if( m_InvaidateSizeEvent )
+        m_InvaidateSizeEvent = false;
+    else  {
+        this->SetMinSize( wxSize(-1, -1) );
+
+        //find & set min size in case of resing
+        // x axis ( at least 1 column )
+        int wmin = DOUBLE_BORDER_WIDTH + m_pDataTable->GetRowLabelSize() + m_pDataTable->GetDefaultColSize();
+
+        // y axis BORDER_WIDTH place )
+        int h = SetTripDataSpaceHeight( event.GetSize().GetWidth() );
+        int hmin = h + m_pDataTable->GetColLabelSize()
+                + (m_pDataTable->GetDefaultRowSize() * m_numVisRows);
+        this->SetMinClientSize( wxSize( wmin, hmin ) );
+
+        this->Layout();
+
+        m_targetFlag = true;
+    }
+
+    event.Skip();
+}
+
+int DataTable::SetTripDataSpaceHeight( int dialogWidth )
+{
     int width = 0;
     int nbw = 0.;
+    int col = 6;
     m_pfgSizer04->SetCols( 6 );
     m_pfgSizer03->SetCols(4);
     wxwxSizerItemListNode *node =  m_pfgSizer04->GetChildren().GetFirst();
@@ -370,8 +440,9 @@ void DataTable::OnSize( wxSizeEvent& event )
             width += item->GetSize().x;
             nbw++;
             if( nbw%2 == 0 ) {
-                if( width > cz ){
-                    int col = wxMax( 2, (nbw - 2) );
+                width += DOUBLE_BORDER_WIDTH;
+                if( width > dialogWidth ){
+                    col = wxMax( 2, (nbw - 2) );
                     m_pfgSizer04->SetCols( col );
                     m_pfgSizer03->SetCols( col );
                     break;
@@ -380,14 +451,24 @@ void DataTable::OnSize( wxSizeEvent& event )
         }
         node = node->GetNext();
     }
-    if( wz > cz )
-        this->SetMinSize( sz );
-    sz = event.GetSize();
-    m_targetFlag = true;
-    event.Skip();
+    int h = DIALOG_BORDER_HEIGHT;
+
+    if( !g_showTripData ) return h;
+
+    switch( col ){
+        case 2:
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 5;
+            break;
+        case 4:
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 3;
+            break;
+        case 6:
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 2;
+     }
+    return h;
 }
 
-void DataTable::OnClose( wxCloseEvent& event )
+/*void DataTable::OnClose( wxCloseEvent& event )
 {
     pPlugin->CloseDataTable();
 }
@@ -395,21 +476,24 @@ void DataTable::OnClose( wxCloseEvent& event )
 void DataTable::OnOKButton( wxCommandEvent& event )
 {
     pPlugin->CloseDataTable();
-}
+}*/
 
 void DataTable::CloseDialog()
 {
+    m_dialPosition = this->GetPosition();
+
     this->Show(false);
-    wxSize s = this->GetClientSize();
-	wxPoint p = GetOCPNCanvasWindow()->ScreenToClient( this->GetPosition() );
+
+    m_numVisCols = m_pDataTable->GetNumVisibleCols();
 
     wxFileConfig *pConf = GetOCPNConfigObject();
     if(pConf) {
         pConf->SetPath ( _T ( "/Settings/NAVDATA" ) );
-        pConf->Write( _T ( "DataTablePosition_x" ), p.x );
-        pConf->Write( _T ( "DataTablePosition_y" ), p.y );
-        pConf->Write( _T ( "DataTableWidth" ), s.GetWidth() );
-        pConf->Write( _T ( "DataTableHeight" ), s.GetHeight() );
+        pConf->Write(_T("DataTablePosition_x"), m_dialPosition.x);
+        pConf->Write(_T("DataTablePosition_y"), m_dialPosition.y);
+        pConf->Write(_T("NumberColVisibles"), m_numVisCols);
+        pConf->Write(_T("ShowTripData"), g_showTripData);
+        pConf->Write(_T("ShowTTCETAatVMG"), g_withSog);
     }
 }
 
@@ -466,4 +550,26 @@ void DataTable::BrgRngMercatorToActiveNormalArrival(double wptlat, double wptlon
             vSubtractVectors( &va, &vn, &vToArriveNormal );
 
             *nrng = vVectorMagnitude( &vToArriveNormal );
+}
+
+
+//----------------------------------------------------------------------------------------------------------
+//          Settings Dialog Implementation
+//----------------------------------------------------------------------------------------------------------
+
+Settings::Settings(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
+    : SettingsBase(parent, id, title, pos, size, style )
+{
+    m_pShowTripData->SetValue( g_showTripData );
+    int sel = g_withSog? 1: 0;
+    m_pShowspeed->SetSelection( sel );
+
+    m_pSettingsOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Settings::OnOKButton ), NULL, this );
+}
+
+void Settings::OnOKButton( wxCommandEvent& event )
+{
+        g_showTripData = m_pShowTripData->GetValue();
+        g_withSog = (m_pShowspeed->GetSelection() == 1);
+        this->EndModal(wxID_OK);
 }

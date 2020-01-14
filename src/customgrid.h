@@ -34,14 +34,7 @@
 
 #include <wx/grid.h>
 #include "ocpn/ocpn_plugin.h"
-//#include <wx/graphics.h>
-//#include <vector>
 
-/*
-#if !wxUSE_GRAPHICS_CONTEXT
-#define wxGCDC wxDC
-#endif
-*/
 //class CustomRenderer;
 class DataTable;
 
@@ -59,9 +52,9 @@ public:
     ~CustomGrid();
 
     void GetFirstVisibleCell( int& frow, int& fcol );
-    bool GetSpeedAsSog() { return m_withSog; }
+    int  GetNumVisibleCols();
 
-    DataTable* m_gParent;
+    DataTable* m_pParent;
 
 private:
     void DrawColLabel( wxDC& dc, int col );
@@ -77,9 +70,7 @@ private:
     void OnLabelClik( wxGridEvent& event);
 
     wxTimer  m_refreshTimer;
-    wxColour m_yellowColour;
-    wxColour m_redColour;
-    bool     m_withSog;
+   // bool     g_withSog;
 
 #ifdef __WXOSX__
     bool     m_bLeftDown;
