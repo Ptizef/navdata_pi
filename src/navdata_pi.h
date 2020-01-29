@@ -37,7 +37,7 @@
 
 #include <wx/fileconf.h>
 
-#include "ocpn/ocpn_plugin.h"
+#include "ocpn_plugin.h"
 
 #include "version.h"
 #include "datatable.h"

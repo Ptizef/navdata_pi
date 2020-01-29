@@ -198,7 +198,7 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
             dialog->ShowModal();
 
             if( showTrip != g_showTripData )
-                m_pParent->SetTableSizePosition( true );
+                m_pParent->SetTableSizePosition( false );
 
             wxString s = g_withSog? _("SOG"): _("VMG");
             SetRowLabelValue( 3, _("TTG") + _T("@") + s );
@@ -351,6 +351,8 @@ int CustomGrid::GetNumVisibleCols()
         }
         if( vis ) ncols++;
     }
+	if (ncols < 1) ncols = 1;
+
     return ncols;
 }
 

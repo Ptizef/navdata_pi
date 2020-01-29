@@ -25,7 +25,7 @@
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
-
+#include "navdata_pi.h"
 
 
 class vector2D
@@ -49,12 +49,12 @@ typedef vector2D* pVector2D;
 //      Vector Stuff for Hit Test Algorithm
 //---------------------------------------------------------------------------------
 
-extern "C" double vGetLengthOfNormal(pVector2D a, pVector2D b, pVector2D n);
-extern "C" double vDotProduct(pVector2D v0, pVector2D v1);
-extern "C" pVector2D vAddVectors(pVector2D v0, pVector2D v1, pVector2D v);
-extern "C" pVector2D vSubtractVectors(pVector2D v0, pVector2D v1, pVector2D v);
-extern "C" double vVectorMagnitude(pVector2D v0);
-extern "C" double vVectorSquared(pVector2D v0);
+  double vGetLengthOfNormal(pVector2D a, pVector2D b, pVector2D n);
+  double vDotProduct(pVector2D v0, pVector2D v1);
+  pVector2D vAddVectors(pVector2D v0, pVector2D v1, pVector2D v);
+  pVector2D vSubtractVectors(pVector2D v0, pVector2D v1, pVector2D v);
+  double vVectorMagnitude(pVector2D v0);
+  double vVectorSquared(pVector2D v0);
 
 
 #endif

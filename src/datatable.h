@@ -33,12 +33,9 @@
 #endif //precompiled headers
 
 #include <wx/grid.h>
-//#include <wx/list.h>
 
 #include "datadialogbase.h"
-//#include "navdata_pi.h"
-#include "ocpn/ocpn_plugin.h"
-#include "ocpn/vector2D.h"
+#include "vector2D.h"
 #include "customgrid.h"
 #include <wx/dcgraph.h>
 
@@ -49,7 +46,8 @@
 #define ACTIVE_POINT_IDX        0
 #define DOUBLE_BORDER_WIDTH     10
 #define SINGLE_BORDER_WIDTH     5
-#define DIALOG_BORDER_HEIGHT    25
+#define DIALOG_BORDER_HEIGHT    35
+#define SCROLL_BAR_WIDTH        20
 
 
 class navdata_pi;
@@ -65,7 +63,7 @@ public:
 
     DataTable(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ,navdata_pi *ppi );
     
-     ~DataTable(){ delete m_pDataTable; }
+	~DataTable();
 
     void InitDataTable();
     void UpdateRouteData(wxString pointGuid,
@@ -73,13 +71,12 @@ public:
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
     void DrawWptName(int index, wxSize size, wxPoint pos);
-    void SetTableSizePosition(bool ComputeNumber );
+    void SetTableSizePosition(bool initrun );
     void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
-
-    wxTimer    m_NameTimer;  //timer to hide long wpt name
-
+	void OnSize(wxSizeEvent &event);
+	wxTimer    m_NameTimer;  //timer to show long wpt name
 private:
     void AddDataCol(int num_cols);
     wxString FormatDistance(double val1 , double val2 = 0., bool delta = false);
@@ -88,11 +85,11 @@ private:
                                   double glat, double glon,
                                   double *brg, double *nrng);
     void MakeVisibleCol( int col );
-    void OnSize(wxSizeEvent &event );
-    int  SetTripDataSpaceHeight(int dialogWidth );
-    void OnNameTimer( wxTimerEvent & event );
-    void OnClose( wxCloseEvent& event );
-    //void OnOKButton( wxCommandEvent& event );
+    int  GetBestDialogHeight(int dialogWidth );
+	int  GetDataGridWidth(int visColsnumb);
+	int  GetDataGridHeight(int visRowsnumb);
+	void OnSizeTimer(wxTimerEvent & event);
+    void OnNameTimer(wxTimerEvent & event);
 
     wxGridCellAttr *m_pDataCol;
     bool           m_targetFlag;
@@ -100,12 +97,10 @@ private:
     wxPoint2DDouble  m_SelPointPos;
     int            m_numVisCols;
     int            m_numVisRows;
-    bool           m_InvaidateSizeEvent;
+    bool           m_InvalidateSizeEvent;
     wxPoint        m_dialPosition;
-   // bool           g_withSog;
-
-
-
+	int			   m_tempDialWidth;
+	wxTimer		   m_SizeTimer;
 };
 
 //----------------------------------------------------------------------------------------------------------

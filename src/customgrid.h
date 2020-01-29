@@ -33,7 +33,7 @@
 #endif //precompiled headers
 
 #include <wx/grid.h>
-#include "ocpn/ocpn_plugin.h"
+#include "ocpn_plugin.h"
 
 //class CustomRenderer;
 class DataTable;

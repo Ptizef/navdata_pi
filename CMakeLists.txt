@@ -77,15 +77,16 @@ SET(SRC_NAVDATA
             src/datadialogbase.cpp
             src/icons.h
             src/icons.cpp
-            include/ocpn/ocpn_plugin.h
-            include/ocpn/vector2D.h
+            ocpn/vector2D.h
+            ocpn/vector2D.cpp
+            ocpn/ocpn_plugin.h
 	)
 
 SET(SRC_wxJSON
-            include/wx/json_defs.h
-            include/wx/jsonreader.h
-            include/wx/jsonval.h
-            include/wx/jsonwriter.h
+            wxJSON/json_defs.h
+            wxJSON/jsonreader.h
+            wxJSON/jsonval.h
+            wxJSON/jsonwriter.h
             wxJSON/jsonval.cpp
             wxJSON/jsonreader.cpp
             wxJSON/jsonwriter.cpp
@@ -93,10 +94,11 @@ SET(SRC_wxJSON
 
 INCLUDE_DIRECTORIES(
             src
-            include
+            ocpn
+            wxJSON
 )
 
-SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON})
+SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON} ${SRC_ocpn})
 ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC})
 
 INCLUDE("cmake/PluginConfigure.cmake")

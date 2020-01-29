@@ -36,8 +36,8 @@
 
 #include "GL/gl.h"
 
-#include "wx/jsonreader.h"
-#include "wx/jsonwriter.h"
+#include "jsonreader.h"
+#include "jsonwriter.h"
 
 // the class factories, used to create and destroy instances of the PlugIn
 
@@ -639,33 +639,36 @@ double navdata_pi::GetMag(double a)
 void navdata_pi::OnToolbarToolCallback(int id)
 {
 
-    if( g_activeRouteGuid == wxEmptyString ) {
-        OCPNMessageBox_PlugIn( g_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING|wxOK, 100, 50 );
-        SetToolbarItemState( m_leftclick_tool_id, false );
-        return;
-     }
+	if (g_activeRouteGuid == wxEmptyString) {
+		OCPNMessageBox_PlugIn(g_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
+		SetToolbarItemState(m_leftclick_tool_id, false);
+		return;
+	}
 
-    if( m_pTable ){
-        CloseDataTable();
-    } else {
-    SetToolbarItemState( m_leftclick_tool_id, true );
+	if (m_pTable) {
+		CloseDataTable();
+	}
+	else {
+		SetToolbarItemState(m_leftclick_tool_id, true);
 
-    LoadocpnConfig();
+		LoadocpnConfig();
 
-    long style = wxCAPTION|wxRESIZE_BORDER;
-    m_pTable = new DataTable( g_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
-                           wxDefaultSize, style, this );
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
-    SetDialogFont( m_pTable, &font );//Apply global font
-    DimeWindow( m_pTable ); //apply colour sheme
-    m_pTable->InitDataTable();
-    m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
-    m_pTable->UpdateTripData();
-    m_pTable->SetTableSizePosition( false );
-    m_pTable->Show();
-    if( !m_gTrkGuid.IsEmpty() )
-        m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
-    }
+		long style = wxCAPTION | wxRESIZE_BORDER;
+		m_pTable = new DataTable(g_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
+			wxDefaultSize, style, this);
+		wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
+		SetDialogFont(m_pTable, &font);//Apply global font
+		DimeWindow(m_pTable); //apply colour sheme
+		m_pTable->InitDataTable();
+		m_pTable->UpdateRouteData(m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog);
+		m_pTable->UpdateTripData();
+		m_pTable->SetTableSizePosition(true);
+		m_pTable->Show();
+		//now we can activate size event
+		m_pTable->Bind(wxEVT_SIZE, &DataTable::OnSize, m_pTable);
+		if (!m_gTrkGuid.IsEmpty())
+			m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+	}
 }
 
 bool navdata_pi::GetOcpnDailyTrack( int *roTime, int *rotimeType)
