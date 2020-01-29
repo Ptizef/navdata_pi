@@ -42,12 +42,16 @@
 #ifndef PI
 #define PI        3.1415926535897931160E0      /* pi */
 #endif
-#define SECONDS_PER_DAY         86400
-#define ACTIVE_POINT_IDX        0
-#define DOUBLE_BORDER_WIDTH     10
-#define SINGLE_BORDER_WIDTH     5
-#define DIALOG_BORDER_HEIGHT    35
-#define SCROLL_BAR_WIDTH        20
+#define SECONDS_PER_DAY             86400
+#define ACTIVE_POINT_IDX            0
+#define SINGLE_BORDER_THICKNESS     5
+#define DOUBLE_BORDER_THICKNESS     10
+#define DIALOG_CAPTION_HEIGHT       35
+#ifdef __WXMSW__
+    #define SCROLL_BAR_THICKNESS    20
+#else
+    #define SCROLL_BAR_THICKNESS    15
+#endif
 
 
 class navdata_pi;

@@ -331,8 +331,10 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         int pnumErrors = p1reader.Parse( message_body, &p1root );
         if ( pnumErrors == 0 ){
             m_activePointGuid = p1root[_T("GUID")].AsString();
-            if( m_pTable )
+            if( m_pTable ){
                 m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                m_pTable->SetTableSizePosition(false);
+            }
         }
     }
 

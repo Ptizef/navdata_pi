@@ -373,8 +373,8 @@ void DataTable::SetTableSizePosition(bool initrun )
 
 	int h = GetBestDialogHeight(w);
 
-	int wc = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_WIDTH : 0;
-	int hc = ((m_numVisCols < m_pDataTable->GetNumberCols()) && initrun)? SCROLL_BAR_WIDTH: 0;
+    int wc = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_THICKNESS : 0;
+    int hc = ((m_numVisCols < m_pDataTable->GetNumberCols()) && initrun)? SCROLL_BAR_THICKNESS: 0;
 	this->SetMinClientSize(wxSize(mw + wc, h + hc));
 	this->SetClientSize(wxSize(w + wc, h + hc));
 
@@ -395,7 +395,7 @@ void DataTable::OnSize( wxSizeEvent& event )
 	if(!m_InvalidateSizeEvent){
 
 		m_tempDialWidth = event.GetSize().GetWidth();
-		m_numVisCols = (m_tempDialWidth - (DOUBLE_BORDER_WIDTH + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
+        m_numVisCols = (m_tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
 		m_SizeTimer.Start(5, wxTIMER_ONE_SHOT);
     }
     event.Skip();
@@ -408,7 +408,7 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 	int w = GetDataGridWidth(m_numVisCols);
 	int mw = GetDataGridWidth(1);
 	int h = GetBestDialogHeight(w);
-	int wc = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_WIDTH : 0;
+    int wc = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_THICKNESS : 0;
 	this->SetMinClientSize(wxSize(mw + wc, h));
 	this->SetClientSize(wxSize(w + wc, h));
 
@@ -422,7 +422,7 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 
 int DataTable::GetBestDialogHeight( int dialogWidth )
 {
-	int h = DIALOG_BORDER_HEIGHT;
+    int h = DIALOG_CAPTION_HEIGHT;
 	if (g_showTripData) {
 		//Compute Trip Data
 		int width = 0;
@@ -434,7 +434,7 @@ int DataTable::GetBestDialogHeight( int dialogWidth )
 		while( node ) {
 			wxSizerItem *item = node->GetData();
 			if( item ){
-				width += item->GetSize().x + SINGLE_BORDER_WIDTH;
+                width += item->GetSize().x + SINGLE_BORDER_THICKNESS;
 				nbw++;
 				if( nbw%2 == 0 ) {
 					if( width > dialogWidth ){
@@ -449,13 +449,13 @@ int DataTable::GetBestDialogHeight( int dialogWidth )
 		}
 		switch (col) {
 		case 2:
-			h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 5;
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 5;
 			break;
 		case 4:
-			h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 3;
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 3;
 			break;
 		case 6:
-			h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_WIDTH) * 2;
+            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 2;
 		}
 	}
 	//then compute best dialog height
@@ -483,7 +483,7 @@ int DataTable::GetBestDialogHeight( int dialogWidth )
 
 int DataTable::GetDataGridWidth(int visColsnumb)
 {
-	return  DOUBLE_BORDER_WIDTH + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * visColsnumb);
+    return  DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * visColsnumb);
 }
 
 int DataTable::GetDataGridHeight(int visRowsnumb)
