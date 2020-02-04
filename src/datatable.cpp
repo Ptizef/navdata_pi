@@ -81,7 +81,7 @@ void DataTable::InitDataTable()
     }
     m_oldIndex = wxNOT_FOUND; //indew of long wpt name to be entrerely viewed
 
-    //init text controls sizing trip data
+    //set text controls sizing trip data
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
     GetTextExtent( wxDateTime::Now().Format(_T("%b %d %Y")), &w, NULL, 0, 0, &font); // Time width text control size
@@ -90,11 +90,14 @@ void DataTable::InitDataTable()
     m_pStartTime->SetMinSize( wxSize(w, -1) );
     GetTextExtent( _T("0000.0NMI"), &w, NULL, 0, 0, &font); // Lenght width text control size
     m_pDistValue->SetMinSize( wxSize(w, -1) );
-    GetTextExtent( _T("00h 00m"), &w, NULL, 0, 0, &font); // Lenght width text control size
+    GetTextExtent( _T("00h 00m"), &w, NULL, 0, 0, &font); // duration width text control size
     m_pTimeValue->SetMinSize( wxSize(w, -1) );
-    //set default col size
+	//set the best size for all columns
     int h;
-    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, &h, 0, 0, &font);
+	if(pPlugin->GetShowMag() == 2)
+		GetTextExtent(wxString(_T("300°300°(M)")), &w, &h, 0, 0, &font);
+	else
+		GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, &h, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
     m_pDataTable->SetDefaultRowSize( h + 4, true);
     //Set scroll step X
@@ -171,28 +174,31 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                 }
                 m_pDataTable->SetColLabelValue( ncols, wpt->m_MarkName );
                 if( ncols == ACTIVE_POINT_IDX ){ //active leg from ownship to active point
-                    //rng, brg
+					//rng, brg, nrng
                     rng = DistGreatCircle_Plugin( shiplat, shiplon, wpt->m_lat, wpt->m_lon );
                     BrgRngMercatorToActiveNormalArrival( wpt->m_lat, wpt->m_lon, latprev, lonprev,
                                             shiplat, shiplon, &brg, &nrng);
+					//vmg
+					if (!std::isnan(shipcog) && !std::isnan(shipsog)) {
+						double vmg = shipsog * cos((brg - shipcog) * PI / 180.);
+						if (g_withSog)
+							speed = shipsog;
+						else
+							speed = vmg;
+					}
+					//sbrg
+					if (brg > 359.5) brg = 0;
+					if (pPlugin->GetShowMag() == 0 || pPlugin->GetShowMag() == 2)
+						sbrg << wxString::Format(wxString("%3.0f°", wxConvUTF8), brg);
+					if (pPlugin->GetShowMag() == 1 || pPlugin->GetShowMag() == 2)
+						sbrg << wxString::Format(wxString("%3.0f°(M)", wxConvUTF8), pPlugin->GetMag(brg));
+					//srng with eventually nrng
                     double deltarng = fabs( rng - nrng );
-                    //eventually nrng
                     bool delta = false;
                     if( ( deltarng > .01 ) && ( ( deltarng / rng ) > .10 ) && ( rng < 10.0 ) )
                         delta = true;
                     srng = FormatDistance( rng, nrng, delta );
-                    if( pPlugin->GetShowMag() )
-                        sbrg<< wxString::Format( wxString("%3d°(M)", wxConvUTF8 ), (int)pPlugin->GetMag( brg ) );
-                    else
-                        sbrg << wxString::Format( wxString("%3d°", wxConvUTF8 ), (int)brg );
-                    //vmg
-                    if( !std::isnan(shipcog) && !std::isnan(shipsog) ){
-                        double vmg = shipsog * cos( ( brg - shipcog ) * PI / 180. );
-                        if( g_withSog )
-                            speed = shipsog;
-                        else
-                            speed = vmg;
-                    }
+					//total rng
                     trng = rng;
                 } else {// following legs
                     //brg, rng
@@ -201,6 +207,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                     srng = FormatDistance( rng );
                     sbrg << wxString::Format( wxString("%3d°", wxConvUTF8 ), (int)brg );
                     speed = shipsog;
+					//total rng
                     trng += rng;
                 }
                 // print brg, ttg, eta

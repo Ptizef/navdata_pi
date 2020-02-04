@@ -197,9 +197,11 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
 
             dialog->ShowModal();
 
-            if( showTrip != g_showTripData )
-                m_pParent->SetTableSizePosition( false );
-
+			if (showTrip != g_showTripData) {
+				m_pParent->SetTableSizePosition(false);
+				if(g_showTripData )
+					m_pParent->pPlugin->m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+			}
             wxString s = g_withSog? _("SOG"): _("VMG");
             SetRowLabelValue( 3, _("TTG") + _T("@") + s );
             SetRowLabelValue( 4, _("ETA") + _T("@") + s );

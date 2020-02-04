@@ -87,10 +87,13 @@ public:
       wxString GetLongDescription();
       //
       double GetMag(double a);
-      bool GetShowMag() {return m_ocpnShowMag;}
+      int GetShowMag() {return m_ocpnShowMag;}
       int GetDistFormat() {return m_ocpnDistFormat;}
       int GetSpeedFormat() {return m_ocpnSpeedFormat;}
       void CloseDataTable();
+
+	  //Track variables
+	  wxTimer     m_lenghtTimer;
 
 private:
       //    The override PlugIn Methods
@@ -131,10 +134,10 @@ private:
       int         m_ocpnDistFormat;
       int         m_ocpnSpeedFormat;
       double      m_ocpnUserVar;
-      bool        m_ocpnShowMag;
+      int         m_ocpnShowMag;
 
       //Track variables
-      wxTimer     m_lenghtTimer;
+    //  wxTimer     m_lenghtTimer;
       wxTimer     m_rotateTimer;
       wxString    m_gTrkGuid;
       wxDateTime  m_gTrkStart;

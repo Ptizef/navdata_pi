@@ -93,12 +93,11 @@ navdata_pi::~navdata_pi(void)
     delete _img_setting;
  }
 
-int navdata_pi::Init(void)
-{
+int navdata_pi::Init(void){
+	//connect events
     m_lenghtTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
     m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
     m_selectTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnSelectGuidTimer), NULL, this );
-    //m_selectTimer.Bind(wxEVT_TIMER, &navdata_pi::OnSelectGuidTimer, this );
 
     AddLocaleCatalog( _T("opencpn-navdata_pi") );
 
@@ -117,6 +116,7 @@ int navdata_pi::Init(void)
     m_gHasRotated = false;
     m_gRotateLenght = 0;
     g_blinkTrigger = 0;
+	m_gWmmVar = NAN;
 
     //find and store share path
     g_shareLocn =*GetpSharedDataLocation() +
@@ -148,13 +148,15 @@ int navdata_pi::Init(void)
 
 bool navdata_pi::DeInit(void)
 {
-      //SaveConfig();
-
-      if( m_pTable ){
-          CloseDataTable();
-      }
-
-      return true;
+    //SaveConfig();
+	//disconnect events
+	m_lenghtTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this);
+	m_rotateTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this);
+	m_selectTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnSelectGuidTimer), NULL, this);
+    if( m_pTable ){
+		CloseDataTable();
+    }
+	return true;
 }
 
 int navdata_pi::GetAPIVersionMajor()
@@ -208,18 +210,24 @@ void navdata_pi::LoadocpnConfig()
       wxFileConfig *pConf = GetOCPNConfigObject();
       if(pConf)
       {
+		  bool showtrue, showmag;
           pConf->SetPath(_T("/Settings"));
-          pConf->Read(_T("ShowMag"), &m_ocpnShowMag, 0);
+		  pConf->Read(_T("ShowTrue"), &showtrue, 0);
+          pConf->Read(_T("ShowMag"), &showmag, 0);
           pConf->Read(_T("UserMagVariation"), &m_ocpnUserVar, 0);
           pConf->Read(_T("DistanceFormat"), &m_ocpnDistFormat, 0);
           pConf->Read(_T("SpeedFormat"), &m_ocpnSpeedFormat, 0);
-      }
+
+		  m_ocpnShowMag = showmag ? showtrue ? 2 : 1 : 0;
+
+	  }
 }
 
 void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 {
     if(message_id == _T("OCPN_TRACKPOINTS_COORDS"))
     {
+		//compute the lenght of the track if requested by "m_lenghtTimer"
         wxJSONValue  root;
         wxJSONReader reader;
         int rnumErrors = reader.Parse( message_body, &root );
@@ -250,7 +258,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                  * 2) if we are on first track point and either it's the first time
                  * or no movement have been made, change continuously the starting time
                  * except if we are in rotation situation
-                 * 3) update the trip data and eventually re-start the lenght timer for
+                 * 3) eventually update the trip data and re-start the lenght timer for
                  * the next lap;*/
 
                 double dist = 0.;
@@ -262,18 +270,23 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                         dist = DistGreatCircle_Plugin( m_oldtpLat + copysign( OFFSET_LAT, deltaLat ), m_oldtpLon,  m_gLat, m_gLon );
                     if( dist < .001 ) dist = 0.; //no movement
                 }// m_gNodeNbr > TotalNodes
+				bool needlength = false;
                 if( TotalNodes == TRACKPOINT_FIRST ){
-                    if( !m_gHasRotated )
-                        if( dist == 0. ) //no movement
-                            m_gTrkStart = wxDateTime::Now();
+					if (!m_gHasRotated) {
+						if (dist == 0.) { //no movement
+							m_gTrkStart = wxDateTime::Now();
+							needlength = true;
+						}
+					}
                 } else
                     m_gHasRotated = false;
                 m_gTrkRunning = wxDateTime::Now() - m_gTrkStart;
                 m_gNodeNbr = NodeNr + 1;
-                if( m_pTable )
-                    m_pTable->UpdateTripData( m_gTrkStart, (dist + m_gTrkLenght + m_gRotateLenght), m_gTrkRunning );
-                if( m_pTable ||  m_gHasRotated )
-                    m_lenghtTimer.Start( TIMER_INTERVAL_SECOND, wxTIMER_ONE_SHOT );
+				if ( m_pTable )
+					m_pTable->UpdateTripData(m_gTrkStart, (dist + m_gTrkLenght + m_gRotateLenght), m_gTrkRunning);
+				//re-start lenghth computerization only if needed ie if the trip data are shown or after a date rotation or to update start date
+				if ((m_pTable && g_showTripData) || m_gHasRotated || needlength)
+					m_lenghtTimer.Start(TIMER_INTERVAL_SECOND, wxTIMER_ONE_SHOT);
             }//NodeNr == TotalNodes
         }
     }
@@ -318,8 +331,8 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 m_gRotateLenght = 0.;
             }
             m_gTrkLenght = 0.;
-            m_gMustRotate = false;
-            m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
+			m_gMustRotate = false;
+			m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
             m_rotateTimer.Start( TIMER_INTERVAL_10SECOND, wxTIMER_ONE_SHOT);
         }
     }
@@ -373,6 +386,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
     {
         m_gTrkGuid = wxEmptyString;
         m_rotateTimer.Stop();
+		m_lenghtTimer.Stop();
         if( m_pTable )
                 m_pTable->UpdateTripData();
     }
@@ -602,7 +616,7 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
         m_rotateTimer.Start( TIMER_INTERVAL_SECOND, wxTIMER_ONE_SHOT );
     else {
         m_gMustRotate = true;
-        if( !m_pTable )
+        if( !m_pTable || (m_pTable && !g_showTripData) )
             m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
     }
 }
@@ -668,7 +682,8 @@ void navdata_pi::OnToolbarToolCallback(int id)
 		m_pTable->Show();
 		//now we can activate size event
 		m_pTable->Bind(wxEVT_SIZE, &DataTable::OnSize, m_pTable);
-		if (!m_gTrkGuid.IsEmpty())
+		//launch track lenght if necessary
+		if (!m_gTrkGuid.IsEmpty() && g_showTripData)
 			m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
 	}
 }
@@ -709,6 +724,8 @@ void navdata_pi::CloseDataTable()
 {
     SetToolbarItemState( m_leftclick_tool_id, false );
     if( m_pTable ) {
+	//stop all timers
+
         m_pTable->CloseDialog();
         delete m_pTable;
         m_pTable = NULL;
