@@ -91,13 +91,13 @@ navdata_pi::~navdata_pi(void)
     delete _img_activewpt;
     delete _img_targetwpt;
     delete _img_setting;
+    delete m_vp;
  }
 
 int navdata_pi::Init(void){
 	//connect events
     m_lenghtTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
     m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
-    m_selectTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnSelectGuidTimer), NULL, this );
 
     AddLocaleCatalog( _T("opencpn-navdata_pi") );
 
@@ -108,6 +108,7 @@ int navdata_pi::Init(void){
         g_pParentWin = GetOCPNCanvasWindow();
 
     m_pTable = NULL;
+    m_vp = NULL;
 
     g_selectedPointGuid = wxEmptyString;
     m_gTrkGuid = wxEmptyString;
@@ -152,7 +153,6 @@ bool navdata_pi::DeInit(void)
 	//disconnect events
 	m_lenghtTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this);
 	m_rotateTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this);
-	m_selectTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnSelectGuidTimer), NULL, this);
     if( m_pTable ){
 		CloseDataTable();
     }
@@ -164,7 +164,8 @@ int navdata_pi::GetAPIVersionMajor()
       return MY_API_VERSION_MAJOR;
 }
 
-int navdata_pi::GetAPIVersionMinor()
+int navdata_pi::
+GetAPIVersionMinor()
 {
       return MY_API_VERSION_MINOR;
 }
@@ -217,6 +218,13 @@ void navdata_pi::LoadocpnConfig()
           pConf->Read(_T("UserMagVariation"), &m_ocpnUserVar, 0);
           pConf->Read(_T("DistanceFormat"), &m_ocpnDistFormat, 0);
           pConf->Read(_T("SpeedFormat"), &m_ocpnSpeedFormat, 0);
+          if(IsTouchInterface_PlugIn()){
+              pConf->Read( _T ( "SelectionRadiusTouchMM" ), &m_selectionRadiusMM);
+              m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 1.0);
+          } else {
+              pConf->Read( _T ( "SelectionRadiusMM" ), &m_selectionRadiusMM);
+              m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 0.5);
+          }
 
 		  m_ocpnShowMag = showmag ? showtrue ? 2 : 1 : 0;
 
@@ -417,22 +425,71 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
-    if( !event.RightDown() )
+    if( !m_pTable )
+        return false;
+    if(IsTouchInterface_PlugIn()){
+        if( !event.LeftUp() )
+            return false;
+    } else {
+        if( !event.LeftDown() )
+            return false;
+    }
+    if( !m_vp )  //this should never happens but ...
+        return false;
+    wxPoint p = event.GetPosition();
+    double plat, plon;
+    GetCanvasLLPix( m_vp, p, &plat, &plon);
+    float selectRadius = GetSelectRadius();
+    //walk through the route to find the selected wpt guid
+    wxString SelGuid = wxEmptyString;
+    std::unique_ptr<PlugIn_Route> r;
+    r = GetRoute_Plugin( g_activeRouteGuid );
+    wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
+    while( node ){
+        PlugIn_Waypoint *wpt = node->GetData();
+        if(wpt) {
+            if( ( fabs( plat - wpt->m_lat ) < selectRadius )
+                    && ( fabs( plon - wpt->m_lon ) < selectRadius ) ){
+                SelGuid = wpt->m_GUID;
+                break;
+            }
+        }
+        node = node->GetNext();
+    }
+    if(SelGuid.IsEmpty())
         return false;
 
-    if( m_pTable )
-       m_selectTimer.Start(10, wxTIMER_ONE_SHOT);
-
+    if(g_selectedPointGuid != SelGuid){
+        g_selectedPointGuid = SelGuid;
+        m_pTable->SetTargetFlag( true );
+        m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        return true;
+    }
     return false;
+}
+
+float navdata_pi::GetSelectRadius()
+{
+    int w, h;
+    ::wxDisplaySize(&w, &h);
+    unsigned int radiusPixel = (w / PlugInGetDisplaySizeMM()) * m_selectionRadiusMM;
+    double  canvasScaleFactor = wxMax( w, h) / (PlugInGetDisplaySizeMM() / 1000.);
+    double trueScalePPM = canvasScaleFactor / m_vp->chart_scale;
+    float selectRadius =  radiusPixel / (trueScalePPM * 1852 * 60);
+    return selectRadius;
 }
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
+    if( !m_pTable ) return false;
+    if( m_vp != vp ) {
+        delete m_vp;
+        m_vp = new PlugIn_ViewPort(*vp);
+    }
     // If multicanvas are active, render the overlay on the right canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
         return false;
 
-    if( !m_pTable ) return false;
     if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
     if( g_blinkTrigger & 1 ) {
@@ -469,11 +526,14 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
 {
+    if( !m_pTable ) return false;
+    if( m_vp != vp ) {
+        delete m_vp;
+        m_vp = new PlugIn_ViewPort(*vp);
+    }
     // If multicanvas are active, render the overlay on the right canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
         return false;
-
-    if( !m_pTable ) return false;
     if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
     if( g_blinkTrigger & 1 ) {
@@ -619,21 +679,6 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
         if( !m_pTable || (m_pTable && !g_showTripData) )
             m_lenghtTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
     }
-}
-
-void navdata_pi::OnSelectGuidTimer( wxTimerEvent & event)
-{
-    wxString guid = GetSelectedWaypointGUID_Plugin(  );
-    if( guid.IsEmpty() )
-        return;
-    if( guid != g_selectedPointGuid ){
-        g_selectedPointGuid = guid;
-        if( m_pTable ){
-            m_pTable->SetTargetFlag( true );
-            m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
-        }
-    }
-    RequestRefresh( g_pParentWin );
 }
 
 double navdata_pi::GetMag(double a)

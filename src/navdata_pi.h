@@ -109,17 +109,17 @@ private:
       //
       void OnTripLenghtTimer(wxTimerEvent & event);
       void OnRotateTimer( wxTimerEvent & event);
-      void OnSelectGuidTimer( wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       void SetDialogFont( wxWindow *dialog, wxFont *font);
+      float GetSelectRadius();
 
+      //toolbar variables
       int          m_leftclick_tool_id;
       unsigned int m_ToolIconType;
 
       //data table variables
       DataTable   *m_pTable;
-      //wxWindow    *g_pParentWin;
       double      m_gLat;
       double      m_gLon;
       double      m_gCog;
@@ -127,14 +127,15 @@ private:
       double      m_gWmmVar;
 
       //Route & wpoint variables
-      wxTimer     m_selectTimer;
       wxString    m_activePointGuid;
+      PlugIn_ViewPort *m_vp;
 
       //ocpn options variables
       int         m_ocpnDistFormat;
       int         m_ocpnSpeedFormat;
       double      m_ocpnUserVar;
       int         m_ocpnShowMag;
+      float       m_selectionRadiusMM;
 
       //Track variables
     //  wxTimer     m_lenghtTimer;
