@@ -36,7 +36,6 @@
 #include "navdata_pi.h"
 #include <wx/tokenzr.h>
 
-extern wxWindow       *g_pParentWin;
 extern wxString       g_activeRouteGuid;
 extern wxString       g_selectedPointGuid;
 extern wxString       g_shareLocn;
@@ -358,7 +357,7 @@ void DataTable::SetTableSizePosition(bool initrun )
     m_InvalidateSizeEvent = true;
 
     //1)adjust visibles columns number
-	int scw = g_pParentWin->GetSize().GetWidth();
+    int scw = GetCanvasByIndex(0)->GetSize().GetWidth();
 	int w = GetDataGridWidth(m_numVisCols);
     if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1 ){
 		m_dialPosition.x = scw * 0.1;
@@ -468,7 +467,7 @@ int DataTable::GetBestDialogHeight( int dialogWidth )
 	//then compute best dialog height
 	m_numVisRows = 5;
 	//get display zone heigh
-	int sch = g_pParentWin->GetSize().GetHeight() - 1;
+    int sch = GetCanvasByIndex(0)->GetSize().GetHeight() - 1;
 	int ht = h + GetDataGridHeight(m_numVisRows);
 	if (m_dialPosition.y + ht > sch || m_dialPosition.y < 1) {
 		m_dialPosition.y = sch * 0.1;

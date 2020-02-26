@@ -51,7 +51,6 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
     delete p;
 }
 // static variables
-wxWindow       *g_pParentWin;
 wxString       g_shareLocn;
 wxString       g_activeRouteGuid;
 wxString       g_selectedPointGuid;
@@ -100,12 +99,6 @@ int navdata_pi::Init(void){
     m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
 
     AddLocaleCatalog( _T("opencpn-navdata_pi") );
-
-    // If multicanvas are active, render the overlay on the right canvas only
-    if(GetCanvasCount() > 1)            // multi?
-        g_pParentWin = GetCanvasByIndex(1);
-    else
-        g_pParentWin = GetOCPNCanvasWindow();
 
     m_pTable = NULL;
     m_vp = NULL;
@@ -420,7 +413,7 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     if( m_pTable ){
         m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
-    RequestRefresh( g_pParentWin );
+    RequestRefresh( GetCanvasByIndex(0) );
 }
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
@@ -440,6 +433,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     double plat, plon;
     GetCanvasLLPix( m_vp, p, &plat, &plon);
     float selectRadius = GetSelectRadius();
+    double dist_from_cursor = 9999999999.;
     //walk through the route to find the selected wpt guid
     wxString SelGuid = wxEmptyString;
     std::unique_ptr<PlugIn_Route> r;
@@ -448,10 +442,16 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     while( node ){
         PlugIn_Waypoint *wpt = node->GetData();
         if(wpt) {
-            if( ( fabs( plat - wpt->m_lat ) < selectRadius )
-                    && ( fabs( plon - wpt->m_lon ) < selectRadius ) ){
-                SelGuid = wpt->m_GUID;
-                break;
+            if( ( fabs(plat - wpt->m_lat) < selectRadius )
+                    && ( fabs(plon - wpt->m_lon ) < selectRadius) ){
+                //we must select the nearest point from the cursor/finger, not the first (nether the last)
+                double dis;
+                DistanceBearingMercator_Plugin(plat, plon, wpt->m_lat, wpt->m_lon, NULL, &dis);
+                if( dis < dist_from_cursor ) {
+                    SelGuid = wpt->m_GUID;
+                    dist_from_cursor = dis;
+                }
+                    //break;
             }
         }
         node = node->GetNext();
@@ -481,14 +481,15 @@ float navdata_pi::GetSelectRadius()
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
+    // If multicanvas are active, render the overlay on the right canvas only
+    if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
+        return false;
+
     if( !m_pTable ) return false;
     if( m_vp != vp ) {
         delete m_vp;
         m_vp = new PlugIn_ViewPort(*vp);
     }
-    // If multicanvas are active, render the overlay on the right canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
-        return false;
 
     if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
@@ -526,14 +527,15 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
 {
+    // If multicanvas are active, render the overlay on the left canvas only
+    if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
+        return false;
+
     if( !m_pTable ) return false;
     if( m_vp != vp ) {
         delete m_vp;
         m_vp = new PlugIn_ViewPort(*vp);
     }
-    // If multicanvas are active, render the overlay on the right canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 1)           // multi?
-        return false;
     if( g_selectedPointCol == wxNOT_FOUND ) return false;
 
     if( g_blinkTrigger & 1 ) {
@@ -701,7 +703,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
 {
 
 	if (g_activeRouteGuid == wxEmptyString) {
-		OCPNMessageBox_PlugIn(g_pParentWin, _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
+        OCPNMessageBox_PlugIn(GetCanvasByIndex(0), _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
 		SetToolbarItemState(m_leftclick_tool_id, false);
 		return;
 	}
@@ -715,7 +717,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
 		LoadocpnConfig();
 
 		long style = wxCAPTION | wxRESIZE_BORDER;
-		m_pTable = new DataTable(g_pParentWin, wxID_ANY, wxEmptyString, wxDefaultPosition,
+        m_pTable = new DataTable(GetCanvasByIndex(0), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);
 		wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
 		SetDialogFont(m_pTable, &font);//Apply global font
