@@ -97,7 +97,9 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
 
 void CustomGrid::DrawColLabel( wxDC& dc, int col )
 {
-    //draw label only inside width available
+    //long wpt name
+    if(!DrawLongWptName(col)){
+    //draw wpt name only inside width available
     int w;
     wxString label = GetColLabelValue(col);
     GetTextExtent( label, &w, NULL, 0, 0, &m_labelFont);
@@ -151,6 +153,7 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
     dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
     dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
                             m_colLabelHeight - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+    }
 }
 
 void CustomGrid::DrawCornerLabel( wxDC& dc )
@@ -241,27 +244,20 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
 
     bool refresh = event.Leaving();
     if( event.Moving() || event.LeftUp() ){
-        int c = event.GetPosition().x;
-        int col = XToCol( c );
+        int cx = event.GetPosition().x;
+        int col = XToCol(cx);
+        int r,c;
+        GetFirstVisibleCell( r, c );
+        col +=  c;
         if( col != wxNOT_FOUND ) {           //column label
-            int index = GetColIndex( col );
             wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
             int w, h;
-            GetTextExtent( GetColLabelValue( index ), &w, &h, 0, 0, &font);
-            h-=2;
-            if( w > GetColSize(index) ){
-                //compute best position
-                wxPoint p = GetPosition();
-                wxSize  s = m_pParent->GetSize();
-                int x = p.x + GetRowLabelSize() + (GetDefaultColSize() * col) + (GetDefaultColSize() / 2 );
-                x -= (w/2);
-                int y = p.y - h;
-                if( (x + w)  > s.x ){
-                    x = s.x - w;
-                    if( x < 0 )
-                        x = 0;
-                }
-                m_pParent->DrawWptName( index, wxSize(w, y), wxPoint(x, y) );
+            GetTextExtent( GetColLabelValue( col ), &w, &h, 0, 0, &font);
+            if( w > GetColSize(col) ){
+                m_colLongname = col;
+                ForceRefresh();
+                if( IsTouchInterface_PlugIn() )
+                    m_refreshTimer.Start( 2000, wxTIMER_ONE_SHOT );
                 return;
             } else
                refresh = true;
@@ -269,27 +265,45 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
             refresh = true;
     }
     if( refresh )
-        m_pParent->m_NameTimer.Start( 1, wxTIMER_ONE_SHOT );
+        m_refreshTimer.Start( 1, wxTIMER_ONE_SHOT );
 }
 
-int CustomGrid::GetColIndex( int col )
+bool CustomGrid::DrawLongWptName(int col)
 {
-    int rw,c;
-    GetFirstVisibleCell( rw, c );
-    std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( g_activeRouteGuid );
-    wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
-    int i = 0;
-    while( node ){
-        PlugIn_Waypoint *wpt = node->GetData();
-        if(wpt) {
-            if( c == i )
-                return col + c;
-            i++;
-        }
-        node = node->GetNext();
+    if(m_colLongname == wxNOT_FOUND) return false;
+    //compute best position
+    wxString name = GetColLabelValue(m_colLongname);
+    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
+    int w;
+    GetTextExtent(name, &w, NULL, 0, 0, &font);
+    wxSize  s = GetGridColLabelWindow()->GetSize();
+    int r,c;
+    GetFirstVisibleCell( r, c );
+    int idx = m_colLongname - c;
+    int x = GetColLeft(idx) + (m_defaultColWidth / 2 );
+    x -= (w/2);
+    int min, max;
+    if( (x + w)  > s.x )
+        x = s.x - w;
+    if( x < 0 )
+        x = 0;
+    min = XToCol(x) + c;
+    max = XToCol(x + w) + c;
+    if(col >= min && col <= max){
+    wxClientDC *cdc = new wxClientDC(wxDynamicCast( GetGridColLabelWindow(), wxWindow));
+    if( cdc ) {
+        wxColour clf;
+        GetGlobalColor( _T("BLUE2"), &clf );
+        wxPen pen;
+        pen.SetStyle( wxPENSTYLE_SOLID );
+        pen.SetColour( clf );
+        cdc->SetFont( font );
+        cdc->SetTextForeground( clf );
+        cdc->DrawText( name, x, 0 );
     }
-    return c;
+    return true;
+    } else
+        return false;
 }
 
 void CustomGrid::OnMouseEvent( wxMouseEvent& event )
@@ -360,27 +374,6 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
                 m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
         }
     }
-}
-
-//find the number of visible cols
-int CustomGrid::GetNumVisibleCols()
-{
-    int frow = 0, fcol;
-    int ncols = 0;
-    bool vis = false;
-    for(fcol = 0; fcol < m_numCols; fcol++){
-        for(frow = 0; frow < m_numRows; frow++) {
-            if(IsVisible(frow, fcol)){
-                vis = true;
-                break;
-            } else
-                vis = false;
-        }
-        if( vis ) ncols++;
-    }
-	if (ncols < 1) ncols = 1;
-
-    return ncols;
 }
 
 //find the first top/left visible cell coords

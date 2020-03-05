@@ -52,7 +52,6 @@ public:
     ~CustomGrid();
 
     void GetFirstVisibleCell( int& frow, int& fcol );
-    int  GetNumVisibleCols();
     void CorrectUnwantedScroll();
 
     DataTable* m_pParent;
@@ -60,45 +59,20 @@ public:
 private:
     void DrawColLabel( wxDC& dc, int col );
     void DrawCornerLabel(wxDC & dc);
-    //void GetFirstVisibleCell( int& frow, int& fcol );
+    bool DrawLongWptName(int col);
     void GetLastVisibleCell( int& lrow, int& lcol );
-    int  GetColIndex( int col );
     void OnScroll( wxScrollEvent& event );
     void OnResize( wxSizeEvent& event );
     void OnMouseRollOverColLabel( wxMouseEvent& event);
     void OnMouseEvent( wxMouseEvent& event );
-    void OnRefreshTimer( wxTimerEvent& event ) {ForceRefresh();}
+    void OnRefreshTimer( wxTimerEvent& event ) { m_colLongname = - 1; ForceRefresh();}
     void OnLabelClik( wxGridEvent& event);
 
     wxTimer  m_refreshTimer;
-   // bool     g_withSog;
+    int      m_colLongname;
 
 #ifdef __WXOSX__
     bool     m_bLeftDown;
 #endif
-
 };
-/*
-//----------------------------------------------------------------------------------------------------------
-//    A derived class from wxGridCellRenderer
-//----------------------------------------------------------------------------------------------------------
-class CustomRenderer : public wxGridCellRenderer
-{
-public:
-	CustomRenderer( double dir, bool isdigit)
-        : wxGridCellRenderer(), m_dDir(dir), m_IsDigit(isdigit) {}
-
-	virtual void Draw(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, const wxRect& rect, int row, int col, bool isSelected);
-
-	wxSize GetBestSize(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, int row, int col) {
-		return wxSize(-1, -1);
-	}
-	wxGridCellRenderer *Clone() const { return new CustomRenderer(m_dDir, m_IsDigit);}
-
-private:
-
-	double m_dDir;
-    bool m_IsDigit;
-};
-*/
 #endif //__CUSTOMGRID_H__

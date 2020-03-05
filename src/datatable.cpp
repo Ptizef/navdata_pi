@@ -56,7 +56,6 @@ DataTable::DataTable(wxWindow *parent, wxWindowID id, const wxString& title, con
 DataTable::~DataTable(void)
 { 
 	this->Unbind(wxEVT_SIZE, &DataTable::OnSize, this);
-	m_NameTimer.Unbind(wxEVT_TIMER, &DataTable::OnNameTimer, this);
 	m_SizeTimer.Unbind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
 	delete m_pDataTable;
 }
@@ -68,7 +67,6 @@ void DataTable::InitDataTable()
 
     //init timers & events
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
-	m_NameTimer.Bind(wxEVT_TIMER, &DataTable::OnNameTimer, this);
     this->Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this);
     this->Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this);
 
@@ -82,8 +80,6 @@ void DataTable::InitDataTable()
         pConf->Read(_T("ShowTripData"), &g_showTripData,1);
         pConf->Read(_T("ShowTTCETAatVMG"), &g_withSog,0);
     }
-    m_oldIndex = wxNOT_FOUND; //indew of long wpt name to be entrerely viewed
-
     //set text controls sizing trip data
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
@@ -325,37 +321,6 @@ void DataTable::MakeVisibleCol( int col )
     m_pDataTable->MakeCellVisible( row, col );
 }
 
-void DataTable::DrawWptName( int index, wxSize size, wxPoint pos )
-{
-    if( index != m_oldIndex && m_oldIndex != -1 )
-        RequestRefresh( this );
-    m_oldIndex = index;
-
-    wxString name = m_pDataTable->GetColLabelValue(index);
-
-    wxFont font =  GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-
-    wxClientDC *cdc = new wxClientDC(wxDynamicCast( this, wxWindow));
-    if( cdc ) {
-        wxColour clf;
-        GetGlobalColor( _T("BLUE2"), &clf );
-        wxPen pen;
-        pen.SetStyle( wxPENSTYLE_SOLID );
-        pen.SetColour( clf );
-        cdc->SetFont( font );
-        cdc->SetTextForeground( clf );
-        cdc->DrawText( name, pos.x, pos.y );
-        if( IsTouchInterface_PlugIn() )
-            m_NameTimer.Start( 1000, wxTIMER_ONE_SHOT );
-    }
-}
-
-void DataTable::OnNameTimer( wxTimerEvent & event )
-{
-    m_oldIndex = -1;
-    Refresh();
-}
-
 void DataTable::OnMouseEvent(wxMouseEvent& event)
 {
     if(g_scrollPos > 0)
@@ -411,8 +376,8 @@ void DataTable::OnSize( wxSizeEvent& event )
 {
 	if(!m_InvalidateSizeEvent){
 
-		m_tempDialWidth = event.GetSize().GetWidth();
-        m_numVisCols = (m_tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
+        int tempDialWidth = event.GetSize().GetWidth();
+        m_numVisCols = (tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
 		m_SizeTimer.Start(5, wxTIMER_ONE_SHOT);
     }
     event.Skip();

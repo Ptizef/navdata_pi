@@ -74,13 +74,11 @@ public:
                     double shiplon, double shiplat, double shipcog, double shipsog );
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
-    void DrawWptName(int index, wxSize size, wxPoint pos);
     void SetTableSizePosition(bool initrun );
     void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
 	void OnSize(wxSizeEvent &event);
-	wxTimer    m_NameTimer;  //timer to show long wpt name
 private:
     void AddDataCol(int num_cols);
     wxString FormatDistance(double val1 , double val2 = 0., bool delta = false);
@@ -93,18 +91,15 @@ private:
 	int  GetDataGridWidth(int visColsnumb);
 	int  GetDataGridHeight(int visRowsnumb);
 	void OnSizeTimer(wxTimerEvent & event);
-    void OnNameTimer(wxTimerEvent & event);
     void OnMouseEvent(wxMouseEvent& event);
 
     wxGridCellAttr *m_pDataCol;
     bool           m_targetFlag;
-    int            m_oldIndex;
     wxPoint2DDouble  m_SelPointPos;
     int            m_numVisCols;
     int            m_numVisRows;
     bool           m_InvalidateSizeEvent;
     wxPoint        m_dialPosition;
-	int			   m_tempDialWidth;
 	wxTimer		   m_SizeTimer;
 };
 

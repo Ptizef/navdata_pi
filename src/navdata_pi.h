@@ -97,12 +97,10 @@ public:
 
 private:
       //    The override PlugIn Methods
-     // bool RenderOverlay(wxDC &dc, PlugIn_ViewPort *vp);
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
-     // bool RenderGLOverlay(wxGLContext *pcontext, PlugIn_ViewPort *vp);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
       void SetPluginMessage(wxString &message_id, wxString &message_body);
-      int GetToolbarToolCount(void);
+      int  GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
       void SetPositionFix(PlugIn_Position_Fix &pfix);
       bool MouseEventHook( wxMouseEvent &event );
@@ -138,7 +136,6 @@ private:
       float       m_selectionRadiusMM;
 
       //Track variables
-    //  wxTimer     m_lenghtTimer;
       wxTimer     m_rotateTimer;
       wxString    m_gTrkGuid;
       wxDateTime  m_gTrkStart;
