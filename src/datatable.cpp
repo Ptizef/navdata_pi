@@ -42,6 +42,7 @@ extern wxString       g_shareLocn;
 extern int            g_selectedPointCol;
 extern bool           g_showTripData;
 extern bool           g_withSog;
+extern int            g_scrollPos;
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
 //----------------------------------------------------------------------------------------------------------
@@ -63,10 +64,13 @@ DataTable::~DataTable(void)
 void DataTable::InitDataTable()
 {
     m_pDataTable->m_pParent = this;
+    g_scrollPos = 0;
 
-    //init timers
+    //init timers & events
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
 	m_NameTimer.Bind(wxEVT_TIMER, &DataTable::OnNameTimer, this);
+    this->Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this);
+    this->Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this);
 
     ////init some variables
     wxFileConfig *pConf = GetOCPNConfigObject();
@@ -350,6 +354,13 @@ void DataTable::OnNameTimer( wxTimerEvent & event )
 {
     m_oldIndex = -1;
     Refresh();
+}
+
+void DataTable::OnMouseEvent(wxMouseEvent& event)
+{
+    if(g_scrollPos > 0)
+        m_pDataTable->CorrectUnwantedScroll();
+
 }
 
 void DataTable::SetTableSizePosition(bool initrun )

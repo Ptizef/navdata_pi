@@ -53,6 +53,7 @@ public:
 
     void GetFirstVisibleCell( int& frow, int& fcol );
     int  GetNumVisibleCols();
+    void CorrectUnwantedScroll();
 
     DataTable* m_pParent;
 

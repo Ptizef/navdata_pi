@@ -58,6 +58,7 @@ int            g_blinkTrigger;
 int            g_selectedPointCol;
 bool           g_showTripData;
 bool           g_withSog;
+int            g_scrollPos;
 
 int NextPow2(int size)
 {
@@ -420,6 +421,10 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
     if( !m_pTable )
         return false;
+    if(event.LeftDown() || event.RightDown()){
+        int frow;
+        m_pTable->m_pDataTable->GetFirstVisibleCell(frow, g_scrollPos);
+    }
     if(IsTouchInterface_PlugIn()){
         if( !event.LeftUp() )
             return false;
@@ -714,7 +719,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
 	else {
 		SetToolbarItemState(m_leftclick_tool_id, true);
 
-		LoadocpnConfig();
+        LoadocpnConfig();
 
 		long style = wxCAPTION | wxRESIZE_BORDER;
         m_pTable = new DataTable(GetCanvasByIndex(0), wxID_ANY, wxEmptyString, wxDefaultPosition,

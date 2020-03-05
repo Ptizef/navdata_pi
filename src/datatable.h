@@ -94,6 +94,7 @@ private:
 	int  GetDataGridHeight(int visRowsnumb);
 	void OnSizeTimer(wxTimerEvent & event);
     void OnNameTimer(wxTimerEvent & event);
+    void OnMouseEvent(wxMouseEvent& event);
 
     wxGridCellAttr *m_pDataCol;
     bool           m_targetFlag;

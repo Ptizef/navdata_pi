@@ -40,6 +40,7 @@ extern int      g_blinkTrigger;
 extern int      g_selectedPointCol;
 extern bool     g_showTripData;
 extern bool     g_withSog;
+extern int      g_scrollPos;
 
 
 
@@ -75,6 +76,7 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     Connect(wxEVT_GRID_LABEL_LEFT_CLICK, wxGridEventHandler( CustomGrid::OnLabelClik ), NULL, this );
     //connect events at grid windows level
     GetGridWindow()->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
+    GetGridWindow()->Connect(wxEVT_RIGHT_DOWN, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
     GetGridWindow()->Connect(wxEVT_LEFT_UP, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
     GetGridWindow()->Connect(wxEVT_MOTION, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
     if( IsTouchInterface_PlugIn() )
@@ -83,6 +85,8 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
         GetGridColLabelWindow()->Bind( wxEVT_MOTION, &CustomGrid::OnMouseRollOverColLabel,this);
         GetGridColLabelWindow()->Bind( wxEVT_LEAVE_WINDOW, &CustomGrid::OnMouseRollOverColLabel,this);
     }
+    GetGridColLabelWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
+    GetGridColLabelWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
     //connect timer event
     m_refreshTimer.Connect(wxEVT_TIMER, wxTimerEventHandler( CustomGrid::OnRefreshTimer ), NULL, this);
 }
@@ -184,6 +188,19 @@ void CustomGrid::OnScroll( wxScrollEvent& event )
     event.Skip();
 }
 
+void CustomGrid::CorrectUnwantedScroll()
+{
+        while(1) {
+            int frow, fcol, lrow, lcol;
+            GetFirstVisibleCell(frow, fcol);
+            if( g_scrollPos == fcol ) break;
+            GetLastVisibleCell(lrow, lcol);
+            if( lcol < m_numCols - 1)
+                MakeCellVisible(frow, lcol + 1);
+        }
+        g_scrollPos = 0;
+}
+
 void CustomGrid::OnLabelClik( wxGridEvent& event)
 {
     ClearSelection();
@@ -217,6 +234,11 @@ void CustomGrid::OnResize( wxSizeEvent& event )
 
 void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
 {
+    if(event.LeftDown() || event.RightDown()){
+        if(g_scrollPos > 0)
+            CorrectUnwantedScroll();
+    }
+
     bool refresh = event.Leaving();
     if( event.Moving() || event.LeftUp() ){
         int c = event.GetPosition().x;
@@ -272,6 +294,9 @@ int CustomGrid::GetColIndex( int col )
 
 void CustomGrid::OnMouseEvent( wxMouseEvent& event )
 {
+    if((event.LeftDown() || event.RightDown()) && g_scrollPos > 0)
+        CorrectUnwantedScroll();
+
     static wxPoint s_pevt;
     wxPoint pevt = event.GetPosition();
 #ifdef __WXOSX__
