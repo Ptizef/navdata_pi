@@ -42,7 +42,7 @@ extern wxString       g_shareLocn;
 extern int            g_selectedPointCol;
 extern bool           g_showTripData;
 extern bool           g_withSog;
-extern int            g_scrollPos;
+extern wxPoint        g_scrollPos;
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
 //----------------------------------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ DataTable::~DataTable(void)
 void DataTable::InitDataTable()
 {
     m_pDataTable->m_pParent = this;
-    g_scrollPos = 0;
+    g_scrollPos = wxPoint(0, 0);
 
     //connect events
     //dialog level
@@ -337,8 +337,7 @@ void DataTable::MakeVisibleCol( int col )
 void DataTable::OnMouseEvent(wxMouseEvent& event)
 {
     //suppress all unwanted scroll
-    if(g_scrollPos > 0)
-        m_pDataTable->CorrectUnwantedScroll();
+    m_pDataTable->CorrectUnwantedScroll();
     //eventually stop long wpt name display
     m_pDataTable->m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
 }

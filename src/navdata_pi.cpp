@@ -58,7 +58,7 @@ int            g_blinkTrigger;
 int            g_selectedPointCol;
 bool           g_showTripData;
 bool           g_withSog;
-int            g_scrollPos;
+wxPoint        g_scrollPos;
 
 int NextPow2(int size)
 {
@@ -422,8 +422,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     if( !m_pTable )
         return false;
     //store first visible col
-    int frow;
-    m_pTable->m_pDataTable->GetFirstVisibleCell(frow, g_scrollPos);
+    m_pTable->m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
     //eventually stop long wpt name display
     m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
 

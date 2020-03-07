@@ -40,7 +40,7 @@ extern int      g_blinkTrigger;
 extern int      g_selectedPointCol;
 extern bool     g_showTripData;
 extern bool     g_withSog;
-extern int      g_scrollPos;
+extern wxPoint  g_scrollPos;
 
 
 
@@ -87,6 +87,8 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     }
     GetGridColLabelWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
     GetGridColLabelWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
+    GetGridRowLabelWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
+    GetGridRowLabelWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
     //connect timer event
     m_resizeTimer.Bind(wxEVT_TIMER, &CustomGrid::OnResizeTimer, this);
     m_stopLoopTimer.Bind(wxEVT_TIMER, &CustomGrid::OnStopLoopTimer, this);
@@ -201,27 +203,28 @@ void CustomGrid::OnScroll( wxScrollEvent& event )
 
 void CustomGrid::CorrectUnwantedScroll()
 {
-        while(1) {
-            int frow, fcol, lrow, lcol;
-            GetFirstVisibleCell(frow, fcol);
-            GetLastVisibleCell(lrow, lcol);
-            if( g_scrollPos == fcol ) break;
-            if( lcol < m_numCols - 1)
-                MakeCellVisible(frow, lcol + 1);
-        }
-        g_scrollPos = 0;
+    int frow, fcol, lrow, lcol;
+    GetFirstVisibleCell(frow, fcol);
+    GetLastVisibleCell(lrow, lcol);
+    int x = g_scrollPos.x - fcol;
+    int y = g_scrollPos.y - frow;
+    MakeCellVisible(g_scrollPos.y, lcol + x);
+    MakeCellVisible(lrow + y, g_scrollPos.x);
+
+    GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
 }
 
 void CustomGrid::OnLabelClik( wxGridEvent& event)
 {
     ClearSelection();
+    CorrectUnwantedScroll();
     if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND ){
         int x = event.GetPosition().x;
         int o = m_rowLabelWidth / 4;
         if( x > o || x < (m_rowLabelWidth - o ) ){
            bool showTrip = g_showTripData;
 
-            Settings *dialog = new Settings( m_parent, wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
+            Settings *dialog = new Settings( GetCanvasByIndex(0), wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
 
             dialog->ShowModal();
 
@@ -249,12 +252,17 @@ void CustomGrid::OnResize( wxSizeEvent& event )
     event.Skip();
 }
 
+void CustomGrid::OnResizeTimer(wxTimerEvent& event)
+{
+    ForceRefresh();
+    GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
+}
+
 void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
 {
-    if(event.LeftDown() || event.RightDown()){
-        if(g_scrollPos > 0)
-            CorrectUnwantedScroll();
-    }
+    if(event.LeftDown() || event.RightDown())
+        CorrectUnwantedScroll();
+
     bool endLoop = event.Leaving();
     if( event.Moving() || event.LeftUp() ){
         int cx = event.GetPosition().x;
@@ -347,7 +355,7 @@ void CustomGrid::OnStopLoopTimer( wxTimerEvent& event )
 
 void CustomGrid::OnMouseEvent( wxMouseEvent& event )
 {
-    if((event.LeftDown() || event.RightDown()) && g_scrollPos > 0)
+    if((event.LeftDown() || event.RightDown()))
         CorrectUnwantedScroll();
     if((event.LeftDown() || event.RightDown()) && m_colLongname != wxNOT_FOUND )
         m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );

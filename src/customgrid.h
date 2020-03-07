@@ -65,7 +65,7 @@ private:
     void GetLastVisibleCell(int& lrow, int& lcol);
     void OnScroll(wxScrollEvent& event);
     void OnResize(wxSizeEvent& event);
-    void OnResizeTimer(wxTimerEvent& event) {ForceRefresh();}
+    void OnResizeTimer(wxTimerEvent& event);
     void OnMouseRollOverColLabel(wxMouseEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
     void OnStopLoopTimer(wxTimerEvent& event);
