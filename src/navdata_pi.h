@@ -66,7 +66,14 @@
 #define     TIMER_INTERVAL_HOUR   3600000  //3600 s 1 hour
 #define     TIMER_INTERVAL_10SECOND 10000  //10 s
 #define     TIMER_INTERVAL_SECOND    1000  //1 s
+#define     TIMER_INTERVAL_75MSECOND   75  //75 ms
+#define     TIMER_INTERVAL_10MSECOND   10  //10 ms
 #define     TIMER_INTERVAL_MSECOND      1  //1 ms
+#define     IDLE_STATE_NUMBER    99999999
+#define     NAME_LOOP_READY            -2
+#define     NAME_LOOP_STARTED          -1
+#define     NAME_NEW_LOOP               0
+
 
 class navdata_pi : public opencpn_plugin_116, wxTimer
 {
@@ -106,10 +113,10 @@ private:
       bool MouseEventHook( wxMouseEvent &event );
       //
       void OnTripLenghtTimer(wxTimerEvent & event);
-      void OnRotateTimer( wxTimerEvent & event);
+      void OnRotateTimer(wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
-      void SetDialogFont( wxWindow *dialog, wxFont *font);
+      void SetDialogFont(wxWindow *dialog, wxFont *font);
       float GetSelectRadius();
 
       //toolbar variables

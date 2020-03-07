@@ -65,10 +65,23 @@ void DataTable::InitDataTable()
     m_pDataTable->m_pParent = this;
     g_scrollPos = 0;
 
-    //init timers & events
+    //connect events
+    //dialog level
+    Bind( wxEVT_SIZE, &DataTable::OnSize, this );
+    Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this );
+    Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this );
+    //wxStaticTexts level
+    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    while( node ) {
+        wxWindow *win = node->GetData();
+        if( win && win->IsKindOf(CLASSINFO(wxStaticText)) ){
+            win->Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this );
+            win->Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this );
+        }
+        node = node->GetNext();
+    }
+    //connect timers
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
-    this->Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this);
-    this->Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this);
 
     ////init some variables
     wxFileConfig *pConf = GetOCPNConfigObject();
@@ -127,7 +140,7 @@ void DataTable::InitDataTable()
     m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
     //put cursor outside the grid
-    m_pDataTable->SetGridCursor(m_pDataTable->GetNumberRows() -1, 0);
+    m_pDataTable->SetGridCursor(m_pDataTable->GetNumberRows() +1, 0);
     //set scroll step Y
     m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
 }
@@ -323,9 +336,11 @@ void DataTable::MakeVisibleCol( int col )
 
 void DataTable::OnMouseEvent(wxMouseEvent& event)
 {
+    //suppress all unwanted scroll
     if(g_scrollPos > 0)
         m_pDataTable->CorrectUnwantedScroll();
-
+    //eventually stop long wpt name display
+    m_pDataTable->m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
 }
 
 void DataTable::SetTableSizePosition(bool initrun )
@@ -336,7 +351,7 @@ void DataTable::SetTableSizePosition(bool initrun )
     int scw = GetCanvasByIndex(0)->GetSize().GetWidth();
 	int w = GetDataGridWidth(m_numVisCols);
     if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1 ){
-		m_dialPosition.x = scw * 0.1;
+        m_dialPosition.x = scw * 0.1;
 		scw *= 0.8;
         if(w > scw ){
 			for( int i = m_numVisCols; i > 0; i-- ){
@@ -378,7 +393,7 @@ void DataTable::OnSize( wxSizeEvent& event )
 
         int tempDialWidth = event.GetSize().GetWidth();
         m_numVisCols = (tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
-		m_SizeTimer.Start(5, wxTIMER_ONE_SHOT);
+        m_SizeTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
     }
     event.Skip();
 }
@@ -446,7 +461,7 @@ int DataTable::GetBestDialogHeight( int dialogWidth )
     int sch = GetCanvasByIndex(0)->GetSize().GetHeight() - 1;
 	int ht = h + GetDataGridHeight(m_numVisRows);
 	if (m_dialPosition.y + ht > sch || m_dialPosition.y < 1) {
-		m_dialPosition.y = sch * 0.1;
+        m_dialPosition.y = sch * 0.1;
 		sch -= m_dialPosition.y;
 		if (ht > sch) {
 			for (int j = m_numVisRows; j > 0; j--) {

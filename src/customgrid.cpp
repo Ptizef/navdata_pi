@@ -69,16 +69,16 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
 #ifdef __WXOSX__
     m_bLeftDown = false;
 #endif
-
     //connect events at dialog level
     Connect(wxEVT_SCROLLWIN_THUMBTRACK, wxScrollEventHandler( CustomGrid::OnScroll ), NULL, this );
     Connect(wxEVT_SIZE, wxSizeEventHandler( CustomGrid::OnResize ), NULL, this );
     Connect(wxEVT_GRID_LABEL_LEFT_CLICK, wxGridEventHandler( CustomGrid::OnLabelClik ), NULL, this );
-    //connect events at grid windows level
-    GetGridWindow()->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
-    GetGridWindow()->Connect(wxEVT_RIGHT_DOWN, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
-    GetGridWindow()->Connect(wxEVT_LEFT_UP, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
-    GetGridWindow()->Connect(wxEVT_MOTION, wxMouseEventHandler( CustomGrid::OnMouseEvent ), NULL, this );
+    //connect events at grid window level
+    GetGridWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent, this );
+    GetGridWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent, this );
+    GetGridWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseEvent, this );
+    GetGridWindow()->Bind( wxEVT_MOTION, &CustomGrid::OnMouseEvent, this );
+    //connect events at column labels window level
     if( IsTouchInterface_PlugIn() )
         GetGridColLabelWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseRollOverColLabel,this);
     else {
@@ -88,7 +88,9 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     GetGridColLabelWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
     GetGridColLabelWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseRollOverColLabel,this);
     //connect timer event
-    m_refreshTimer.Connect(wxEVT_TIMER, wxTimerEventHandler( CustomGrid::OnRefreshTimer ), NULL, this);
+    m_resizeTimer.Bind(wxEVT_TIMER, &CustomGrid::OnResizeTimer, this);
+    m_stopLoopTimer.Bind(wxEVT_TIMER, &CustomGrid::OnStopLoopTimer, this);
+    m_nameLoopTimer.Bind(wxEVT_TIMER, &CustomGrid::OnNameLoopTimer, this);
 }
 
  CustomGrid::~CustomGrid()
@@ -97,61 +99,67 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
 
 void CustomGrid::DrawColLabel( wxDC& dc, int col )
 {
-    //long wpt name
-    if(!DrawLongWptName(col)){
-    //draw wpt name only inside width available
-    int w;
-    wxString label = GetColLabelValue(col);
-    GetTextExtent( label, &w, NULL, 0, 0, &m_labelFont);
-    if( w > (GetColWidth(col) - 2)){
-        int len =  label.Len() * ((double)(GetColWidth(col) - 2) / (double)w);
-        label = GetColLabelValue(col).Mid(0, len);
-    }
-    //draw rectangle
-    dc.SetFont( m_labelFont );
-    dc.SetPen(GetDefaultGridLinePen());
-    dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
-    dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
-    //draw selected or active mark
-    if( (col == 0 && g_selectedPointCol == wxNOT_FOUND )
-            || col == g_selectedPointCol ){
-         if( g_blinkTrigger & 1 ) {
-            wxImage image;
-            int w = 0, h = 0;
-            if( col == 0  ){
-                w = _img_activewpt->GetWidth();
-                h = _img_activewpt->GetHeight();
-                wxString file = g_shareLocn + _T("activewpt.svg");
-                if( wxFile::Exists( file ) ){
-                    wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
-                    image = bmp.ConvertToImage();
-                } else
-                    image = _img_activewpt->ConvertToImage();
-            } else {
-                w = _img_targetwpt->GetWidth();
-                h = _img_targetwpt->GetHeight();
-                wxString file = g_shareLocn + _T("targetwpt.svg");
-                if( wxFile::Exists( file ) ){
-                    wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
-                    image = bmp.ConvertToImage();
-                } else
-                    image = _img_targetwpt->ConvertToImage();
-            }
+    if(col == m_colLongname){
+        //draw long wpt name
+        if(m_nameFlag == NAME_LOOP_READY){
+            m_nameFlag = NAME_LOOP_STARTED;
+            m_LongName = GetColLabelValue(m_colLongname) + _T(" ... ");
+            m_nameLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+        }
+    } else {
+        //draw wpt name only inside width available
+        int w;
+        wxString label = GetColLabelValue(col);
+        GetTextExtent( label, &w, NULL, 0, 0, &m_labelFont);
+        if( w > (GetColWidth(col) - 2)){
+            int len =  label.Len() * ((double)(GetColWidth(col) - 2) / (double)w);
+            label = GetColLabelValue(col).Mid(0, len);
+        }
+        //draw rectangle
+        dc.SetFont( m_labelFont );
+        dc.SetPen(GetDefaultGridLinePen());
+        dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+        dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
+        //draw selected or active mark
+        if( (col == 0 && g_selectedPointCol == wxNOT_FOUND )
+                    || col == g_selectedPointCol ){
+            if( g_blinkTrigger & 1 ) {
+                wxImage image;
+                int w = 0, h = 0;
+                if( col == 0  ){
+                    w = _img_activewpt->GetWidth();
+                    h = _img_activewpt->GetHeight();
+                    wxString file = g_shareLocn + _T("activewpt.svg");
+                    if( wxFile::Exists( file ) ){
+                        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
+                        image = bmp.ConvertToImage();
+                    } else
+                        image = _img_activewpt->ConvertToImage();
+                } else {
+                    w = _img_targetwpt->GetWidth();
+                    h = _img_targetwpt->GetHeight();
+                    wxString file = g_shareLocn + _T("targetwpt.svg");
+                    if( wxFile::Exists( file ) ){
+                        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
+                        image = bmp.ConvertToImage();
+                    } else
+                        image = _img_targetwpt->ConvertToImage();
+                }
 
-            unsigned char *i = image.GetData();
-            if (i == 0)
-                return;
-            double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
-            w *= scale;
-            h *= scale;
-            wxBitmap scaled;
-            scaled =  wxBitmap(image.Scale( w, h) );
-            dc.DrawBitmap( scaled, GetColLeft(col), 0 );
-         }
-    }
-    //draw label
-    dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
-    dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
+                unsigned char *i = image.GetData();
+                if (i == 0)
+                    return;
+                double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
+                w *= scale;
+                h *= scale;
+                wxBitmap scaled;
+                scaled =  wxBitmap(image.Scale( w, h) );
+                dc.DrawBitmap( scaled, GetColLeft(col), 0 );
+            }
+        }
+        //draw label
+        dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
+        dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
                             m_colLabelHeight - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
     }
 }
@@ -187,7 +195,7 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
 {
-    m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+    m_resizeTimer.Start( TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
     event.Skip();
 }
 
@@ -196,8 +204,8 @@ void CustomGrid::CorrectUnwantedScroll()
         while(1) {
             int frow, fcol, lrow, lcol;
             GetFirstVisibleCell(frow, fcol);
-            if( g_scrollPos == fcol ) break;
             GetLastVisibleCell(lrow, lcol);
+            if( g_scrollPos == fcol ) break;
             if( lcol < m_numCols - 1)
                 MakeCellVisible(frow, lcol + 1);
         }
@@ -229,9 +237,15 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
     }
 }
 
+void CustomGrid::OnNameLoopTimer( wxTimerEvent& event )
+{
+    m_nameFlag++;
+    DrawLongWptName();
+}
+
 void CustomGrid::OnResize( wxSizeEvent& event )
 {
-    m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+    m_resizeTimer.Start( TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
     event.Skip();
 }
 
@@ -241,75 +255,102 @@ void CustomGrid::OnMouseRollOverColLabel( wxMouseEvent& event)
         if(g_scrollPos > 0)
             CorrectUnwantedScroll();
     }
-
-    bool refresh = event.Leaving();
+    bool endLoop = event.Leaving();
     if( event.Moving() || event.LeftUp() ){
         int cx = event.GetPosition().x;
         int col = XToCol(cx);
         int r,c;
         GetFirstVisibleCell( r, c );
         col +=  c;
+        //end processus no valid column selected
         if( col != wxNOT_FOUND ) {           //column label
-            wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
             int w, h;
-            GetTextExtent( GetColLabelValue( col ), &w, &h, 0, 0, &font);
+            GetTextExtent( GetColLabelValue( col ), &w, &h, 0, 0, &m_labelFont);
+            //end processus if the wpt name can be entirely
             if( w > GetColSize(col) ){
-                m_colLongname = col;
-                ForceRefresh();
-                if( IsTouchInterface_PlugIn() )
-                    m_refreshTimer.Start( 2000, wxTIMER_ONE_SHOT );
+                if( col != m_colLongname){
+                    m_colLongname = col;
+                    m_nameFlag = -2;
+                    ForceRefresh();
+                }
+                /* in case of touch screen will stop long name display
+                 *  after 10s if nothing is done*/
+                if(IsTouchInterface_PlugIn())
+                    m_stopLoopTimer.Start( TIMER_INTERVAL_10SECOND, wxTIMER_ONE_SHOT );
                 return;
             } else
-               refresh = true;
+               endLoop = true;
         } else
-            refresh = true;
+            endLoop = true;
     }
-    if( refresh )
-        m_refreshTimer.Start( 1, wxTIMER_ONE_SHOT );
+    if(endLoop)
+        m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
 }
 
-bool CustomGrid::DrawLongWptName(int col)
+void CustomGrid::DrawLongWptName()
 {
-    if(m_colLongname == wxNOT_FOUND) return false;
-    //compute best position
-    wxString name = GetColLabelValue(m_colLongname);
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-    int w;
-    GetTextExtent(name, &w, NULL, 0, 0, &font);
-    wxSize  s = GetGridColLabelWindow()->GetSize();
-    int r,c;
-    GetFirstVisibleCell( r, c );
-    int idx = m_colLongname - c;
-    int x = GetColLeft(idx) + (m_defaultColWidth / 2 );
-    x -= (w/2);
-    int min, max;
-    if( (x + w)  > s.x )
-        x = s.x - w;
-    if( x < 0 )
-        x = 0;
-    min = XToCol(x) + c;
-    max = XToCol(x + w) + c;
-    if(col >= min && col <= max){
-    wxClientDC *cdc = new wxClientDC(wxDynamicCast( GetGridColLabelWindow(), wxWindow));
+    if(m_colLongname == wxNOT_FOUND)
+        return;
+
+    static int x;
+    if(m_nameFlag == NAME_NEW_LOOP){
+        int r,c;
+        GetFirstVisibleCell( r, c );
+        x = GetColLeft(m_colLongname - c);
+    }
+    wxString s = wxEmptyString, label;
+    if(m_nameFlag > (int)m_LongName.Len() -1)
+        m_nameFlag = NAME_NEW_LOOP;
+    int i = m_nameFlag;
+    int j = 0;
+    while(1){
+        if((i + j) > (int)m_LongName.Len() -1){
+            i = 0; j = 0;
+        }
+        s.Append(m_LongName.GetChar(i + j));
+        int w;
+        GetTextExtent(s, &w, NULL, 0, 0, &m_labelFont);
+        if( w > GetColWidth(m_colLongname))
+            break;
+        label = s;
+        j++;
+    }
+    wxClientDC *cdc = new wxClientDC(GetGridColLabelWindow());
     if( cdc ) {
+        //draw rectangle
+        cdc->SetFont( m_labelFont );
+        cdc->SetPen(GetDefaultGridLinePen());
+        cdc->SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+        cdc->DrawRectangle(wxRect(x, 0, GetColWidth(m_colLongname),  m_colLabelHeight));
+        //draw label
         wxColour clf;
         GetGlobalColor( _T("BLUE2"), &clf );
-        wxPen pen;
-        pen.SetStyle( wxPENSTYLE_SOLID );
-        pen.SetColour( clf );
-        cdc->SetFont( font );
-        cdc->SetTextForeground( clf );
-        cdc->DrawText( name, x, 0 );
+        cdc->SetTextForeground(clf);
+        cdc->DrawLabel(label, wxRect(x, 1, GetColWidth(m_colLongname) - 2,
+                        m_colLabelHeight - 2), wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
+
+
+        m_nameLoopTimer.Start(TIMER_INTERVAL_75MSECOND, wxTIMER_ONE_SHOT);
     }
-    return true;
-    } else
-        return false;
+}
+
+void CustomGrid::OnStopLoopTimer( wxTimerEvent& event )
+{
+    if(m_nameLoopTimer.IsRunning())
+        m_nameLoopTimer.Stop();
+
+    m_colLongname = wxNOT_FOUND;
+    m_nameFlag = IDLE_STATE_NUMBER;
+
+    ForceRefresh();
 }
 
 void CustomGrid::OnMouseEvent( wxMouseEvent& event )
 {
     if((event.LeftDown() || event.RightDown()) && g_scrollPos > 0)
         CorrectUnwantedScroll();
+    if((event.LeftDown() || event.RightDown()) && m_colLongname != wxNOT_FOUND )
+        m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
 
     static wxPoint s_pevt;
     wxPoint pevt = event.GetPosition();
@@ -371,7 +412,7 @@ void CustomGrid::OnMouseEvent( wxMouseEvent& event )
                 }
             }
             if(rfh)
-                m_refreshTimer.Start( 10, wxTIMER_ONE_SHOT );
+                m_resizeTimer.Start( TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
         }
     }
 }
@@ -400,79 +441,4 @@ void CustomGrid::GetLastVisibleCell(int& lrow, int& lcol)
 		}
 	}
 }
-/*
 
-//------------------------------------------------------------------------------
-//          custom renderer
-//------------------------------------------------------------------------------
-void CustomRenderer::Draw(wxGrid& grid, wxGridCellAttr& attr, wxDC& dc, const wxRect& rect, int row, int col, bool isSelected)
-{
-    dc.SetPen(wxPen(attr.GetBackgroundColour(), 1));
-    dc.SetBrush(wxBrush( attr.GetBackgroundColour(), wxBRUSHSTYLE_SOLID ));
-    dc.DrawRectangle( rect );
-
-    if( m_IsDigit || m_dDir == GRIB_NOTDEF ) {        //digital format
-        wxString text(wxEmptyString);
-        if( m_dDir != GRIB_NOTDEF )
-            text.Printf(_T("%03d\u00B0"), (int)m_dDir);
-        dc.DrawLabel(text, rect, wxALIGN_CENTER_HORIZONTAL | wxALIGN_CENTER_VERTICAL);
-    } else {                                        //graphical format
-        double si = sin( (m_dDir - 90) * M_PI / 180. );
-        double co = cos( (m_dDir - 90) * M_PI / 180. );
-
-        int i = rect.GetTopLeft().x + (rect.GetWidth() / 2);
-        int j = rect.GetTopLeft().y + (rect.GetHeight() / 2);
-
-        int arrowSize = rect.GetHeight() - 3;
-        int dec = -arrowSize / 2;
-
-#if wxUSE_GRAPHICS_CONTEXT
-        wxGraphicsContext *gdc;
-        wxClientDC *cdc = new wxClientDC(wxDynamicCast( &grid, wxWindow));
-        cdc = wxDynamicCast(&dc, wxClientDC);
-        if( cdc ) {
-            gdc = wxGraphicsContext::Create(*cdc);
-#ifdef __WXGTK__
-            // platforms don't manage the same way the gdc origin
-            for linux, we have to re-compute the good one.
-            To DO : verify it works on all other plateforms (done for MSW
-            bool vis = false;
-            int r = 0;
-            for( int c = 0; c < grid.GetNumberCols(); c++){
-                for(r = 0; r < grid.GetNumberRows(); r++) {
-                    if(grid.IsVisible(r, c)){  //find the first row/col
-                        vis = true;
-                        i -= (c * grid.GetColSize(0));
-                        j -= (r * grid.GetRowHeight(0));
-                        break;
-                    }
-                }
-                if(vis) break;
-            }
-#endif
-            gdc->SetPen(wxPen(attr.GetTextColour(), 3));
-            gdc->SetBrush(wxBrush( attr.GetBackgroundColour(), wxBRUSHSTYLE_SOLID ));
-
-            double ii, jj, kk, ll;
-            GetArrowsPoints( si, co, i, j, dec, 0, dec + arrowSize, 0, ii, jj, kk, ll );
-            gdc->StrokeLine( ii, jj, kk, ll );
-            GetArrowsPoints( si, co, i, j, dec - 3, 0, dec + 5, 3, ii, jj, kk, ll );
-            gdc->StrokeLine( ii, jj, kk, ll );
-            GetArrowsPoints( si, co, i, j, dec - 3, 0, dec + 5, -3, ii, jj, kk, ll );
-            gdc->StrokeLine( ii, jj, kk, ll );
-            delete gdc;
-        } else
-#endif
-        {
-            dc.SetPen(wxPen(attr.GetTextColour(), 3));
-            double ii, jj, kk, ll;
-            GetArrowsPoints( si, co, i, j, dec, 0, dec + arrowSize, 0, ii, jj, kk, ll );
-            dc.DrawLine( (int)ii, (int)jj, (int)kk, (int)ll );
-            GetArrowsPoints( si, co, i, j, dec - 3, 0, dec + 5, 3, ii, jj, kk, ll );
-            dc.DrawLine( (int)ii, (int)jj, (int)kk, (int)ll );
-            GetArrowsPoints( si, co, i, j, dec - 3, 0, dec + 5, -3, ii, jj, kk, ll );
-            dc.DrawLine( (int)ii, (int)jj, (int)kk, (int)ll );
-        }
-    }
-}
-*/

@@ -74,8 +74,8 @@ public:
                     double shiplon, double shiplat, double shipcog, double shipsog );
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
-    void SetTableSizePosition(bool initrun );
-    void SetTargetFlag( bool flag ) { m_targetFlag = flag; }
+    void SetTableSizePosition(bool initrun);
+    void SetTargetFlag(bool flag) {m_targetFlag = flag;}
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
 	void OnSize(wxSizeEvent &event);
@@ -86,8 +86,8 @@ private:
                                   double wptprevlat, double wptprevlon,
                                   double glat, double glon,
                                   double *brg, double *nrng);
-    void MakeVisibleCol( int col );
-    int  GetBestDialogHeight(int dialogWidth );
+    void MakeVisibleCol(int col);
+    int  GetBestDialogHeight(int dialogWidth);
 	int  GetDataGridWidth(int visColsnumb);
 	int  GetDataGridHeight(int visRowsnumb);
 	void OnSizeTimer(wxTimerEvent & event);
@@ -109,7 +109,7 @@ private:
 class Settings: public SettingsBase
 {
 private:
-    void OnOKButton( wxCommandEvent& event );
+    void OnOKButton(wxCommandEvent& event);
 
 public:
     Settings(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style );

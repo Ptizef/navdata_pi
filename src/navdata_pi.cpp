@@ -411,20 +411,22 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     m_gCog = pfix.Cog;
     m_gSog = pfix.Sog;
     g_blinkTrigger++;
-    if( m_pTable ){
+    if( m_pTable && m_pTable->m_pDataTable->m_colLongname == wxNOT_FOUND){
         m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
-    RequestRefresh( GetCanvasByIndex(0) );
+   // RequestRefresh( GetCanvasByIndex(0) );
 }
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
     if( !m_pTable )
         return false;
-    if(event.LeftDown() || event.RightDown()){
-        int frow;
-        m_pTable->m_pDataTable->GetFirstVisibleCell(frow, g_scrollPos);
-    }
+    //store first visible col
+    int frow;
+    m_pTable->m_pDataTable->GetFirstVisibleCell(frow, g_scrollPos);
+    //eventually stop long wpt name display
+    m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+
     if(IsTouchInterface_PlugIn()){
         if( !event.LeftUp() )
             return false;
@@ -438,7 +440,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     double plat, plon;
     GetCanvasLLPix( m_vp, p, &plat, &plon);
     float selectRadius = GetSelectRadius();
-    double dist_from_cursor = 9999999999.;
+    double dist_from_cursor = IDLE_STATE_NUMBER;
     //walk through the route to find the selected wpt guid
     wxString SelGuid = wxEmptyString;
     std::unique_ptr<PlugIn_Route> r;
@@ -732,9 +734,6 @@ void navdata_pi::OnToolbarToolCallback(int id)
 		m_pTable->UpdateTripData();
 		m_pTable->SetTableSizePosition(true);
 		m_pTable->Show();
-		//now we can activate size event
-		m_pTable->Bind(wxEVT_SIZE, &DataTable::OnSize, m_pTable);
-		//launch track lenght if necessary
 		if (!m_gTrkGuid.IsEmpty() && g_showTripData)
 			m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
 	}

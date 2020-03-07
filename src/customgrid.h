@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
  *
  * Project:  OpenCPN
  * Purpose:  personalized GRID
@@ -51,25 +51,31 @@ public:
 
     ~CustomGrid();
 
-    void GetFirstVisibleCell( int& frow, int& fcol );
+    void GetFirstVisibleCell(int& frow, int& fcol);
     void CorrectUnwantedScroll();
 
-    DataTable* m_pParent;
+    DataTable *m_pParent;
+    wxTimer   m_stopLoopTimer;
+    int       m_colLongname;
 
 private:
-    void DrawColLabel( wxDC& dc, int col );
+    void DrawColLabel(wxDC& dc, int col);
     void DrawCornerLabel(wxDC & dc);
-    bool DrawLongWptName(int col);
-    void GetLastVisibleCell( int& lrow, int& lcol );
-    void OnScroll( wxScrollEvent& event );
-    void OnResize( wxSizeEvent& event );
-    void OnMouseRollOverColLabel( wxMouseEvent& event);
-    void OnMouseEvent( wxMouseEvent& event );
-    void OnRefreshTimer( wxTimerEvent& event ) { m_colLongname = - 1; ForceRefresh();}
-    void OnLabelClik( wxGridEvent& event);
+    void DrawLongWptName();
+    void GetLastVisibleCell(int& lrow, int& lcol);
+    void OnScroll(wxScrollEvent& event);
+    void OnResize(wxSizeEvent& event);
+    void OnResizeTimer(wxTimerEvent& event) {ForceRefresh();}
+    void OnMouseRollOverColLabel(wxMouseEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
+    void OnStopLoopTimer(wxTimerEvent& event);
+    void OnNameLoopTimer(wxTimerEvent& event);
+    void OnLabelClik(wxGridEvent& event);
 
-    wxTimer  m_refreshTimer;
-    int      m_colLongname;
+    wxTimer  m_resizeTimer;
+    wxTimer  m_nameLoopTimer;
+    int      m_nameFlag;
+    wxString m_LongName;
 
 #ifdef __WXOSX__
     bool     m_bLeftDown;
