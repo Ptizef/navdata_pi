@@ -53,6 +53,7 @@ public:
 
     void GetFirstVisibleCell(int& frow, int& fcol);
     void CorrectUnwantedScroll();
+    void OnMouseEvent(wxMouseEvent& event);
 
     DataTable *m_pParent;
     wxTimer   m_stopLoopTimer;
@@ -67,7 +68,6 @@ private:
     void OnResize(wxSizeEvent& event);
     void OnResizeTimer(wxTimerEvent& event);
     void OnMouseRollOverColLabel(wxMouseEvent& event);
-    void OnMouseEvent(wxMouseEvent& event);
     void OnStopLoopTimer(wxTimerEvent& event);
     void OnNameLoopTimer(wxTimerEvent& event);
     void OnLabelClik(wxGridEvent& event);

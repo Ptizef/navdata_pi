@@ -66,6 +66,8 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     GetGlobalColor(_T("DILG0"), &m_labelBackgroundColour);
     GetGlobalColor(_T("DILG3"), &m_labelTextColour );
 
+    //init variables
+    m_colLongname = wxNOT_FOUND;
 #ifdef __WXOSX__
     m_bLeftDown = false;
 #endif
@@ -208,7 +210,7 @@ void CustomGrid::CorrectUnwantedScroll()
     GetLastVisibleCell(lrow, lcol);
     int x = g_scrollPos.x - fcol;
     int y = g_scrollPos.y - frow;
-    MakeCellVisible(g_scrollPos.y, lcol + x);
+    MakeCellVisible(frow, lcol + x);
     MakeCellVisible(lrow + y, g_scrollPos.x);
 
     GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
@@ -307,7 +309,7 @@ void CustomGrid::DrawLongWptName()
         x = GetColLeft(m_colLongname - c);
     }
     wxString s = wxEmptyString, label;
-    if(m_nameFlag > (int)m_LongName.Len() -1)
+    if(m_nameFlag > (int)m_LongName.Len())
         m_nameFlag = NAME_NEW_LOOP;
     int i = m_nameFlag;
     int j = 0;
@@ -355,10 +357,11 @@ void CustomGrid::OnStopLoopTimer( wxTimerEvent& event )
 
 void CustomGrid::OnMouseEvent( wxMouseEvent& event )
 {
-    if((event.LeftDown() || event.RightDown()))
+    if((event.LeftDown() || event.RightDown())){
         CorrectUnwantedScroll();
-    if((event.LeftDown() || event.RightDown()) && m_colLongname != wxNOT_FOUND )
-        m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
+        if( m_colLongname != wxNOT_FOUND )
+            m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
+    }
 
     static wxPoint s_pevt;
     wxPoint pevt = event.GetPosition();

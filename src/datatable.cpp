@@ -68,15 +68,16 @@ void DataTable::InitDataTable()
     //connect events
     //dialog level
     Bind( wxEVT_SIZE, &DataTable::OnSize, this );
-    Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this );
-    Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this );
+    //grid level
+    Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+    Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
     //wxStaticTexts level
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     while( node ) {
         wxWindow *win = node->GetData();
         if( win && win->IsKindOf(CLASSINFO(wxStaticText)) ){
-            win->Bind( wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent,this );
-            win->Bind( wxEVT_RIGHT_DOWN, &DataTable::OnMouseEvent,this );
+            win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+            win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
         }
         node = node->GetNext();
     }
@@ -290,7 +291,8 @@ void DataTable::UpdateRouteData( wxString pointGuid,
 	}
     //close counters
     m_pDataTable->EndBatch();
-    m_pDataCol->DecRef();              // Give up pointer contrl to Grid
+    m_pDataCol->DecRef();              // Give up pointer control to Grid
+    m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
 }
 
 void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan times )
@@ -332,14 +334,6 @@ void DataTable::MakeVisibleCol( int col )
     if( m_pDataTable->IsVisible(row, col, true) ) return;
     m_pDataTable->MakeCellVisible( row, m_pDataTable->GetNumberCols() - 1 );
     m_pDataTable->MakeCellVisible( row, col );
-}
-
-void DataTable::OnMouseEvent(wxMouseEvent& event)
-{
-    //suppress all unwanted scroll
-    m_pDataTable->CorrectUnwantedScroll();
-    //eventually stop long wpt name display
-    m_pDataTable->m_stopLoopTimer.Start( TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT );
 }
 
 void DataTable::SetTableSizePosition(bool initrun )

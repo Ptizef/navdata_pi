@@ -411,22 +411,19 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     m_gCog = pfix.Cog;
     m_gSog = pfix.Sog;
     g_blinkTrigger++;
-    if( m_pTable && m_pTable->m_pDataTable->m_colLongname == wxNOT_FOUND){
+    if( m_pTable && m_pTable->m_pDataTable->m_colLongname == wxNOT_FOUND ){
         m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
     }
-   // RequestRefresh( GetCanvasByIndex(0) );
 }
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
     if( !m_pTable )
         return false;
-    //store first visible col
-    m_pTable->m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
-    //eventually stop long wpt name display
-    m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
 
     if(IsTouchInterface_PlugIn()){
+        //eventually stop long wpt name display
+        m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
         if( !event.LeftUp() )
             return false;
     } else {
