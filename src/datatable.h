@@ -46,7 +46,6 @@
 #define ACTIVE_POINT_IDX            0
 #define SINGLE_BORDER_THICKNESS     5
 #define DOUBLE_BORDER_THICKNESS     10
-#define DIALOG_CAPTION_HEIGHT       35
 #ifdef __WXMSW__
     #define SCROLL_BAR_THICKNESS    20
 #else

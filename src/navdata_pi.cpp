@@ -422,8 +422,8 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
         return false;
 
     if(IsTouchInterface_PlugIn()){
-        //eventually stop long wpt name display
-        m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+        if(event.LeftIsDown() || event.RightDown())
+			m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
         if( !event.LeftUp() )
             return false;
     } else {

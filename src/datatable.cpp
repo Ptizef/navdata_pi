@@ -404,30 +404,21 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 
 int DataTable::GetBestDialogHeight( int dialogWidth )
 {
-    //compute best trip data height (including space for dialog caption)
-    int h = 0;//DIALOG_CAPTION_HEIGHT;
+    //compute best trip data height
+    int h = 0;
 	if (g_showTripData) {
-		//Compute Trip Data
-		int width = 0;
-		int nbw = 0.;
-		int col = 6;
-        m_pTripSizer01->SetCols( 6 );
-        wxwxSizerItemListNode *node = m_pTripSizer01->GetChildren().GetFirst();
-		while( node ) {
-			wxSizerItem *item = node->GetData();
-			if( item ){
-                width += item->GetSize().x + SINGLE_BORDER_THICKNESS;
-				nbw++;
-				if( nbw%2 == 0 ) {
-					if( width > dialogWidth ){
-                        col = wxMin(6, wxMax(2, (nbw - 2)));
-                        m_pTripSizer01->SetCols( col );
-						break;
-					}
-				}
-			}
-			node = node->GetNext();
+		//Compute Trip Data (get nuber of sizer column then compute height)
+		int col;
+		switch (m_numVisCols) {
+		case 1:
+			col = 2; break;
+		case 2:
+		case 3:
+			col = 4; break;
+		default :
+			col = 6; break;
 		}
+		m_pTripSizer01->SetCols(col);
        /*if the sizer has 6 columns, there is 2 data lines + 1 box sizer line
         +         * if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
         +         * if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
