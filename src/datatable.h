@@ -74,7 +74,7 @@ public:
                     double shiplon, double shiplat, double shipcog, double shipsog );
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
-    void SetTableSizePosition(bool initrun);
+    void SetTableSizePosition(bool moveflag);
     void SetTargetFlag(bool flag) {m_targetFlag = flag;}
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}

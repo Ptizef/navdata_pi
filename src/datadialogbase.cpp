@@ -22,64 +22,7 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     fgSizer01->SetFlexibleDirection( wxBOTH );
     fgSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
 
-    m_pTripSizer = new wxFlexGridSizer( 0, 1, 0, 0 );
-    m_pTripSizer->SetFlexibleDirection( wxBOTH );
-    m_pTripSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
-
-    m_pfgSizer03 = new wxFlexGridSizer( 0, 4, 0, 0 );
-    m_pfgSizer03->SetFlexibleDirection( wxBOTH );
-    m_pfgSizer03->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
-
-    m_pStartDText = new wxStaticText( this, wxID_ANY, _("Trip Started"), wxDefaultPosition, wxSize( -1, -1 ), 0);
-    m_pStartDText->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartDText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
-
-    m_pStartDate = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pStartDate->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartDate, 0, wxALL|wxEXPAND, 5 );
-
-    m_pStartDTextat = new wxStaticText( this, wxID_ANY, _("at"), wxDefaultPosition, wxSize( -1, -1 ), 0);
-    m_pStartDTextat->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartDTextat, 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxEXPAND, 5 );
-
-    m_pStartTime = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pStartTime->Wrap( -1 );
-    m_pfgSizer03->Add( m_pStartTime, 0, wxALL|wxEXPAND, 5 );
-
-    m_pTripSizer->Add( m_pfgSizer03, 1, wxEXPAND, 0 );
-
-    m_pfgSizer04 = new wxFlexGridSizer( 0, 6, 0, 0 );
-    m_pfgSizer04->SetFlexibleDirection( wxBOTH );
-    m_pfgSizer04->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
-
-    m_pTimetText = new wxStaticText( this, wxID_ANY, _("Time"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTimetText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
-
-    m_pTimeValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTimeValue->Wrap( -1 );
-    m_pfgSizer04->Add( m_pTimeValue, 0, wxALL|wxEXPAND, 5 );
-
-    m_pDistText = new wxStaticText( this, wxID_ANY, _("Dist"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pDistText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
-
-    m_pDistValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pDistValue->Wrap( -1 );
-    m_pfgSizer04->Add( m_pDistValue, 0, wxALL|wxEXPAND, 5 );
-
-    m_pSpeedText = new wxStaticText( this, wxID_ANY, _("Avg.speed:"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pSpeedText->Wrap( -1 );
-    m_pfgSizer04->Add( m_pSpeedText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
-
-    m_pSpeedValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pSpeedValue->Wrap( -1 );
-    m_pfgSizer04->Add( m_pSpeedValue, 0, wxALL|wxEXPAND, 5 );
-
-    m_pTripSizer->Add( m_pfgSizer04, 1, wxEXPAND, 0 );
-
-    fgSizer01->Add( m_pTripSizer, 1, wxEXPAND, 0 );
-
+    //route grid
     wxFlexGridSizer* fgSizer05;
     fgSizer05 = new wxFlexGridSizer( 0, 1, 0, 0 );
     fgSizer05->AddGrowableRow( 0 );
@@ -92,6 +35,56 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     fgSizer05->Add( m_pDataTable, 0, wxALL|wxEXPAND, 5 );
 
     fgSizer01->Add( fgSizer05, 1, wxEXPAND, 5 );
+
+    //trp part
+    m_pTripSizer00 = new wxFlexGridSizer( 0, 1, 0, 0 );
+    m_pTripSizer00->AddGrowableCol( 0 );
+    m_pTripSizer00->SetFlexibleDirection( wxBOTH );
+    m_pTripSizer00->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
+
+    wxStaticBoxSizer *stboxsizer02;
+    stboxsizer02 = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Trip"));
+
+    m_pTripSizer01 = new wxFlexGridSizer( 0, 6, 0, 0 );
+    m_pTripSizer01->SetFlexibleDirection( wxBOTH );
+    m_pTripSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
+
+    m_pStartDText = new wxStaticText( this, wxID_ANY, _("Started"), wxDefaultPosition, wxSize( -1, -1 ), 0);
+    m_pTripSizer01->Add( m_pStartDText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+
+    m_pStartDate = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pStartDate, 0, wxALL|wxEXPAND, 5 );
+
+    m_pStartDTextat = new wxStaticText( this, wxID_ANY, _("at"), wxDefaultPosition, wxSize( -1, -1 ), wxALIGN_CENTRE_HORIZONTAL|wxST_NO_AUTORESIZE);
+    m_pTripSizer01->Add( m_pStartDTextat, 0, wxALIGN_CENTRE_HORIZONTAL|wxLEFT|wxTOP, 5 );
+
+    m_pStartTime = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pStartTime->Wrap( -1 );
+    m_pTripSizer01->Add( m_pStartTime, 0, wxALL|wxEXPAND, 5 );
+
+    m_pTimetText = new wxStaticText( this, wxID_ANY, _("Time"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+
+    m_pTimeValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pTimeValue, 0, wxALL|wxEXPAND, 5 );
+
+    m_pDistText = new wxStaticText( this, wxID_ANY, _("Dist"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+
+    m_pDistValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pDistValue, 0, wxALL|wxEXPAND, 5 );
+
+    m_pSpeedText = new wxStaticText( this, wxID_ANY, _("Avg.speed"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pSpeedText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+
+    m_pSpeedValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTripSizer01->Add( m_pSpeedValue, 0, wxALL|wxEXPAND, 5 );
+
+    stboxsizer02->Add( m_pTripSizer01, 1, wxEXPAND, 0 );
+
+    m_pTripSizer00->Add( stboxsizer02, 1, wxEXPAND, 0 );
+
+    fgSizer01->Add( m_pTripSizer00, 1, wxEXPAND, 0 );
 
     Sizer01->Add( fgSizer01, 1, wxEXPAND, 5 );
 
@@ -135,12 +128,12 @@ SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& tit
     fgSizer01->Add( m_pShowspeed, 0, wxALL, 5 );
 
     wxStdDialogButtonSizer *m_pSettings = new wxStdDialogButtonSizer();
-    m_pSettingsOK = new wxButton( this, wxID_OK, _("Close") );
+    m_pSettingsOK = new wxButton( this, wxID_OK, _("OK") );
     m_pSettingsOK->SetFont( GetOCPNGUIScaledFont_PlugIn(_T("Dialog")) );
     m_pSettings->AddButton( m_pSettingsOK );
     m_pSettings->Realize();
 
-    fgSizer01->Add( m_pSettings, 1, wxEXPAND, 5 );
+    fgSizer01->Add( m_pSettings, 1, wxALL|wxEXPAND, 5 );
 
     Sizer01->Add( fgSizer01, 1, wxEXPAND, 5 );this->SetSizer( Sizer01 );
     this->Layout();

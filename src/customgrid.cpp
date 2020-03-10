@@ -187,11 +187,11 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
     unsigned char *i = image.GetData();
     if (i == 0)
         return;
-    double scale = ((((double)m_colLabelHeight/1.5)/h)*4)/4;
+    double scale = (((double)(m_colLabelHeight / 1.2) / h) * 4) / 4;
     w *= scale;
     h *= scale;
-    int x = (m_rowLabelWidth/2) - (w/2);
-    int y = (m_colLabelHeight-h)/2;
+    int x = m_rowLabelWidth / 4  - ( w / 2 );
+    int y = (m_colLabelHeight - h) / 2;
     wxBitmap scaled;
     scaled =  wxBitmap(image.Scale( w, h) );
     dc.DrawBitmap( scaled, x, y );
@@ -222,19 +222,23 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
     CorrectUnwantedScroll();
     if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND ){
         int x = event.GetPosition().x;
-        int o = m_rowLabelWidth / 4;
-        if( x > o || x < (m_rowLabelWidth - o ) ){
+        int o = m_rowLabelWidth / 2;
+        if( x <  o ){
            bool showTrip = g_showTripData;
 
             Settings *dialog = new Settings( GetCanvasByIndex(0), wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
 
             dialog->ShowModal();
 
-			if (showTrip != g_showTripData) {
-				m_pParent->SetTableSizePosition(false);
-				if(g_showTripData )
-					m_pParent->pPlugin->m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
-			}
+            if (showTrip != g_showTripData) {
+                if(g_showTripData ){
+                    m_pParent->UpdateTripData();
+                    m_pParent->pPlugin->m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+                    //curiously in this case two calculations are needed to obtain the right result
+                    m_pParent->SetTableSizePosition(false);
+                }
+                m_pParent->SetTableSizePosition(false);
+            }
             wxString s = g_withSog? _("SOG"): _("VMG");
             SetRowLabelValue( 3, _("TTG") + _T("@") + s );
             SetRowLabelValue( 4, _("ETA") + _T("@") + s );
