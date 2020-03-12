@@ -1,6 +1,6 @@
 /************************************************************************************************
  *
- * Project:  OpenCPN
+ * Project:  OpenCPN - plugin navdata_pi
  * Purpose:  personalized GRID
  * Author:   David Register
  *

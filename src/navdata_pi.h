@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Project:  OpenCPN
+ * Project:  OpenCPN - plugin navdata_pi
  * Purpose:  ROUTE Plugin
  * Author:   Walbert Schulpen (SaltyPaws)
  *

@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
  *
- * Project:  OpenCPN
+ * Project:  OpenCPN - plugin navdata_pi
  * Purpose:  ROUTE Plugin
  * Author:   Walbert Schulpen (SaltyPaws)
  *
@@ -191,8 +191,7 @@ wxString navdata_pi::GetShortDescription()
 
 wxString navdata_pi::GetLongDescription()
 {
-      return _("Navigation progress data\n plugin for OpenCPN\n\
-shows range, TTG and ETA for all route points\n of an active route.");
+      return _("Navigation data plugin for OpenCPN\nShows range, TTG and ETA for all route points\n of the current active route.\nAlso shows current track progress summary,\nstart time, distance, mean speed ...");
 }
 
 int navdata_pi::GetToolbarToolCount(void)
