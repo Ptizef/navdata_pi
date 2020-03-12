@@ -1,7 +1,7 @@
 /******************************************************************************
  *
- * Project:  OpenCPN
- * Purpose:  GRIB Plugin Friends - gribtable
+ * Project:  OpenCPN - plugin navdata_pi
+ * Purpose:  GRIB table
  * Author:   David Register
  *
  ***************************************************************************
@@ -86,7 +86,7 @@ private:
                                   double glat, double glon,
                                   double *brg, double *nrng);
     void MakeVisibleCol(int col);
-    int  GetBestDialogHeight(int dialogWidth);
+    int  GetDialogHeight(int dialogWidth);
 	int  GetDataGridWidth(int visColsnumb);
 	int  GetDataGridHeight(int visRowsnumb);
 	void OnSizeTimer(wxTimerEvent & event);

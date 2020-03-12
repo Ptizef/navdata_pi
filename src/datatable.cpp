@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * Project:  OpenCPN
+ * Project:  OpenCPN - plugin navdata_pi
  * Purpose:  GRIB table
  * Author:   David Register
  *
@@ -358,7 +358,7 @@ void DataTable::SetTableSizePosition(bool moveflag )
 			w = GetDataGridWidth(m_numVisCols);
         }
     }
-	int h = GetBestDialogHeight(w);
+    int h = GetDialogHeight(w);
     this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
     this->SetClientSize(wxSize(w, h));
 
@@ -390,7 +390,7 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 	m_InvalidateSizeEvent = true;
 
 	int w = GetDataGridWidth(m_numVisCols);
-	int h = GetBestDialogHeight(w);
+    int h = GetDialogHeight(w);
     this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
     this->SetClientSize(wxSize(w, h));
 
@@ -402,37 +402,36 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 	m_InvalidateSizeEvent = false;
 }
 
-int DataTable::GetBestDialogHeight( int dialogWidth )
+int DataTable::GetDialogHeight( int dialogWidth )
 {
     //compute best trip data height
     int h = 0;
 	if (g_showTripData) {
-		//Compute Trip Data (get nuber of sizer column then compute height)
+        /*Compute Trip Data (get number of sizer column then compute height)
+         *if the sizer has 6 columns, there is 2 data lines + 1 box sizer line
+         *if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
+         *if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
 		int col;
+        int lines;
 		switch (m_numVisCols) {
 		case 1:
-			col = 2; break;
-		case 2:
-		case 3:
-			col = 4; break;
+        case 2:
+            col = 2;
+            lines = 6;
+            break;
+        case 3:
+        case 4:
+            col = 4;
+            lines = 4;
+            ; break;
 		default :
-			col = 6; break;
+            col = 6;
+            lines = 3;
+            break;
 		}
 		m_pTripSizer01->SetCols(col);
-       /*if the sizer has 6 columns, there is 2 data lines + 1 box sizer line
-        +         * if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
-        +         * if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
-        switch (col) {
-		case 2:
-            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 6;
-			break;
-		case 4:
-            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 4;
-			break;
-		case 6:
-            h += (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * 3;
-		}
-	}
+        h = (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * lines;
+    }
     //then compute and set best grid height
 	m_numVisRows = 5;
 	//get display zone heigh
