@@ -1,32 +1,35 @@
 # navdata_pi
 
-The purpose is to give the user more complete informations about the route followed as seen in the console but also a global view of the trip.
+The purpose is to show more informations about the route followed that can be seen in the console but also a global view of the trip.
 There are two parts in the main dialog
-** The first part gives the user the view of the entire active route. It is sometime useful to follow the BRG, RNG, TTG, ETA etc... for an intermediary route point which is not apparent in the console.
+** The first part shows for all active route points BRG, RNG, TTG, ETA mean speed at VMG or SOG in a grid.
 The dialog can't be opened without an active route.
 Once a route is activated, the plugin shows the informations above for all route points.
 At the start, the active point is always the first in the left grid column  and is marked by a small blinking red flag.
 The number of route points visible (thus the size of the dialog) can be choosen by dragging the right side of the dialog.
-If a point in particularity has to be folowed, a left click (or touch) on this point in the canvas will mark it by a blinking green circle and in the grid by a small blinking green flag and make it always visible.
+If a point in particularity has to be followed, a left click (or touch) on this point in the canvas will mark it by a blinking green circle and in hits grid column by a small blinking green flag and make it always visible.
 
 ** The second part shows a summary of the current trip. The data are based on the current active track. At any moment when a track is active and the dialog is opened, the data shows start date-time, time spend, distance since departure and mean spead since depature.
+Off course if there is no track opened, the data are empty.
 
 There are very few settings:
-Clicking on the setting button (upper left) will open a small dialog where it is possible to hide or show the trip part of the dialog and the choice to use SOG or VMG
-to compute TTG and ETA.
+Clicking on the settings button (upper left) will open a small dialog where it is possible to hide or show the trip part of the dialog and the choice to use SOG or VMG as base for TTG and ETA.
 
 installation
 ============
+
+
 remark : in any case the OpenCPN installation must be a standard official intall
             (intaller for Windows and from the ppa from linus. see opencpn.org/ downloads)
-
 ** Windows
-    use the installer navdata_pi-x.x-win32.exe
+    use the installer navdata_pi-x.x-win32.exe 
+    it was tested on W10 only but should work on all recent Windows.
 
 ** Linux(Ubuntu and derived)
-    you can install with navdata_pi_x.x-x_amd64
-
-    if the installation doe'nt work (32 bits ?) you will have to compile yourself
+    install with navdata_pi_x.x-x_amd64
+    
+****    warning
+            It was Compiled and tested on a Linux 
 
 Compiling
 =========
