@@ -1,15 +1,15 @@
 # navdata_pi
 
 The purpose is to show more informations about the route followed that can be seen in the console but also a global view of the trip.
-There are two parts in the main dialog
-** The first part shows for all active route points BRG, RNG, TTG, ETA mean speed at VMG or SOG in a grid.
+There are two parts in the main dialog:
+  ** The first part shows for all active route points BRG, RNG, TTG, ETA mean speed at VMG or SOG in a grid.
 The dialog can't be opened without an active route.
 Once a route is activated, the plugin shows the informations above for all route points.
 At the start, the active point is always the first in the left grid column  and is marked by a small blinking red flag.
 The number of route points visible (thus the size of the dialog) can be choosen by dragging the right side of the dialog.
 If a point in particularity has to be followed, a left click (or touch) on this point in the canvas will mark it by a blinking green circle and in hits grid column by a small blinking green flag and make it always visible.
 
-** The second part shows a summary of the current trip. The data are based on the current active track. At any moment when a track is active and the dialog is opened, the data shows start date-time, time spend, distance since departure and mean spead since depature.
+  ** The second part shows a summary of the current trip. The data are based on the current active track. At any moment when a track is active and the dialog is opened, the data shows start date-time, time spend, distance since departure and mean spead since depature.
 Off course if there is no track opened, the data are empty.
 
 There are very few settings:
