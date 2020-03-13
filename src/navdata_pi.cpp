@@ -421,8 +421,10 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
         return false;
 
     if(IsTouchInterface_PlugIn()){
-        if(event.LeftIsDown() || event.RightDown())
+        if(event.LeftDown() || event.RightDown()) {
 			m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
+            return false;
+        }
         if( !event.LeftUp() )
             return false;
     } else {
@@ -436,14 +438,20 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     GetCanvasLLPix( m_vp, p, &plat, &plon);
     float selectRadius = GetSelectRadius();
     double dist_from_cursor = IDLE_STATE_NUMBER;
-    //walk through the route to find the selected wpt guid
+    /*walk along the route to find the selected wpt guid
+     * way point visibility parameter unuseful here is use to
+     * store if the selected is before or after the active point*/
     wxString SelGuid = wxEmptyString;
+    bool past = false, pastactive;
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
     wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
     while( node ){
         PlugIn_Waypoint *wpt = node->GetData();
         if(wpt) {
+            wpt->m_IsVisible = past;
+            if( wpt->m_GUID == m_activePointGuid )
+                past = true;
             if( ( fabs(plat - wpt->m_lat) < selectRadius )
                     && ( fabs(plon - wpt->m_lon ) < selectRadius) ){
                 //we must select the nearest point from the cursor/finger, not the first (nether the last)
@@ -451,21 +459,20 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
                 DistanceBearingMercator_Plugin(plat, plon, wpt->m_lat, wpt->m_lon, NULL, &dis);
                 if( dis < dist_from_cursor ) {
                     SelGuid = wpt->m_GUID;
+                    pastactive = wpt->m_IsVisible;
                     dist_from_cursor = dis;
                 }
-                    //break;
             }
         }
         node = node->GetNext();
     }
     if(SelGuid.IsEmpty())
         return false;
-
     if(g_selectedPointGuid != SelGuid){
         g_selectedPointGuid = SelGuid;
         m_pTable->SetTargetFlag( true );
         m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
-        return true;
+        return pastactive;
     }
     return false;
 }
