@@ -44,7 +44,9 @@ then click on the more recent version
             
    ** Windows
         run navdata_pi-x.x-win32.exe 
-        select "don't create shortcut"
+        and select "don't create shortcut" when asked.
+        
+        **** warning
         it was tested on W10 only but should work on any not too old Windows.
 
    ** Linux(Ubuntu and derived)
