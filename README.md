@@ -33,20 +33,20 @@ to get the binaries, go to:
 https://github.com/Ptizef/navdata_pi/releases
 then click on the more recent version
 
-    Remark : It is recommended to have OpenCPN comming from a standard official install
+   Remark : It is recommended to have OpenCPN comming from a standard official install
             (see opencpn.org/ downloads).
             
-    ** Windows
+   ** Windows
         run navdata_pi-x.x-win32.exe 
         select "don't create shortcut"
         it was tested on W10 only but should work on any not too old Windows.
 
-    ** Linux(Ubuntu and derived)
+   ** Linux(Ubuntu and derived)
         run navdata_pi_x.x-x_amd64.deb
         **** warning
             It was Compiled and tested on a Linux Mint 19.2 and may not work on other version
            
-    ** OSX
+   ** OSX
         there is no version for this OS. I have no device to test
 
 Compiling
