@@ -21,14 +21,14 @@ There are two parts in the main window:
         The data are based on the current active track. 
         If a track is activated and the plugin closed, data will be kept internally to be displayed when the plugin will 
         be opened. 
-        Off course if there is no track active, there is no data, and the accuracy will depend on the moment of activation
+        Off course if there is no track active, there is no data, and the accuracy will depend on the activation time.
         (ideally at the same time of the real departure).
         
-         **** Special case where "Automatic daily track" is set.
-         It could append that the navigation start on day one and end on day two , three...
-         In consequence of this option, the current track will be closed at the time set for the daily track change and a new
-         track opened. The pluging will add the daily tracks in the objective of showing the entire trip data (except if
-         the current track is closed manually or OpenCPN stopped)
+        **** Special case where "Automatic daily track" is set.
+          It could append that the navigation start on day one and end on day two , three...
+          In consequence of this option, the current track will be closed at the time set for the daily track 
+          change and a new track opened. The pluging will add the daily tracks in the objective of displaying 
+          the entire trip data.
 
   ** There are very few settings:
         Clicking on the settings button (upper left) will open a small dialog where it is possible to hide or show 
