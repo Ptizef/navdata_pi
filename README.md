@@ -48,7 +48,7 @@ then click on the more recent version
         it was tested on W10 only but should work on any not too old Windows.
 
    ** Linux(Ubuntu and derived)
-        run navdata_pi_x.x-x_amd64.de
+        run navdata_pi_x.x-x_amd64.deb
         
         **** warning
         It was Compiled and tested on a Linux Mint 19.2 and may not work on other version
