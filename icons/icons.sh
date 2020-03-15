@@ -14,5 +14,4 @@ do
 done
 optipng $path/*.png
 ./png2wx.pl -C $path/../icons.cpp -H $path/../icons.h -M ICONS_H $path/*.png
-rm $path/*.png
 
