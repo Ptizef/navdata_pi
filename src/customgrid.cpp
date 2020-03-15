@@ -187,10 +187,10 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
     unsigned char *i = image.GetData();
     if (i == 0)
         return;
-    double scale = (((double)(m_colLabelHeight / 1.2) / h) * 4) / 4;
+    double scale = (((double)(m_colLabelHeight / 1.3) / h) * 4) / 4.;
     w *= scale;
     h *= scale;
-    int x = m_rowLabelWidth / 4  - ( w / 2 );
+    int x = w / 4;
     int y = (m_colLabelHeight - h) / 2;
     wxBitmap scaled;
     scaled =  wxBitmap(image.Scale( w, h) );
@@ -222,7 +222,7 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
     CorrectUnwantedScroll();
     if( event.GetCol() == wxNOT_FOUND && event.GetRow() == wxNOT_FOUND ){
         int x = event.GetPosition().x;
-        int o = m_rowLabelWidth / 2;
+        int o = _img_setting->GetWidth() * 1.5;
         if( x <  o ){
            bool showTrip = g_showTripData;
 
