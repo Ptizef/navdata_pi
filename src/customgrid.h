@@ -61,7 +61,7 @@ public:
 
 private:
     void DrawColLabel(wxDC& dc, int col);
-    void DrawCornerLabel(wxDC & dc);
+	void OnPaint(wxPaintEvent &event);
     void DrawLongWptName();
     void GetLastVisibleCell(int& lrow, int& lcol);
     void OnScroll(wxScrollEvent& event);

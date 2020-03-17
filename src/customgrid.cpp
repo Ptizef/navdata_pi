@@ -75,12 +75,12 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     Connect(wxEVT_SCROLLWIN_THUMBTRACK, wxScrollEventHandler( CustomGrid::OnScroll ), NULL, this );
     Connect(wxEVT_SIZE, wxSizeEventHandler( CustomGrid::OnResize ), NULL, this );
     Connect(wxEVT_GRID_LABEL_LEFT_CLICK, wxGridEventHandler( CustomGrid::OnLabelClik ), NULL, this );
-    //connect events at grid window level
+    //connect events at grid windows level
     GetGridWindow()->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent, this );
     GetGridWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent, this );
     GetGridWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseEvent, this );
     GetGridWindow()->Bind( wxEVT_MOTION, &CustomGrid::OnMouseEvent, this );
-    //connect events at column labels window level
+	GetGridCornerLabelWindow()->Bind(wxEVT_PAINT, &CustomGrid::OnPaint, this);
     if( IsTouchInterface_PlugIn() )
         GetGridColLabelWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseRollOverColLabel,this);
     else {
@@ -168,12 +168,8 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
     }
 }
 
-void CustomGrid::DrawCornerLabel( wxDC& dc )
+void CustomGrid::OnPaint(wxPaintEvent &event)
 {
-    //draw corner rectangle
-    dc.SetPen(GetDefaultGridLinePen());
-    dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
-    dc.DrawRectangle(0, 0, m_rowLabelWidth, m_colLabelHeight);
     //draw setting button
     wxImage image;
     int w = _img_setting->GetWidth();
@@ -187,14 +183,15 @@ void CustomGrid::DrawCornerLabel( wxDC& dc )
     unsigned char *i = image.GetData();
     if (i == 0)
         return;
-    double scale = (((double)(m_colLabelHeight / 1.3) / h) * 4) / 4.;
+    double scale = (((double)(m_colLabelHeight / 1.4) / h) * 4) / 4.;
     w *= scale;
     h *= scale;
     int x = w / 4;
-    int y = (m_colLabelHeight - h) / 2;
+    int y = 0;
     wxBitmap scaled;
     scaled =  wxBitmap(image.Scale( w, h) );
-    dc.DrawBitmap( scaled, x, y );
+	wxPaintDC pdc(GetGridCornerLabelWindow());
+    pdc.DrawBitmap( scaled, x, y );
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )
