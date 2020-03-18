@@ -125,40 +125,41 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
         dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
         dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
         //draw selected or active mark
-        if( (col == 0 && g_selectedPointCol == wxNOT_FOUND )
-                    || col == g_selectedPointCol ){
+        if( col == 0 || col == g_selectedPointCol ){
             if( g_blinkTrigger & 1 ) {
-                wxImage image;
+                wxBitmap bmp;
                 int w = 0, h = 0;
                 if( col == 0  ){
                     w = _img_activewpt->GetWidth();
                     h = _img_activewpt->GetHeight();
+                    double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
                     wxString file = g_shareLocn + _T("activewpt.svg");
                     if( wxFile::Exists( file ) ){
-                        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
-                        image = bmp.ConvertToImage();
-                    } else
-                        image = _img_activewpt->ConvertToImage();
+                        bmp = GetBitmapFromSVGFile( file, w*scale, h*scale );
+                    } else{
+                        wxImage image = _img_targetwpt->ConvertToImage();
+                        bmp =  wxBitmap(image.Scale( w*scale, h*scale) );
+                    }
+
                 } else {
                     w = _img_targetwpt->GetWidth();
                     h = _img_targetwpt->GetHeight();
+                    double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
                     wxString file = g_shareLocn + _T("targetwpt.svg");
                     if( wxFile::Exists( file ) ){
-                        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
-                        image = bmp.ConvertToImage();
-                    } else
-                        image = _img_targetwpt->ConvertToImage();
+                        bmp = GetBitmapFromSVGFile( file, w*scale, h*scale);
+                    } else{
+                        wxImage image = _img_targetwpt->ConvertToImage();
+                        bmp =  wxBitmap(image.Scale( w*scale, h*scale) );
+                    }
                 }
-
-                unsigned char *i = image.GetData();
-                if (i == 0)
+                wxImage image = bmp.ConvertToImage();
+                //control image
+                unsigned char *d = image.GetData();
+                if (d == 0)
                     return;
-                double scale = ((((double)m_colLabelHeight/2)/h)*4)/4;
-                w *= scale;
-                h *= scale;
-                wxBitmap scaled;
-                scaled =  wxBitmap(image.Scale( w, h) );
-                dc.DrawBitmap( scaled, GetColLeft(col), 0 );
+                //draw
+                dc.DrawBitmap( image, GetColLeft(col), 0 );
             }
         }
         //draw label
@@ -171,27 +172,27 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
 void CustomGrid::OnPaint(wxPaintEvent &event)
 {
     //draw setting button
-    wxImage image;
+    wxBitmap bmp;
     int w = _img_setting->GetWidth();
     int h = _img_setting->GetHeight();
-    wxString file = g_shareLocn + _T("setting.svg");
-    if( wxFile::Exists( file ) ){
-        wxBitmap bmp = GetBitmapFromSVGFile( file, w, h);
-        image = bmp.ConvertToImage();
-    } else
-        image = _img_setting->ConvertToImage();
-    unsigned char *i = image.GetData();
-    if (i == 0)
-        return;
     double scale = (((double)(m_colLabelHeight / 1.4) / h) * 4) / 4.;
     w *= scale;
     h *= scale;
-    int x = w / 4;
-    int y = 0;
-    wxBitmap scaled;
-    scaled =  wxBitmap(image.Scale( w, h) );
+    wxString file = g_shareLocn + _T("setting.svg");
+    if( wxFile::Exists( file ) ){
+        bmp = GetBitmapFromSVGFile( file, w, h);
+    } else {
+        wxImage im = _img_setting->ConvertToImage();
+        bmp =  wxBitmap(im.Scale( w, h) );
+    }
+    wxImage image = bmp.ConvertToImage();
+    //control image
+    unsigned char *d = image.GetData();
+    if (d == 0)
+        return;
+    //draw
 	wxPaintDC pdc(GetGridCornerLabelWindow());
-    pdc.DrawBitmap( scaled, x, y );
+    pdc.DrawBitmap( image, w/3, 0 );
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )

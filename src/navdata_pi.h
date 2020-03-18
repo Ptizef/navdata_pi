@@ -99,13 +99,14 @@ public:
       int GetSpeedFormat() {return m_ocpnSpeedFormat;}
       void CloseDataTable();
 
-	  //Track variables
-	  wxTimer     m_lenghtTimer;
+      //Track variables
+      wxTimer     m_lenghtTimer;
 
 private:
       //    The override PlugIn Methods
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
+      bool RenderTargetPoint();
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int  GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
@@ -118,6 +119,7 @@ private:
       void LoadocpnConfig();
       void SetDialogFont(wxWindow *dialog, wxFont *font);
       float GetSelectRadius();
+      void SetVP(PlugIn_ViewPort *vp);
 
       //toolbar variables
       int          m_leftclick_tool_id;
@@ -134,6 +136,7 @@ private:
       //Route & wpoint variables
       wxString    m_activePointGuid;
       PlugIn_ViewPort *m_vp;
+      wxDC        *m_pdc;
 
       //ocpn options variables
       int         m_ocpnDistFormat;

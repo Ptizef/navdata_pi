@@ -149,9 +149,11 @@ void DataTable::InitDataTable()
 void DataTable::UpdateRouteData( wxString pointGuid,
                 double shiplat, double shiplon, double shipcog, double shipsog )
 {
-    g_selectedPointCol = wxNOT_FOUND;
+    //Do not update data if displaying the long way point name
+    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
 
     //find active route and wpts
+    g_selectedPointCol = wxNOT_FOUND;
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
     //set label route name in title
@@ -297,6 +299,9 @@ void DataTable::UpdateRouteData( wxString pointGuid,
 
 void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan times )
 {
+    //Do not update data if displaying the long way point name
+    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
+
     if( !g_showTripData ) return;
         m_pStartDate->SetLabel( starttime.Format(_T("%b %d %Y")) );
         m_pStartTime->SetLabel( starttime.Format(_T("%H:%M:%S")) );
@@ -319,6 +324,9 @@ void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan t
 
 void DataTable::UpdateTripData()
 {
+    //Do not update data if displaying the long way point name
+    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
+
     if( !g_showTripData ) return;
     m_pStartDate->SetLabel( _T("----") );
     m_pStartTime->SetLabel( _T("----") );
@@ -336,12 +344,13 @@ void DataTable::MakeVisibleCol( int col )
     m_pDataTable->MakeCellVisible( row, col );
 }
 
+wxWindow *GetNAVCanvas();
 void DataTable::SetTableSizePosition(bool moveflag )
 {
     m_InvalidateSizeEvent = true;
     m_pTripSizer00->Show(g_showTripData);
     //1)adjust visibles columns number
-    int scw = GetCanvasByIndex(0)->GetSize().GetWidth();
+    int scw = GetNAVCanvas()->GetSize().GetWidth();
 	int w = GetDataGridWidth(m_numVisCols);
     if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1 ){
         m_dialPosition.x = scw * 0.1;
@@ -395,7 +404,7 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
     this->SetClientSize(wxSize(w, h));
 
 	this->Layout();
-	this->Refresh();
+    RequestRefresh(this);
 
 	m_targetFlag = true;
 
@@ -435,7 +444,7 @@ int DataTable::GetDialogHeight( int dialogWidth )
     //then compute and set best grid height
 	m_numVisRows = 5;
 	//get display zone heigh
-    int sch = GetCanvasByIndex(0)->GetSize().GetHeight() - 1;
+    int sch = GetNAVCanvas()->GetSize().GetHeight() - 1;
     int ht = GetDataGridHeight(m_numVisRows);
     if (m_dialPosition.y + ht +h > sch || m_dialPosition.y < 1) {
         m_dialPosition.y = sch * 0.1;

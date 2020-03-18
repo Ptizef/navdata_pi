@@ -71,6 +71,17 @@ int NextPow2(int size)
     return n + 1;
 }
 
+wxWindow *GetNAVCanvas()
+{
+    wxWindow *wx;
+    // If multicanvas are active, render the overlay on the Left canvas only
+    if(GetCanvasCount() > 1)            // multi?
+        wx = GetCanvasByIndex(0);
+    else
+        wx = GetOCPNCanvasWindow();
+    return wx;
+}
+
 //-------------------------------------------------------
 //          PlugIn initialization and de-init
 //-------------------------------------------------------
@@ -158,8 +169,7 @@ int navdata_pi::GetAPIVersionMajor()
       return MY_API_VERSION_MAJOR;
 }
 
-int navdata_pi::
-GetAPIVersionMinor()
+int navdata_pi::GetAPIVersionMinor()
 {
       return MY_API_VERSION_MINOR;
 }
@@ -410,8 +420,16 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     m_gCog = pfix.Cog;
     m_gSog = pfix.Sog;
     g_blinkTrigger++;
-    if( m_pTable && m_pTable->m_pDataTable->m_colLongname == wxNOT_FOUND ){
+    if( m_pTable ){
         m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+    }
+}
+
+void navdata_pi::SetVP(PlugIn_ViewPort *vp)
+{
+    if( m_vp != vp ) {
+        delete m_vp;
+        m_vp = new PlugIn_ViewPort(*vp);
     }
 }
 
@@ -419,6 +437,11 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
     if( !m_pTable )
         return false;
+
+    if( event.Dragging() ){
+        g_blinkTrigger = 0;
+        return false;
+    }
 
     if(IsTouchInterface_PlugIn()){
         if(event.LeftDown() || event.RightDown()) {
@@ -442,7 +465,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
      * way point visibility parameter unuseful here is use to
      * store if the selected is before or after the active point*/
     wxString SelGuid = wxEmptyString;
-    bool past = false, pastactive;
+    bool past = false, pastactive = false;
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
     wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
@@ -471,9 +494,16 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     if(g_selectedPointGuid != SelGuid){
         g_selectedPointGuid = SelGuid;
         m_pTable->SetTargetFlag( true );
-        m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        if( pastactive ){
+            g_blinkTrigger = 1;
+            RequestRefresh(GetNAVCanvas());
+            m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        }
         return pastactive;
     }
+    if( m_pdc )
+        RequestRefresh(GetNAVCanvas());
+
     return false;
 }
 
@@ -490,48 +520,21 @@ float navdata_pi::GetSelectRadius()
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    // If multicanvas are active, render the overlay on the right canvas only
+    // If multicanvas are active, render the overlay on the left canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
         return false;
+    if( !m_pTable )
+        return false;
 
-    if( !m_pTable ) return false;
-    if( m_vp != vp ) {
-        delete m_vp;
-        m_vp = new PlugIn_ViewPort(*vp);
-    }
+    SetVP( vp );
 
-    if( g_selectedPointCol == wxNOT_FOUND ) return false;
+    if( g_selectedPointCol == wxNOT_FOUND )
+        return false;
 
-    if( g_blinkTrigger & 1 ) {
-        wxDC *pdc;
-        pdc = &dc;
-        float scale =  GetOCPNChartScaleFactor_Plugin();
-        int  imgw = _img_target->GetWidth();
-        int  imgh = _img_target->GetHeight();
-        wxImage image;
-        wxString file = g_shareLocn + _T("target.svg");
-        if( wxFile::Exists( file ) ){
-            wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
-            image = bmp.ConvertToImage();
-        } else
-            image = _img_target->ConvertToImage();
-        unsigned char *d = image.GetData();
-        if (d == 0)
-            return false;
+    m_pdc = (&dc);
 
-        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
-        wxPoint r;
-        GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
-        //draw
-        imgw *= scale;
-        imgh *= scale;
-        int x = r.x - (imgw/2);
-        int y = r.y - (imgh/2);
-        wxBitmap scaled_Bitmap;
-        scaled_Bitmap =  wxBitmap(image.Scale(imgw, imgh) );
-        pdc->DrawBitmap( scaled_Bitmap, x, y );
-    }
-    return true;
+    return RenderTargetPoint();
+
 }
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
@@ -539,95 +542,121 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
     // If multicanvas are active, render the overlay on the left canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
         return false;
+    if( !m_pTable )
+        return false;
 
-    if( !m_pTable ) return false;
-    if( m_vp != vp ) {
-        delete m_vp;
-        m_vp = new PlugIn_ViewPort(*vp);
-    }
-    if( g_selectedPointCol == wxNOT_FOUND ) return false;
+    SetVP( vp );
 
+    if( g_selectedPointCol == wxNOT_FOUND )
+        return false;
+
+    m_pdc = NULL;
+
+    return RenderTargetPoint();
+}
+
+bool navdata_pi::RenderTargetPoint()
+{
     if( g_blinkTrigger & 1 ) {
+        //way point position
+        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
+        wxPoint r;
+        GetCanvasPixLL( m_vp, &r, pp.m_x, pp.m_y );
+        //icon image
         float scale =  GetOCPNChartScaleFactor_Plugin();
         wxImage image;
-        int  imgw = _img_target->GetWidth();
-        int  imgh = _img_target->GetHeight();
+        wxBitmap bmp;
+        int  w = _img_target->GetWidth() * scale;
+        int  h = _img_target->GetHeight() * scale;
+        int rx = r.x - w/2;
+        int ry = r.y - h/2;
         wxString file = g_shareLocn + _T("target.svg");
         if( wxFile::Exists( file ) ){
-            wxBitmap bmp = GetBitmapFromSVGFile( file, imgw, imgh);
-            image = bmp.ConvertToImage();
-        } else
-            image = _img_target->ConvertToImage();
+            bmp = GetBitmapFromSVGFile( file, w, h);
+        } else {
+            wxImage im = _img_target->ConvertToImage();
+            wxBitmap bmp = wxBitmap(im.Scale( w, h) );
+        }
+        image = bmp.ConvertToImage();
+        //control image
         unsigned char *d = image.GetData();
         if (d == 0)
             return false;
-        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
-        wxPoint r;
-        GetCanvasPixLL( vp, &r, pp.m_x, pp.m_y );
-        //create texture
-        int w = image.GetWidth(), h = image.GetHeight();
-        wxRect r1 = wxRect( r.x - w/2, r.y - h/2, w, h );
-        unsigned int IconTexture;
-        glGenTextures(1, &IconTexture);
-        glBindTexture(GL_TEXTURE_2D, IconTexture);
-
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
-
-        unsigned char *a = image.GetAlpha();
-        unsigned char mr, mg, mb;
-        if(!a)
-            image.GetOrFindMaskColour( &mr, &mg, &mb );
-        unsigned char *e = new unsigned char[4 * w * h];
-        for( int y = 0; y < h; y++ ) {
-            for( int x = 0; x < w; x++ ) {
-                unsigned char r, g, b;
-                int off = ( y * w + x );
-                r = d[off * 3 + 0];
-                g = d[off * 3 + 1];
-                b = d[off * 3 + 2];
-                e[off * 4 + 0] = r;
-                e[off * 4 + 1] = g;
-                e[off * 4 + 2] = b;
-                e[off * 4 + 3] =  a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
-            }
-        }
-        unsigned int glw = NextPow2(w);
-        unsigned int glh = NextPow2(h);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glw, glh,
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h,
-                    GL_RGBA, GL_UNSIGNED_BYTE, e);
-        delete []e;
         //draw
-        glBindTexture(GL_TEXTURE_2D, IconTexture);
+        if( m_pdc ){                // no GL
+            m_pdc->DrawBitmap( image, rx, ry, true );
+        }
+#ifdef ocpnUSE_SVG
+        else {                    // GL
+            //create texture
+            unsigned int IconTexture;
+            glGenTextures(1, &IconTexture);
+            glBindTexture(GL_TEXTURE_2D, IconTexture);
 
-        glEnable(GL_TEXTURE_2D);
-        glEnable(GL_BLEND);
-        glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+            glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP );
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            unsigned char *a = image.GetAlpha();
+            unsigned char mr, mg, mb;
+            if(!a)
+                image.GetOrFindMaskColour( &mr, &mg, &mb );
+            unsigned char *e = new unsigned char[4 * w * h];
+            for( int y = 0; y < h; y++ ) {
+                for( int x = 0; x < w; x++ ) {
+                    unsigned char r, g, b;
+                    int off = ( y * w + x );
+                    r = d[off * 3 + 0];
+                    g = d[off * 3 + 1];
+                    b = d[off * 3 + 2];
+                    e[off * 4 + 0] = r;
+                    e[off * 4 + 1] = g;
+                    e[off * 4 + 2] = b;
+                    e[off * 4 + 3] =  a ? a[off] : ( ( r == mr ) && ( g == mg ) && ( b == mb ) ? 0 : 255 );
+                }
+            }
+            unsigned int glw = NextPow2(w);
+            unsigned int glh = NextPow2(h);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glw, glh,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h,
+                    GL_RGBA, GL_UNSIGNED_BYTE, e);
+            delete []e;
+            //draw
+            glBindTexture(GL_TEXTURE_2D, IconTexture);
 
-        glColor3f(1, 1, 1);
+            glEnable(GL_TEXTURE_2D);
+            glEnable(GL_BLEND);
+            glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
-        float ws = r1.width * scale;
-        float hs = r1.height * scale;
-        float xs = r.x - (ws/2.);
-        float ys = r.y - hs/2.;
-        float u = (float)w/glw, v = (float)h/glh;
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0); glVertex2f(xs, ys);
-        glTexCoord2f(u, 0); glVertex2f(xs+ws, ys);
-        glTexCoord2f(u, v); glVertex2f(xs+ws, ys+hs);
-        glTexCoord2f(0, v); glVertex2f(xs, ys+hs);
-        glEnd();
+            glColor3f(1, 1, 1);
 
-        glDisable(GL_BLEND);
-        glDisable(GL_TEXTURE_2D);
+            float ws = w;
+            float hs = h;
+            float xs = rx;
+            float ys = ry;
+            float u = (float)w/glw, v = (float)h/glh;
+
+            glBegin(GL_QUADS);
+            glTexCoord2f(0, 0); glVertex2f(xs, ys);
+            glTexCoord2f(u, 0); glVertex2f(xs+ws, ys);
+            glTexCoord2f(u, v); glVertex2f(xs+ws, ys+hs);
+            glTexCoord2f(0, v); glVertex2f(xs, ys+hs);
+            glEnd();
+
+            glDisable(GL_BLEND);
+            glDisable(GL_TEXTURE_2D);
+        }
+#endif
     }
+    else {
+        if( m_pdc )
+            RequestRefresh(GetNAVCanvas());
+    }
+
     return true;
 }
 
@@ -712,21 +741,23 @@ void navdata_pi::OnToolbarToolCallback(int id)
 {
 
 	if (g_activeRouteGuid == wxEmptyString) {
-        OCPNMessageBox_PlugIn(GetCanvasByIndex(0), _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
+        OCPNMessageBox_PlugIn(GetNAVCanvas(), _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
 		SetToolbarItemState(m_leftclick_tool_id, false);
 		return;
 	}
 
 	if (m_pTable) {
+        if( m_pdc )
+            RequestRefresh(GetNAVCanvas());
 		CloseDataTable();
 	}
 	else {
 		SetToolbarItemState(m_leftclick_tool_id, true);
 
         LoadocpnConfig();
-
+        m_pdc = NULL;
 		long style = wxCAPTION | wxRESIZE_BORDER;
-        m_pTable = new DataTable(GetCanvasByIndex(0), wxID_ANY, wxEmptyString, wxDefaultPosition,
+        m_pTable = new DataTable(GetNAVCanvas(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);
 		wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
 		SetDialogFont(m_pTable, &font);//Apply global font
