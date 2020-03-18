@@ -221,6 +221,7 @@ void navdata_pi::LoadocpnConfig()
           pConf->Read(_T("UserMagVariation"), &m_ocpnUserVar, 0);
           pConf->Read(_T("DistanceFormat"), &m_ocpnDistFormat, 0);
           pConf->Read(_T("SpeedFormat"), &m_ocpnSpeedFormat, 0);
+          pConf->Read(_T("OpenGL"), &m_ocpnOpenGL, 1);
           if(IsTouchInterface_PlugIn()){
               pConf->Read( _T ( "SelectionRadiusTouchMM" ), &m_selectionRadiusMM);
               m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 1.0);
@@ -228,9 +229,7 @@ void navdata_pi::LoadocpnConfig()
               pConf->Read( _T ( "SelectionRadiusMM" ), &m_selectionRadiusMM);
               m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 0.5);
           }
-
 		  m_ocpnShowMag = showmag ? showtrue ? 2 : 1 : 0;
-
 	  }
 }
 
@@ -499,11 +498,11 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
             RequestRefresh(GetNAVCanvas());
             m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
         }
+        if(!m_ocpnOpenGL)
+            pastactive = false;
+
         return pastactive;
     }
-    if( m_pdc )
-        RequestRefresh(GetNAVCanvas());
-
     return false;
 }
 
@@ -531,7 +530,7 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
     if( g_selectedPointCol == wxNOT_FOUND )
         return false;
 
-    m_pdc = (&dc);
+    m_pdc = (&dc);      //inform render of non GL mode
 
     return RenderTargetPoint();
 
@@ -550,7 +549,7 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
     if( g_selectedPointCol == wxNOT_FOUND )
         return false;
 
-    m_pdc = NULL;
+    m_pdc = NULL;   //inform renderer of GL mode
 
     return RenderTargetPoint();
 }
@@ -584,7 +583,7 @@ bool navdata_pi::RenderTargetPoint()
             return false;
         //draw
         if( m_pdc ){                // no GL
-            m_pdc->DrawBitmap( image, rx, ry, true );
+        //    m_pdc->DrawBitmap( image, rx, ry, true ); Don't work properly!!
         }
 #ifdef ocpnUSE_SVG
         else {                    // GL
@@ -652,11 +651,6 @@ bool navdata_pi::RenderTargetPoint()
         }
 #endif
     }
-    else {
-        if( m_pdc )
-            RequestRefresh(GetNAVCanvas());
-    }
-
     return true;
 }
 
@@ -747,15 +741,12 @@ void navdata_pi::OnToolbarToolCallback(int id)
 	}
 
 	if (m_pTable) {
-        if( m_pdc )
-            RequestRefresh(GetNAVCanvas());
 		CloseDataTable();
 	}
 	else {
 		SetToolbarItemState(m_leftclick_tool_id, true);
 
         LoadocpnConfig();
-        m_pdc = NULL;
 		long style = wxCAPTION | wxRESIZE_BORDER;
         m_pTable = new DataTable(GetNAVCanvas(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);

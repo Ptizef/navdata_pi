@@ -144,6 +144,7 @@ private:
       double      m_ocpnUserVar;
       int         m_ocpnShowMag;
       float       m_selectionRadiusMM;
+      bool        m_ocpnOpenGL;
 
       //Track variables
       wxTimer     m_rotateTimer;
