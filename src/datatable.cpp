@@ -55,8 +55,6 @@ DataTable::DataTable(wxWindow *parent, wxWindowID id, const wxString& title, con
 
 DataTable::~DataTable(void)
 { 
-	this->Unbind(wxEVT_SIZE, &DataTable::OnSize, this);
-	m_SizeTimer.Unbind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
 	delete m_pDataTable;
 }
 
@@ -160,6 +158,8 @@ void DataTable::UpdateRouteData( wxString pointGuid,
     SetTitle( r.get()->m_NameString );
     //populate cols
     m_pDataTable->BeginBatch();
+    double brg, rng, speed, nrng;
+    speed = 0.; nrng = 0.;
     double latprev, lonprev, trng = 0.;
     float tttg_sec =0.;
     int ncols = wxNOT_FOUND;
@@ -177,8 +177,6 @@ void DataTable::UpdateRouteData( wxString pointGuid,
             if( wpt->m_GUID == pointGuid ) //find active wpt
                 ncols = ACTIVE_POINT_IDX;
             if( ncols > wxNOT_FOUND ){
-                double brg, rng, speed, nrng;
-                speed = 0.; nrng = 0.;
                 AddDataCol( ncols );
                 if( wpt->m_GUID == g_selectedPointGuid ){
                     if( ncols > ACTIVE_POINT_IDX ){
@@ -221,14 +219,19 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                                 &brg, &rng);
                     srng = FormatDistance( rng );
                     sbrg << wxString::Format( wxString("%3d°", wxConvUTF8 ), (int)brg );
-                    speed = shipsog;
 					//total rng
                     trng += rng;
                 }
                 // print brg, ttg, eta
                 wxString tttg_s, teta_s;
                 if( speed > 0. ) {
-                    float ttg_sec = ( rng / speed ) * 3600.;
+                    float ttg_sec;
+                    /*TTG and ETA based on VMG for active leg then on SOG for
+                     * the following legs*/
+                    if( ncols == ACTIVE_POINT_IDX )
+                        ttg_sec = ( rng / speed ) * 3600.;
+                    else
+                        ttg_sec = ( rng / shipsog ) * 3600.;
                     tttg_sec += ttg_sec;
                     wxTimeSpan tttg_span = wxTimeSpan::Seconds( (long) tttg_sec );
                     //Show also #days if TTG > 24 h
@@ -245,7 +248,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                     tttg_s = _T("---");
                     teta_s = _T("---");
                 }
-                //populate or update cells
+                //update cells
                 for (int j = 0; j < m_pDataTable->GetNumberRows(); j++ ){
                 m_pDataCol->IncRef();
                     switch(j){

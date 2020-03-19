@@ -103,6 +103,7 @@ navdata_pi::~navdata_pi(void)
     delete _img_targetwpt;
     delete _img_setting;
     delete m_vp;
+    delete m_pdc;
  }
 
 int navdata_pi::Init(void){
@@ -154,10 +155,6 @@ int navdata_pi::Init(void){
 
 bool navdata_pi::DeInit(void)
 {
-    //SaveConfig();
-	//disconnect events
-	m_lenghtTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this);
-	m_rotateTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this);
     if( m_pTable ){
 		CloseDataTable();
     }
