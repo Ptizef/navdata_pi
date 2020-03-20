@@ -35,11 +35,13 @@ There are two parts in the main window:
 
 installation
 ============
-* to get the binaries, go to:
-* https://github.com/Ptizef/navdata_pi/releases
-* then click on the more recent version
+ to get the binaries, go to:
+ 
+ https://github.com/Ptizef/navdata_pi/releases
+ 
+ then click on the more recent version
 
-*   Remark : It is recommended to have OpenCPN comming from a standard official install
+ Remark : It is recommended to have OpenCPN comming from a standard official install
             (see opencpn.org/ downloads).
             
 *    Windows
@@ -66,7 +68,7 @@ Get the sources
 The pugin is compiled as standalone
 
 ** Windows
-    perequisites (Visual studio 2017 only)
+***    perequisites (Visual studio 2017 only)
         Be sure you are able to compile OpenCPN including building package
         Eventually read and follow instructions:
         opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
