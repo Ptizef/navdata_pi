@@ -23,7 +23,7 @@ There are two parts in the main window:
         be opened. 
         Off course if there is no track active, there is no data, and the accuracy will depend on the activation time.
         (ideally at the same time of the real departure).     
-*       **** Special case where "Automatic daily track" is set.
+*    *** Special case where "Automatic daily track" is set.
           It could append that the navigation start on day one and end on day two , three...
           In consequence of this option, the current track will be closed at the time set for the daily track 
           change and a new track opened. The pluging will add the daily tracks in the objective of displaying 
@@ -65,34 +65,29 @@ installation
 Compiling
 =========
 Get the sources
-* git clone https://github.com/Ptizef/navdata_pi.git
+* $ git clone https://github.com/Ptizef/navdata_pi.git
 
 The pugin is compiled as standalone
 
-** Windows
+* Windows
 
-***    perequisites (Visual studio 2017 only)
+     perequisites (Visual studio 2017 only)
 
-        Be sure you are able to compile OpenCPN including building package
+     Be sure you are able to compile OpenCPN including building package.       
+     Eventually read and follow instructions at:    
+     opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
+     compile OpenCPN     
         
-        Eventually read and follow instructions:
-        
-        opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
-        compile OpenCPN     
-        
-        ** do not forget to copy opecpn.lib 
-           from OpenCPN\build\release\opencpn.lib
-           to  navdata_pi\build
-           
+     ** do not forget to copy opecpn.lib from OpenCPN\build\release\opencpn.lib to  navdata_pi\build
         then compile navdata_pi and eventually build package
 
-** Linux(Ubuntu and derived)
+* Linux(Ubuntu and derived)
 
-    perequisites
+     perequisites
     
-        the same as to compile OpenCPN.
-        Eventually read and follow instructions:
-        opencpn.org manual/ Developer manual/ Developer guide/ Compliling on Linux
+     the same as to compile OpenCPN.
+     Eventually read and follow instructions at:
+     opencpn.org manual/ Developer manual/ Developer guide/ Compliling on Linux
 
 *    $ cd sources directory
 *    $ mkdir build
