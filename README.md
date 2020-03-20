@@ -29,7 +29,7 @@ There are two parts in the main window:
           change and a new track opened. The pluging will add the daily tracks in the objective of displaying 
           the entire trip data.
         
- * ** There are very few settings:
+ *    There are very few settings:
         Clicking on the settings button (upper left) will open a small dialog where it is possible to hide or show 
         the trip part of the plugin and to choose to use SOG or VMG as base for TTG and ETA calculation.
 
