@@ -45,19 +45,21 @@ installation
             (see opencpn.org/ downloads).
             
 *    Windows
+
         run navdata_pi-x.x-win32.exe 
+        
         and select "don't create shortcut" when asked.
         
-        **** warning
-        it was tested on W10 only but should work on any not too old Windows.
+        **** warning : it was tested on W10 only but should work on any not too old Windows.
 
 *    Linux(Ubuntu and derived)
+
         run navdata_pi_x.x-x_amd64.deb
         
-        **** warning
-        It was Compiled and tested on a Linux Mint 19.2 and may not work on other version
+        **** warning : It was Compiled and tested on a Linux Mint 19.2 and may not work on other version
            
  *   OSX
+ 
         there is no version for this OS. I have no device to test
 
 Compiling
@@ -68,19 +70,27 @@ Get the sources
 The pugin is compiled as standalone
 
 ** Windows
+
 ***    perequisites (Visual studio 2017 only)
+
         Be sure you are able to compile OpenCPN including building package
+        
         Eventually read and follow instructions:
+        
         opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
-        compile OpenCPN        
+        compile OpenCPN     
+        
         ** do not forget to copy opecpn.lib 
            from OpenCPN\build\release\opencpn.lib
            to  navdata_pi\build
+           
         then compile navdata_pi and eventually build package
 
 ** Linux(Ubuntu and derived)
+
     perequisites
-        the same as to compile OpenCPN
+    
+        the same as to compile OpenCPN.
         Eventually read and follow instructions:
         opencpn.org manual/ Developer manual/ Developer guide/ Compliling on Linux
 
