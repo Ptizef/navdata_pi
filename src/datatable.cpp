@@ -105,10 +105,7 @@ void DataTable::InitDataTable()
     m_pTimeValue->SetMinSize( wxSize(w, -1) );
 	//set the best size for all columns
     int h;
-	if(pPlugin->GetShowMag() == 2)
-		GetTextExtent(wxString(_T("300°300°(M)")), &w, &h, 0, 0, &font);
-	else
-		GetTextExtent( wxDateTime::Now().Format(_T("%b %d %H:%M")), &w, &h, 0, 0, &font);
+    GetTextExtent(wxString(_T("300°300°(M)")), &w, &h, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
     m_pDataTable->SetDefaultRowSize( h + 4, true);
     //Set scroll step X
@@ -240,8 +237,8 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                     wxDateTime dtnow, eta;
                     dtnow.SetToCurrent();
                     eta = dtnow.Add( tttg_span );
-                    teta_s = eta.GetDateOnly() > wxDateTime::Today() ?
-                            eta.Format(_T("%b%d %H:%M")) : eta.Format(_T("%H:%M"));
+                    teta_s = tttg_sec > SECONDS_PER_DAY ?
+                            eta.Format(_T("(%d) %H:%M")) : eta.Format(_T("%H:%M"));
                 }
                 else
                 {
@@ -492,6 +489,9 @@ int DataTable::GetDataGridHeight(int visRowsnumb)
 
 void DataTable::CloseDialog()
 {
+    //disconnect timer
+    m_SizeTimer.Unbind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
+
     m_dialPosition = this->GetPosition();
 
     this->Show(false);

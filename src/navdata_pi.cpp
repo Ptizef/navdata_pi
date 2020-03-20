@@ -107,7 +107,7 @@ navdata_pi::~navdata_pi(void)
  }
 
 int navdata_pi::Init(void){
-	//connect events
+    //connect timers
     m_lenghtTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
     m_rotateTimer.Connect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
 
@@ -155,6 +155,10 @@ int navdata_pi::Init(void){
 
 bool navdata_pi::DeInit(void)
 {
+    //disconnect timers
+    m_lenghtTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
+    m_rotateTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
+
     if( m_pTable ){
 		CloseDataTable();
     }
@@ -796,8 +800,6 @@ void navdata_pi::CloseDataTable()
 {
     SetToolbarItemState( m_leftclick_tool_id, false );
     if( m_pTable ) {
-	//stop all timers
-
         m_pTable->CloseDialog();
         delete m_pTable;
         m_pTable = NULL;

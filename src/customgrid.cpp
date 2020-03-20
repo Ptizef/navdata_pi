@@ -98,7 +98,12 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
 }
 
  CustomGrid::~CustomGrid()
- {}
+ {
+     //disconnect all timers
+     m_resizeTimer.Unbind(wxEVT_TIMER, &CustomGrid::OnResizeTimer, this);
+     m_stopLoopTimer.Unbind(wxEVT_TIMER, &CustomGrid::OnStopLoopTimer, this);
+     m_nameLoopTimer.Unbind(wxEVT_TIMER, &CustomGrid::OnNameLoopTimer, this);
+ }
 
 
 void CustomGrid::DrawColLabel( wxDC& dc, int col )
