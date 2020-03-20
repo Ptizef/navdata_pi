@@ -33,6 +33,9 @@ There are two parts in the main window:
  *    There are very few settings:
         Clicking on the settings button (upper left) will open a small dialog where it is possible to hide or show 
         the trip part of the plugin and to choose to use SOG or VMG as base for TTG and ETA calculation.
+       
+ *    The plugin uses OpenCPN global options. If these options are changed, Navdata_pi needs to be closed and re-opened to
+      apply the new options.
 
 installation
 ============
