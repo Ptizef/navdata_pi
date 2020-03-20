@@ -80,10 +80,12 @@ The pugin is compiled as standalone
      Be sure you are able to compile OpenCPN including building package.       
      Eventually read and follow instructions at:    
      opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
+     
      compile OpenCPN     
         
      ** do not forget to copy opecpn.lib from OpenCPN\build\release\opencpn.lib to  navdata_pi\build
-        then compile navdata_pi and eventually build package
+        
+     then compile navdata_pi and eventually build package
 
 * Linux(Ubuntu and derived)
 
