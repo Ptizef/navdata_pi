@@ -1,6 +1,6 @@
 # navdata_pi
 
-Is compatible with OpenCPN 5.0.0 (and the current master built)
+Is compatible with OpenCPN 5.0.0 (and the current master)
 
 The purpose is to show more informations about the active route that can be seen in the console and also 
 a global view of the trip.
@@ -18,11 +18,11 @@ There are two parts in the main window:
         In this case, cursor rolled over, or click or touch the name zone will allow to see the entire name.
 
 *    The second part shows a summary of the current trip. 
-        start date-time, time spend, distance since departure and averaged spead since depature.
-        The data are based on the current active track. 
+        start date-time, time spend, distance since departure and averaged spead since depature, based on the current
+        active track. 
         If a track is activated and the plugin closed, data will be kept internally to be displayed when the plugin will 
         be opened. 
-        Off course if there is no track active, there is no data, and the accuracy will depend on the activation time.
+        Off course if there is no active track, there is no data, and the accuracy will depend on the activation time.
         (ideally at the same time of the real departure).     
 *    *** Special case where "Automatic daily track" is set.
           It could append that the navigation start on day one and end on day two , three...
