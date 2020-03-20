@@ -1,5 +1,6 @@
 # navdata_pi
-Works with OpenCPN 5.0.0
+
+Is compatible with OpenCPN 5.0.0 (and the current master built)
 
 The purpose is to show more informations about the active route that can be seen in the console and also 
 a global view of the trip.
