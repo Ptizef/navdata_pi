@@ -5,14 +5,14 @@ The purpose is to show more informations about the active route that can be seen
 a global view of the trip.
 
 There are two parts in the main window:
-  ** The first part shows BRG, RNG, Total RNG, TTG, ETA at VMG or SOG for all route points of the current active route.
+* ** The first part shows BRG, RNG, Total RNG, TTG, ETA at VMG or SOG for all route points of the current active route.
         The plugin can't be opened without an active route.
         At the start, the active point is always the first in the left grid column  and is marked by a small blinking
         red flag near its name.
         The number of route points visible (thus the size of the window) can be choosen by dragging the right side.
         If a point in particularity has to be followed, a left click (or touch) on this point in the canvas will mark
-        it by a blinking green circle and in the grid near its name by a small blinking green flag and make it always
-        visible.
+        it by a blinking green circle (only in openGL mode ) and in the grid near its name by a small blinking green flag 
+        and make it always visible.
         The grid shows route points in fixed width columns and if a point name is too large, it is only partially displayed.
         In this case, cursor rolled over, or click or touch the name zone will allow to see the entire name.
 
