@@ -106,7 +106,7 @@ private:
       //    The override PlugIn Methods
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
-      bool RenderTargetPoint();
+      bool RenderTargetPoint( wxDC *pdc );
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int  GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
@@ -136,7 +136,6 @@ private:
       //Route & wpoint variables
       wxString    m_activePointGuid;
       PlugIn_ViewPort *m_vp;
-      wxDC        *m_pdc;
 
       //ocpn options variables
       int         m_ocpnDistFormat;

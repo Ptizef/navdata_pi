@@ -103,7 +103,6 @@ navdata_pi::~navdata_pi(void)
     delete _img_targetwpt;
     delete _img_setting;
     delete m_vp;
-    delete m_pdc;
  }
 
 int navdata_pi::Init(void){
@@ -531,9 +530,9 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
     if( g_selectedPointCol == wxNOT_FOUND )
         return false;
 
-    m_pdc = (&dc);      //inform render of non GL mode
+   wxDC *pdc = (&dc);      //inform render of non GL mode
 
-    return RenderTargetPoint();
+    return RenderTargetPoint( pdc );
 
 }
 
@@ -550,12 +549,10 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
     if( g_selectedPointCol == wxNOT_FOUND )
         return false;
 
-    m_pdc = NULL;   //inform renderer of GL mode
-
-    return RenderTargetPoint();
+    return RenderTargetPoint( NULL );		 //NULL inform renderer of GL mode
 }
 
-bool navdata_pi::RenderTargetPoint()
+bool navdata_pi::RenderTargetPoint( wxDC *pdc )
 {
     if( g_blinkTrigger & 1 ) {
         //way point position
@@ -583,8 +580,8 @@ bool navdata_pi::RenderTargetPoint()
         if (d == 0)
             return false;
         //draw
-        if( m_pdc ){                // no GL
-        //    m_pdc->DrawBitmap( image, rx, ry, true ); Don't work properly!!
+        if( pdc ){                // no GL
+        //    pdc->DrawBitmap( image, rx, ry, true );		Don't work properly in this mode!
         }
 #ifdef ocpnUSE_SVG
         else {                    // GL
