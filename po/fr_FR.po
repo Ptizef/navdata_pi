@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-23 10:36+0100\n"
-"PO-Revision-Date: 2020-03-23 10:36+0100\n"
+"POT-Creation-Date: 2020-03-23 15:42+0100\n"
+"PO-Revision-Date: 2020-03-23 15:43+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr_FR\n"
@@ -24,7 +24,7 @@ msgstr "Vit. Moy."
 msgid "BRG"
 msgstr "CAP"
 #
-msgid "Compute and Show TTG & ETA"
+msgid "Compute and Show TTG and ETA"
 msgstr "Calcul et affiche  TTG et ETA"
 #
 msgid "Dialog"
@@ -110,10 +110,3 @@ msgstr "à SOG"
 #
 msgid "at VMG"
 msgstr "à VMG"
-#
-#
-#
-#
-#
-#~ msgid "Navigation Data"
-#~ msgstr "Données de navigation"

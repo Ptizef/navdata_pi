@@ -124,11 +124,15 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
             int len =  label.Len() * ((double)(GetColWidth(col) - 2) / (double)w);
             label = GetColLabelValue(col).Mid(0, len);
         }
-        //draw rectangle
-        dc.SetFont( m_labelFont );
-        dc.SetPen(GetDefaultGridLinePen());
+        //draw backgroud
+        dc.SetPen(*wxTRANSPARENT_PEN);
         dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
         dc.DrawRectangle(wxRect(GetColLeft(col), 0, GetColWidth(col),  m_colLabelHeight));
+        //draw grid lines
+        dc.SetPen(GetDefaultGridLinePen());
+        dc.DrawLine(GetColLeft(col), 0, GetColRight(col),0);
+        dc.DrawLine(GetColLeft(col), m_colLabelHeight - 1, GetColRight(col), m_colLabelHeight - 1);
+        dc.DrawLine(GetColRight(col) - 1, 0, GetColRight(col) - 1, m_colLabelHeight - 1);
         //draw selected or active mark
         if( col == 0 || col == g_selectedPointCol ){
             if( g_blinkTrigger & 1 ) {
@@ -168,6 +172,7 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
             }
         }
         //draw label
+        dc.SetFont( m_labelFont );
         dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
         dc.DrawLabel(label, wxRect( GetColLeft(col) + 1, 1, GetColWidth(col) - 2,
                             m_colLabelHeight - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
@@ -198,6 +203,11 @@ void CustomGrid::OnPaint(wxPaintEvent &event)
     //draw
 	wxPaintDC pdc(GetGridCornerLabelWindow());
     pdc.DrawBitmap( image, w/3, 0 );
+
+    //draw grid lines
+    pdc.SetPen(GetDefaultGridLinePen());
+    pdc.DrawLine(0, m_colLabelHeight - 1, m_rowLabelWidth, m_colLabelHeight - 1);
+    pdc.DrawLine(m_rowLabelWidth- 1, 0, m_rowLabelWidth - 1, m_colLabelHeight - 1);
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )

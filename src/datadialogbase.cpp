@@ -132,20 +132,20 @@ SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& tit
 
     wxFlexGridSizer* fgSizer01;
     fgSizer01 = new wxFlexGridSizer( 0, 1, 0, 0 );
-    fgSizer01->AddGrowableRow( 1 );
+    fgSizer01->AddGrowableCol( 0 );
     fgSizer01->SetFlexibleDirection( wxBOTH );
     fgSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
 
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog"));
 
     m_pShowTripData = new wxCheckBox( this, wxID_ANY, _("Show Trip Data"), wxDefaultPosition, wxDefaultSize, 0 );
-    fgSizer01->Add( m_pShowTripData, 0, wxALL, 5 );
+    fgSizer01->Add( m_pShowTripData, 0, wxALL|wxEXPAND, 5 );
     m_pShowTripData->SetFont( font );
 
     wxString s[] = { _("at VMG"), _("at SOG") };
-    m_pShowspeed = new wxRadioBox( this, wxID_ANY, _("Compute and Show TTG & ETA"), wxDefaultPosition, wxDefaultSize,
+    m_pShowspeed = new wxRadioBox( this, wxID_ANY, _("Compute and Show TTG and ETA"), wxDefaultPosition, wxDefaultSize,
                                    2, s, 0, wxRA_SPECIFY_ROWS );
-    fgSizer01->Add( m_pShowspeed, 0, wxALL, 5 );
+    fgSizer01->Add( m_pShowspeed, 0, wxALL|wxEXPAND, 5 );
     m_pShowspeed->SetFont( font );
 
     wxStdDialogButtonSizer *m_pSettings = new wxStdDialogButtonSizer();

@@ -75,12 +75,15 @@ void DataTable::InitDataTable()
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     while( node ) {
         wxWindow *win = node->GetData();
-        if( win && win->IsKindOf(CLASSINFO(wxStaticText)) ){
-            win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-            win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+        if( win ){
             win->SetFont( font );
+            if( win->IsKindOf(CLASSINFO(wxStaticText)) ){
+                win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+                win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+                win->SetFont( font );
+            }
+            node = node->GetNext();
         }
-        node = node->GetNext();
     }
     //connect timers
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);

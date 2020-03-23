@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-03-23 10:36+0100\n"
+"POT-Creation-Date: 2020-03-23 15:42+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,23 +44,23 @@ msgstr ""
 msgid "Warning!"
 msgstr ""
 
-#: src/customgrid.cpp:232 src/datadialogbase.h:105
+#: src/customgrid.cpp:242 src/datadialogbase.h:105
 msgid "Settings"
 msgstr ""
 
-#: src/customgrid.cpp:245 src/datatable.cpp:133
+#: src/customgrid.cpp:255 src/datatable.cpp:135
 msgid "SOG"
 msgstr ""
 
-#: src/customgrid.cpp:245 src/datatable.cpp:133
+#: src/customgrid.cpp:255 src/datatable.cpp:135
 msgid "VMG"
 msgstr ""
 
-#: src/customgrid.cpp:246 src/datatable.cpp:128
+#: src/customgrid.cpp:256 src/datatable.cpp:130
 msgid "TTG @ "
 msgstr ""
 
-#: src/customgrid.cpp:247 src/datatable.cpp:128
+#: src/customgrid.cpp:257 src/datatable.cpp:130
 msgid "ETA @ "
 msgstr ""
 
@@ -68,19 +68,19 @@ msgstr ""
 msgid "Dialog"
 msgstr ""
 
-#: src/datatable.cpp:127
+#: src/datatable.cpp:129
 msgid "RNG"
 msgstr ""
 
-#: src/datatable.cpp:128
+#: src/datatable.cpp:130
 msgid "BRG"
 msgstr ""
 
-#: src/datatable.cpp:128
+#: src/datatable.cpp:130
 msgid "Total RNG"
 msgstr ""
 
-#: src/datatable.cpp:159
+#: src/datatable.cpp:161
 msgid "Unnamed route"
 msgstr ""
 
@@ -121,7 +121,7 @@ msgid "at SOG"
 msgstr ""
 
 #: src/datadialogbase.cpp:146
-msgid "Compute and Show TTG & ETA"
+msgid "Compute and Show TTG and ETA"
 msgstr ""
 
 #: src/datadialogbase.cpp:152
