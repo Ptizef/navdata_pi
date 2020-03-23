@@ -117,7 +117,6 @@ private:
       void OnRotateTimer(wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
-      void SetDialogFont(wxWindow *dialog, wxFont *font);
       float GetSelectRadius();
       void SetVP(PlugIn_ViewPort *vp);
 

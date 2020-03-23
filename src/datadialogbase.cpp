@@ -79,13 +79,13 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     m_pStartTime->Wrap( -1 );
     m_pTripSizer01->Add( m_pStartTime, 0, wxALL|wxEXPAND, 5 );
 
-    m_pTimetText = new wxStaticText( this, wxID_ANY, _("Time"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pTimetText = new wxStaticText( this, wxID_ANY, _("TimeSpent"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pTripSizer01->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pTimeValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pTripSizer01->Add( m_pTimeValue, 0, wxALL|wxEXPAND, 5 );
 
-    m_pDistText = new wxStaticText( this, wxID_ANY, _("Dist"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
+    m_pDistText = new wxStaticText( this, wxID_ANY, _("Distance"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
     m_pTripSizer01->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
 
     m_pDistValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
@@ -136,19 +136,25 @@ SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& tit
     fgSizer01->SetFlexibleDirection( wxBOTH );
     fgSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
 
+    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog"));
+
     m_pShowTripData = new wxCheckBox( this, wxID_ANY, _("Show Trip Data"), wxDefaultPosition, wxDefaultSize, 0 );
     fgSizer01->Add( m_pShowTripData, 0, wxALL, 5 );
+    m_pShowTripData->SetFont( font );
 
     wxString s[] = { _("at VMG"), _("at SOG") };
     m_pShowspeed = new wxRadioBox( this, wxID_ANY, _("Compute and Show TTG & ETA"), wxDefaultPosition, wxDefaultSize,
                                    2, s, 0, wxRA_SPECIFY_ROWS );
     fgSizer01->Add( m_pShowspeed, 0, wxALL, 5 );
+    m_pShowspeed->SetFont( font );
 
     wxStdDialogButtonSizer *m_pSettings = new wxStdDialogButtonSizer();
     m_pSettingsOK = new wxButton( this, wxID_OK, _("OK") );
-    m_pSettingsOK->SetFont( GetOCPNGUIScaledFont_PlugIn(_T("Dialog")) );
+    m_pSettingsOK->SetFont( font );
     m_pSettings->AddButton( m_pSettingsOK );
     m_pSettings->Realize();
+
+    this->SetFont( font );
 
     fgSizer01->Add( m_pSettings, 1, wxALL|wxEXPAND, 5 );
 

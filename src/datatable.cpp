@@ -69,6 +69,8 @@ void DataTable::InitDataTable()
     //grid level
     Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
     Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+    //get global Font
+    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     //wxStaticTexts level
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     while( node ) {
@@ -76,13 +78,14 @@ void DataTable::InitDataTable()
         if( win && win->IsKindOf(CLASSINFO(wxStaticText)) ){
             win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
             win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
+            win->SetFont( font );
         }
         node = node->GetNext();
     }
     //connect timers
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
 
-    ////init some variables
+    //get navdata_pi options
     wxFileConfig *pConf = GetOCPNConfigObject();
     if (pConf) {
         pConf->SetPath(_T("/Settings/NAVDATA"));
@@ -93,7 +96,6 @@ void DataTable::InitDataTable()
         pConf->Read(_T("ShowTTGETAatSOG"), &g_withSog,0);
     }
     //set text controls sizing trip data
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
     int w;
     GetTextExtent( wxDateTime::Now().Format(_T("%b %d %Y")), &w, NULL, 0, 0, &font); // Time width text control size
     m_pStartDate->SetMinSize( wxSize(w, -1) );
@@ -122,13 +124,12 @@ void DataTable::InitDataTable()
     //create, populate and size rows labels
     wxString sl;
     sl.Append(_("RNG")).Append(_T("(")).Append(getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat())).Append(_T(")"));
-    const wxString s[] = {_("BRG"), sl, _("Total RNG") ,_("TTG"), _("ETA"), _T("END") };
+    const wxString s[] = {_("BRG"), sl, _("Total RNG") ,_("TTG @ "), _("ETA @ "), _T("END") };
     wxString v = wxEmptyString;
     for( int i = 0;; i++ ){
         m_pDataTable->AppendRows();
         if( i == 3 || i == 4 ){
-            wxString s = g_withSog? _("SOG"): _("VMG");
-            v = _T(" @ ") + s;
+            v = g_withSog? _("SOG"): _("VMG");
         }
         m_pDataTable->SetRowLabelValue(i, s[i] + v );
         if( s[i + 1] == _T("END") ) break;
@@ -152,7 +153,10 @@ void DataTable::UpdateRouteData( wxString pointGuid,
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
     //set label route name in title
-    SetTitle( r.get()->m_NameString );
+    wxString title = r.get()->m_NameString;
+    if( title.IsEmpty() )
+        title = _("Unnamed route");
+    SetTitle(title);
     //populate cols
     m_pDataTable->BeginBatch();
     double brg, rng, speed, nrng;
@@ -233,7 +237,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
                     wxTimeSpan tttg_span = wxTimeSpan::Seconds( (long) tttg_sec );
                     //Show also #days if TTG > 24 h
                     tttg_s = tttg_sec > SECONDS_PER_DAY ?
-                            tttg_span.Format(_("%Dd %H:%M")) : tttg_span.Format("%H:%M:%S");
+                            tttg_span.Format(_T("%Dd %H:%M")) : tttg_span.Format("%H:%M:%S");
                     wxDateTime dtnow, eta;
                     dtnow.SetToCurrent();
                     eta = dtnow.Add( tttg_span );

@@ -84,7 +84,7 @@ class DataTableBase : public wxDialog
 
 	public:
         CustomGrid* m_pDataTable;
-        DataTableBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _("Navigation Data"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxRESIZE_BORDER );
+        DataTableBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _T("Navigation data"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxRESIZE_BORDER );
         ~DataTableBase();
 };
 

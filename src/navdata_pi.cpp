@@ -134,10 +134,10 @@ int navdata_pi::Init(void){
     wxString inactive = g_shareLocn + _T("inactive.svg");
     if( wxFile::Exists( inactive) )
         m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
-                    wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+                    wxITEM_CHECK, _("Navigation data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
     else
         m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_inactive,
-                                    wxITEM_CHECK, _("Nav data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+                                    wxITEM_CHECK, _("Navigation data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
     return (WANTS_OVERLAY_CALLBACK          |
             WANTS_ONPAINT_VIEWPORT          |
@@ -191,17 +191,17 @@ wxBitmap *navdata_pi::GetPlugInBitmap()
 
 wxString navdata_pi::GetCommonName()
 {
-      return _("NAVDATA");
+      return _T("NAVDATA");
 }
 
 wxString navdata_pi::GetShortDescription()
 {
-      return _("Navigation progress data plugin for OpenCPN");
+      return _("Navigation data plugin for OpenCPN");
 }
 
 wxString navdata_pi::GetLongDescription()
 {
-      return _("Navigation data plugin for OpenCPN\nShows range, TTG and ETA for all route points\n of the current active route.\nAlso shows current track progress summary,\nstart time, distance, mean speed ...");
+      return _("Navigation data plugin for OpenCPN\nShows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\nfor all active route points.\nAlso shows current trip summary:\nstart time, time spent, distance, mean speed since departure...");
 }
 
 int navdata_pi::GetToolbarToolCount(void)
@@ -733,7 +733,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
 {
 
 	if (g_activeRouteGuid == wxEmptyString) {
-        OCPNMessageBox_PlugIn(GetNAVCanvas(), _("There is no Active Route!\nYou must active one before using this fonctionality"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
+        OCPNMessageBox_PlugIn(GetNAVCanvas(), _("There is no Active Route!\nYou must active one before using navdata_pi"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
 		SetToolbarItemState(m_leftclick_tool_id, false);
 		return;
 	}
@@ -748,8 +748,6 @@ void navdata_pi::OnToolbarToolCallback(int id)
 		long style = wxCAPTION | wxRESIZE_BORDER;
         m_pTable = new DataTable(GetNAVCanvas(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);
-		wxFont font = GetOCPNGUIScaledFont_PlugIn(_T("Dialog"));
-		SetDialogFont(m_pTable, &font);//Apply global font
 		DimeWindow(m_pTable); //apply colour sheme
 		m_pTable->InitDataTable();
 		m_pTable->UpdateRouteData(m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog);
@@ -779,18 +777,6 @@ bool navdata_pi::GetOcpnDailyTrack( int *roTime, int *rotimeType)
         return true;
     }
     return false;
-}
-
-void navdata_pi::SetDialogFont( wxWindow *dialog, wxFont *font)
-{
-    dialog->SetFont( *font );
-    wxWindowList list = dialog->GetChildren();
-    wxWindowListNode *node = list.GetFirst();
-    for( size_t i = 0; i < list.GetCount(); i++ ) {
-        wxWindow *win = node->GetData();
-        win->SetFont( *font );
-        node = node->GetNext();
-    }
 }
 
 void navdata_pi::CloseDataTable()

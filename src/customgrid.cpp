@@ -243,8 +243,8 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
                 m_pParent->SetTableSizePosition(false);
             }
             wxString s = g_withSog? _("SOG"): _("VMG");
-            SetRowLabelValue( 3, _("TTG") + _T("@") + s );
-            SetRowLabelValue( 4, _("ETA") + _T("@") + s );
+            SetRowLabelValue( 3, _("TTG @ ") + s );
+            SetRowLabelValue( 4, _("ETA @ ") + s );
         }
     }
 }

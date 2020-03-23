@@ -1,0 +1,119 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the navdata_pi package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: navdata_pi 0.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-23 10:36+0100\n"
+"PO-Revision-Date: 2020-03-23 10:36+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.6\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#
+msgid "Avg.speed"
+msgstr "Vit. Moy."
+#
+msgid "BRG"
+msgstr "CAP"
+#
+msgid "Compute and Show TTG & ETA"
+msgstr "Calcul et affiche  TTG et ETA"
+#
+msgid "Dialog"
+msgstr "Boite de dialogue"
+#
+msgid "Distance"
+msgstr "Distance"
+#
+msgid "ETA @ "
+msgstr "ETA à "
+#
+msgid "Navigation data"
+msgstr "Données de navigation"
+#
+msgid "Navigation data plugin for OpenCPN"
+msgstr "Complément  \"Données de navigation\" pour OpenCPN"
+#
+msgid ""
+"Navigation data plugin for OpenCPN\n"
+"Shows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\n"
+"for all active route points.\n"
+"Also shows current trip summary:\n"
+"start time, time spent, distance, mean speed since departure..."
+msgstr ""
+"Complément \"Données de navigation\" pour OpenCPN\n"
+"Affiche les distances,  TTG ( temps pour arriver) et ETA (Heure estimée "
+"d'arrivée)\n"
+"pour tous les waypoints de la route active.\n"
+"Montre également un résumé du parcours:\n"
+"départ, temps passé, distance, vitesse moyenne depuis le départ..."
+#
+msgid "OK"
+msgstr "OK"
+#
+msgid "RNG"
+msgstr "RNG"
+#
+msgid "SOG"
+msgstr "SOG"
+#
+msgid "Settings"
+msgstr "Réglages"
+#
+msgid "Show Trip Data"
+msgstr "Montre les Données de Parcours."
+#
+msgid "Started"
+msgstr "Départ"
+#
+msgid "TTG @ "
+msgstr "TTG à "
+#
+msgid ""
+"There is no Active Route!\n"
+"You must active one before using navdata_pi"
+msgstr ""
+"Aucune route n'est activée!\n"
+"Vous devez activer une route avant de pouvoir utiliser navdata_pi"
+#
+msgid "TimeSpent"
+msgstr "Durée"
+#
+msgid "Total RNG"
+msgstr "Total RNG"
+#
+msgid "Trip"
+msgstr "Parcours"
+#
+msgid "Unnamed route"
+msgstr "Route sans nom"
+#
+msgid "VMG"
+msgstr "VMG"
+#
+msgid "Warning!"
+msgstr "Avertissement!"
+#
+msgid "at"
+msgstr "à"
+#
+msgid "at SOG"
+msgstr "à SOG"
+#
+msgid "at VMG"
+msgstr "à VMG"
+#
+#
+#
+#
+#
+#~ msgid "Navigation Data"
+#~ msgstr "Données de navigation"
