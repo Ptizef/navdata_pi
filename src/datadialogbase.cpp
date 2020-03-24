@@ -143,7 +143,7 @@ SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& tit
     m_pShowTripData->SetFont( font );
 
     wxString s[] = { _("at VMG"), _("at SOG") };
-    m_pShowspeed = new wxRadioBox( this, wxID_ANY, _("Compute and Show TTG and ETA"), wxDefaultPosition, wxDefaultSize,
+	m_pShowspeed = new wxRadioBox(this, wxID_ANY, wxString(_("Compute and Show TTG and ETA") + _T("   ")), wxDefaultPosition, wxDefaultSize,
                                    2, s, 0, wxRA_SPECIFY_ROWS );
     fgSizer01->Add( m_pShowspeed, 0, wxALL|wxEXPAND, 5 );
     m_pShowspeed->SetFont( font );

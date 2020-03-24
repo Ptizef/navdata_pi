@@ -77,7 +77,6 @@ public:
     void SetTargetFlag(bool flag) {m_targetFlag = flag;}
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
-	void OnSize(wxSizeEvent &event);
 private:
     void AddDataCol(int num_cols);
     wxString FormatDistance(double val1 , double val2 = 0., bool delta = false);
@@ -89,6 +88,7 @@ private:
     int  GetDialogHeight(int dialogWidth);
 	int  GetDataGridWidth(int visColsnumb);
 	int  GetDataGridHeight(int visRowsnumb);
+	void OnSize(wxSizeEvent &event);
 	void OnSizeTimer(wxTimerEvent & event);
 
     wxGridCellAttr *m_pDataCol;
