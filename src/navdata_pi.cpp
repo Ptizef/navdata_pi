@@ -474,11 +474,11 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
             wpt->m_IsVisible = past;
             if( wpt->m_GUID == m_activePointGuid )
                 past = true;
-            if( ( fabs(plat - wpt->m_lat) < selectRadius )
-                    && ( fabs(plon - wpt->m_lon ) < selectRadius) ){
+            double of_lat = fabs(plat - wpt->m_lat);
+            double of_lon = fabs(plon - wpt->m_lon);
+            if( (of_lat < selectRadius) &&  (of_lon < selectRadius) ){
                 //we must select the nearest point from the cursor/finger, not the first (nether the last)
-                double dis;
-                DistanceBearingMercator_Plugin(plat, plon, wpt->m_lat, wpt->m_lon, NULL, &dis);
+                double dis = sqrt( pow(of_lat,2) + pow(of_lon,2) ) ;
                 if( dis < dist_from_cursor ) {
                     SelGuid = wpt->m_GUID;
                     pastactive = wpt->m_IsVisible;

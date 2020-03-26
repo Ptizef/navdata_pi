@@ -239,9 +239,9 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
         if( x <  o ){
            bool showTrip = g_showTripData;
 
-            Settings *dialog = new Settings( GetCanvasByIndex(0), wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
+            Settings dialog( GetCanvasByIndex(0), wxID_ANY, _("Settings"), wxDefaultPosition, wxDefaultSize, wxCAPTION );
 
-            dialog->ShowModal();
+            dialog.ShowModal();
 
             if (showTrip != g_showTripData) {
                 if(g_showTripData ){
@@ -342,23 +342,21 @@ void CustomGrid::DrawLongWptName()
         label = s;
         j++;
     }
-    wxClientDC *cdc = new wxClientDC(GetGridColLabelWindow());
-    if( cdc ) {
-        //draw rectangle
-        cdc->SetFont( m_labelFont );
-        cdc->SetPen(GetDefaultGridLinePen());
-        cdc->SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
-        cdc->DrawRectangle(wxRect(x, 0, GetColWidth(m_colLongname),  m_colLabelHeight));
-        //draw label
-        wxColour clf;
-        GetGlobalColor( _T("BLUE2"), &clf );
-        cdc->SetTextForeground(clf);
-        cdc->DrawLabel(label, wxRect(x, 1, GetColWidth(m_colLongname) - 2,
-                        m_colLabelHeight - 2), wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
+    wxClientDC cdc(GetGridColLabelWindow());
+    //draw rectangle
+    cdc.SetFont( m_labelFont );
+    cdc.SetPen(GetDefaultGridLinePen());
+    cdc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+    cdc.DrawRectangle(wxRect(x, 0, GetColWidth(m_colLongname),  m_colLabelHeight));
+    //draw label
+    wxColour clf;
+    GetGlobalColor( _T("BLUE2"), &clf );
+    cdc.SetTextForeground(clf);
+    cdc.DrawLabel(label, wxRect(x, 1, GetColWidth(m_colLongname) - 2,
+                   m_colLabelHeight - 2), wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL);
 
 
-        m_nameLoopTimer.Start(TIMER_INTERVAL_75MSECOND, wxTIMER_ONE_SHOT);
-    }
+    m_nameLoopTimer.Start(TIMER_INTERVAL_75MSECOND, wxTIMER_ONE_SHOT);
 }
 
 void CustomGrid::OnStopLoopTimer( wxTimerEvent& event )
