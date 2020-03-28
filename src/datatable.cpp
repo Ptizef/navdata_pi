@@ -151,6 +151,12 @@ void DataTable::UpdateRouteData( wxString pointGuid,
     //Do not update data if displaying the long way point name
     if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
 
+    //if no active route set a one empty column grid
+    if (g_activeRouteGuid == wxEmptyString) {
+        UpdateRouteData();
+        return;
+    }
+
     //find active route and wpts
     g_selectedPointCol = wxNOT_FOUND;
     std::unique_ptr<PlugIn_Route> r;
@@ -286,9 +292,7 @@ void DataTable::UpdateRouteData( wxString pointGuid,
     int ex = m_pDataTable->GetNumberCols() - ncols;
     if( ex > 0 )
         m_pDataTable->DeleteCols( ncols, ex );
-    //ensure the nb vis cols variable is valid
-	if (m_numVisCols == -1 || m_numVisCols > ncols)
-		m_numVisCols = ncols;
+    //set visible point
     if( g_selectedPointCol == wxNOT_FOUND ){
         if ( !g_selectedPointGuid.IsEmpty() )
             MakeVisibleCol( 0 );
@@ -298,6 +302,32 @@ void DataTable::UpdateRouteData( wxString pointGuid,
 		if (m_targetFlag)
 			MakeVisibleCol(g_selectedPointCol);
 	}
+    //close counters
+    m_pDataTable->EndBatch();
+    m_pDataCol->DecRef();              // Give up pointer control to Grid
+    m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
+}
+
+void DataTable::UpdateRouteData()
+{
+    //Do not update data if displaying the long way point name
+    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
+
+    //in this case there is no active route so create a one empty column grid
+    SetTitle(_("No Active Route!"));
+    //populate cols
+    m_pDataTable->BeginBatch();
+    AddDataCol( 0 );
+    m_pDataTable->SetColLabelValue( 0, _T("----") );
+    //update cells
+    for (int j = 0; j < m_pDataTable->GetNumberRows(); j++ ){
+        m_pDataCol->IncRef();
+        m_pDataTable->SetCellValue( j, 0, _T("---") );
+    }
+    //Clear all useless lines if exist
+    int ex = m_pDataTable->GetNumberCols() - 1;
+    if( ex > 0 )
+        m_pDataTable->DeleteCols( 1, ex );
     //close counters
     m_pDataTable->EndBatch();
     m_pDataCol->DecRef();              // Give up pointer control to Grid
@@ -355,26 +385,29 @@ wxWindow *GetNAVCanvas();
 void DataTable::SetTableSizePosition(bool moveflag )
 {
     m_InvalidateSizeEvent = true;
+
+    //find the baest visible column number for the route
+    int numVisCols = (m_numVisCols > m_pDataTable->GetNumberCols() || m_numVisCols == - 1 )?
+                    m_pDataTable->GetNumberCols(): m_numVisCols;
+
     m_pTripSizer00->Show(g_showTripData);
-    //1)adjust visibles columns number
+    //)adjust visibles columns number
     int scw = GetNAVCanvas()->GetSize().GetWidth();
-	int w = GetDataGridWidth(m_numVisCols);
+    int w = GetDataGridWidth(numVisCols);
     if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1 ){
         m_dialPosition.x = scw * 0.1;
 		scw *= 0.8;
         if(w > scw ){
-			for( int i = m_numVisCols; i > 0; i-- ){
+            for( int i = numVisCols; i > 0; i-- ){
 				if(GetDataGridWidth(i) <= scw ) {
-					m_numVisCols = i;
+                    numVisCols = i;
                     break;
                 }
             }
-			//show at least one column
-			if (m_numVisCols < 1) m_numVisCols = 1;
-			w = GetDataGridWidth(m_numVisCols);
+            w = GetDataGridWidth(numVisCols);
         }
     }
-    int h = GetDialogHeight(w);
+    int h = GetDialogHeight(numVisCols);
     this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
     this->SetClientSize(wxSize(w, h));
 
@@ -394,8 +427,11 @@ void DataTable::OnSize( wxSizeEvent& event )
     if(m_InvalidateSizeEvent)
         return;
 
-    int tempDialWidth = event.GetSize().GetWidth();
-    m_numVisCols = (tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
+    //do not recompute the  visible column number if there is no active route
+    if( !g_activeRouteGuid.IsEmpty() ){
+        int tempDialWidth = event.GetSize().GetWidth();
+        m_numVisCols = (tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
+    }
     m_SizeTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
 
     event.Skip();
@@ -405,8 +441,11 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 {
 	m_InvalidateSizeEvent = true;
 
-	int w = GetDataGridWidth(m_numVisCols);
-    int h = GetDialogHeight(w);
+    //find the baest visible column number for the route
+    int numVisCols = (m_numVisCols > m_pDataTable->GetNumberCols() || m_numVisCols == - 1 )?
+                    m_pDataTable->GetNumberCols(): m_numVisCols;
+    int w = GetDataGridWidth(numVisCols);
+    int h = GetDialogHeight(numVisCols);
     this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
     this->SetClientSize(wxSize(w, h));
 
@@ -418,7 +457,7 @@ void DataTable::OnSizeTimer(wxTimerEvent & event)
 	m_InvalidateSizeEvent = false;
 }
 
-int DataTable::GetDialogHeight( int dialogWidth )
+int DataTable::GetDialogHeight( int nVisCols )
 {
     //compute best trip data height
     int h = 0;
@@ -429,7 +468,7 @@ int DataTable::GetDialogHeight( int dialogWidth )
          *if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
 		int col;
         int lines;
-		switch (m_numVisCols) {
+        switch (nVisCols) {
 		case 1:
         case 2:
             col = 2;
@@ -464,34 +503,34 @@ int DataTable::GetDialogHeight( int dialogWidth )
 				}
 			}
 			//show at least one row
-			if (m_numVisRows < 1) m_numVisRows = 1;
+            if (m_numVisRows < 1) m_numVisRows = 1;
             ht = GetDataGridHeight(m_numVisRows);
 		}
         //add a margin
 	}//
     //add space for an horizontal scroll bar and margin if necessary
-    ht += (m_numVisCols < m_pDataTable->GetNumberCols())? SCROLL_BAR_THICKNESS: 0;
+    ht += (nVisCols < m_pDataTable->GetNumberCols())? SCROLL_BAR_THICKNESS: 0;
     if( g_showTripData )
         h += SINGLE_BORDER_THICKNESS;
     else
         ht += DOUBLE_BORDER_THICKNESS;
 
     //set route data grid minsize
-    this->m_pDataTable->SetMinSize( wxSize(dialogWidth, ht));
+    this->m_pDataTable->SetMinSize( wxSize(GetDataGridWidth(nVisCols), ht));
 
     //return whole dialog best heigh
     return ht + h;
 }
 
-int DataTable::GetDataGridWidth(int visColsnumb)
+int DataTable::GetDataGridWidth(int nVisCols)
 {
     int scbw = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_THICKNESS : 0;
-    return  DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * visColsnumb) + scbw;
+    return  DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * nVisCols) + scbw;
 }
 
-int DataTable::GetDataGridHeight(int visRowsnumb)
+int DataTable::GetDataGridHeight(int nVisCols)
 {
-	return m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * visRowsnumb);
+    return m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * nVisCols);
 }
 
 void DataTable::CloseDialog()

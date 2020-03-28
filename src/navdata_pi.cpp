@@ -131,13 +131,14 @@ int navdata_pi::Init(void){
                     +_T("data") + wxFileName::GetPathSeparator();
 
     //    This PlugIn needs a toolbar icon, so request its insertion
-    wxString inactive = g_shareLocn + _T("inactive.svg");
-    if( wxFile::Exists( inactive) )
-        m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, inactive,
+    wxString active = g_shareLocn + _T("active.svg");
+    wxString toggled = g_shareLocn + _T("toggled.svg");
+    if( wxFile::Exists( active) && wxFile::Exists( toggled) )
+        m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), active, active, toggled,
                     wxITEM_CHECK, _("Navigation data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
     else
-        m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_inactive,
-                                    wxITEM_CHECK, _("Navigation data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+    m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_active, _img_toggled,
+                    wxITEM_CHECK, _("Navigation data"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
     return (WANTS_OVERLAY_CALLBACK          |
             WANTS_ONPAINT_VIEWPORT          |
@@ -312,14 +313,6 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         if ( rnumErrors == 0 )  {
             // get route GUID values from the JSON message
             g_activeRouteGuid = root[_T("GUID")].AsString();
-            wxString active = g_shareLocn + _T("active.svg");
-            wxString toggled = g_shareLocn + _T("toggled.svg");
-            if( wxFile::Exists( active) && wxFile::Exists( toggled) )
-                SetToolbarToolBitmapsSVG(m_leftclick_tool_id, active,
-                                     active, toggled );
-            else
-                SetToolbarToolBitmaps(m_leftclick_tool_id, _img_active,
-                                     _img_toggled );
         }
     }
 
@@ -380,16 +373,11 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
     {
         m_activePointGuid = wxEmptyString;
         g_activeRouteGuid = wxEmptyString;
-        //SetToolbarItemState( m_leftclick_tool_id, false );
-        wxString inactive = g_shareLocn + _T("inactive.svg");
-        if( wxFile::Exists( inactive) )
-            SetToolbarToolBitmapsSVG(m_leftclick_tool_id, inactive,
-                                 inactive, inactive );
-        else
-            SetToolbarToolBitmaps(m_leftclick_tool_id, _img_inactive,
-                                 _img_inactive );
-        if(m_pTable)
-            CloseDataTable();
+
+        if(m_pTable){
+            m_pTable->UpdateRouteData();
+            m_pTable->SetTableSizePosition(false);
+        }
     }
 
     else if(message_id == _T("OCPN_TRK_DEACTIVATED"))
@@ -434,9 +422,10 @@ void navdata_pi::SetVP(PlugIn_ViewPort *vp)
 
 bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
+    if( g_activeRouteGuid.IsEmpty() )
+        return false;
     if( !m_pTable )
         return false;
-
     if( event.Dragging() ){
         g_blinkTrigger = 0;
         return false;
@@ -522,6 +511,8 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
     // If multicanvas are active, render the overlay on the left canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
         return false;
+    if( g_activeRouteGuid.IsEmpty() )
+        return false;
     if( !m_pTable )
         return false;
 
@@ -540,6 +531,8 @@ bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewP
 {
     // If multicanvas are active, render the overlay on the left canvas only
     if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
+        return false;
+    if( g_activeRouteGuid.IsEmpty() )
         return false;
     if( !m_pTable )
         return false;
@@ -731,14 +724,8 @@ double navdata_pi::GetMag(double a)
 
 void navdata_pi::OnToolbarToolCallback(int id)
 {
-
-	if (g_activeRouteGuid == wxEmptyString) {
-        OCPNMessageBox_PlugIn(GetNAVCanvas(), _("There is no Active Route!\nYou must active one before using navdata_pi"), _("Warning!"), wxICON_WARNING | wxOK, 100, 50);
-		SetToolbarItemState(m_leftclick_tool_id, false);
-		return;
-	}
-
 	if (m_pTable) {
+        SetToolbarItemState(m_leftclick_tool_id, false);
 		CloseDataTable();
 	}
 	else {

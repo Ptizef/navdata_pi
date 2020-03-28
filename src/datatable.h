@@ -71,6 +71,7 @@ public:
     void InitDataTable();
     void UpdateRouteData(wxString pointGuid,
                     double shiplon, double shiplat, double shipcog, double shipsog );
+    void UpdateRouteData();
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
     void SetTableSizePosition(bool moveflag);
@@ -85,9 +86,9 @@ private:
                                   double glat, double glon,
                                   double *brg, double *nrng);
     void MakeVisibleCol(int col);
-    int  GetDialogHeight(int dialogWidth);
-	int  GetDataGridWidth(int visColsnumb);
-	int  GetDataGridHeight(int visRowsnumb);
+    int  GetDialogHeight(int nVisCols);
+    int  GetDataGridWidth(int nVisCols);
+    int  GetDataGridHeight(int nVisCols);
 	void OnSize(wxSizeEvent &event);
 	void OnSizeTimer(wxTimerEvent & event);
 
