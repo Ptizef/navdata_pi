@@ -43,6 +43,7 @@ extern int            g_selectedPointCol;
 extern bool           g_showTripData;
 extern bool           g_withSog;
 extern wxPoint        g_scrollPos;
+
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
 //----------------------------------------------------------------------------------------------------------
@@ -118,13 +119,10 @@ void DataTable::InitDataTable()
     //init cell attr
     m_pDataCol = new wxGridCellAttr();
     m_pDataCol->SetFont( font );
-    wxColour colour;
-    GetGlobalColor(_T("DILG2"), &colour);
-    m_pDataCol->SetBackgroundColour( colour );
-    GetGlobalColor(_T("DILG3"), &colour);
-    m_pDataCol->SetTextColour( colour );
-    m_pDataCol->SetAlignment(wxALIGN_CENTRE, wxALIGN_CENTRE);
-    //create, populate and size rows labels
+    m_pDataCol->SetReadOnly();
+    //Dim grid & Dialog
+    DimGridDialog();
+    //create grid and populate labels
     wxString sl;
     sl.Append(_("RNG")).Append(_T("(")).Append(getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat())).Append(_T(")"));
     const wxString s[] = {_("BRG"), sl, _("Total RNG") ,_("TTG @ "), _("ETA @ "), _T("END") };
@@ -139,10 +137,24 @@ void DataTable::InitDataTable()
     }
     m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
-    //put cursor outside the grid
-    m_pDataTable->SetGridCursor(m_pDataTable->GetNumberRows() +1, 0);
     //set scroll step Y
     m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
+}
+
+void DataTable::DimGridDialog()
+{
+    //dim grid
+    wxColour colour;
+    GetGlobalColor(_T("DILG0"), &colour);       //colour for grid cells & dialogs background
+    m_pDataCol->SetBackgroundColour( colour );
+    m_pDataTable->SetCellHighlightColour( colour ); //do not show cursor position or selection
+    SetBackgroundColour( colour );
+    GetGlobalColor(_T("DILG1"), &colour);       //colour for grid head labels background
+    m_pDataTable->SetLabelBackgroundColour(colour);
+    GetGlobalColor(_T("GREY3"), &colour);       //colour for all texts and labels
+    m_pDataCol->SetTextColour( colour );
+    SetForegroundColour( colour );
+    m_pDataTable->SetLabelTextColour( colour );
 }
 
 void DataTable::UpdateRouteData( wxString pointGuid,
@@ -156,7 +168,6 @@ void DataTable::UpdateRouteData( wxString pointGuid,
         UpdateRouteData();
         return;
     }
-
     //find active route and wpts
     g_selectedPointCol = wxNOT_FOUND;
     std::unique_ptr<PlugIn_Route> r;
@@ -618,6 +629,22 @@ Settings::Settings(wxWindow *parent, wxWindowID id, const wxString& title, const
 {
     m_pShowTripData->SetValue( g_showTripData );
     m_pShowspeed->SetSelection(g_withSog ? 1 : 0);
+
+    //dim the dialog
+    wxColour colour1, colour2;
+    GetGlobalColor(_T("DILG0"), &colour1);
+    GetGlobalColor(_T("GREY3"), &colour2);
+    SetBackgroundColour( colour1 );
+    SetForegroundColour( colour2 );
+    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    while( node ) {
+        wxWindow *win = node->GetData();
+        if( win ){
+            win->SetBackgroundColour( colour1 );
+            win->SetForegroundColour( colour2 );
+        }
+        node = node->GetNext();
+    }
 
     m_pSettingsOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Settings::OnOKButton ), NULL, this );
 }

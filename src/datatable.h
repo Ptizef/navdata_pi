@@ -78,6 +78,7 @@ public:
     void SetTargetFlag(bool flag) {m_targetFlag = flag;}
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
+    void DimGridDialog();
 private:
     void AddDataCol(int num_cols);
     wxString FormatDistance(double val1 , double val2 = 0., bool delta = false);

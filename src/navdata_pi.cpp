@@ -234,6 +234,14 @@ void navdata_pi::LoadocpnConfig()
 	  }
 }
 
+void navdata_pi::SetColorScheme(PI_ColorScheme cs)
+{
+    if( m_pTable ){
+        m_pTable->DimGridDialog();
+        RequestRefresh( m_pTable );
+    }
+}
+
 void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 {
     if(message_id == _T("OCPN_TRACKPOINTS_COORDS"))

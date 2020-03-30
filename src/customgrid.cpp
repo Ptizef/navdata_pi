@@ -42,8 +42,6 @@ extern bool     g_showTripData;
 extern bool     g_withSog;
 extern wxPoint  g_scrollPos;
 
-
-
 //------------------------------------------------------------------------------
 //          custom grid implementation
 //------------------------------------------------------------------------------
@@ -62,10 +60,6 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     EnableDragColMove( false );
     EnableDragColSize( false );
     EnableDragRowSize( false );
-    //init labels attr
-    GetGlobalColor(_T("DILG0"), &m_labelBackgroundColour);
-    GetGlobalColor(_T("DILG3"), &m_labelTextColour );
-
     //init variables
     m_colLongname = wxNOT_FOUND;
 #ifdef __WXOSX__
@@ -105,6 +99,24 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
      m_nameLoopTimer.Unbind(wxEVT_TIMER, &CustomGrid::OnNameLoopTimer, this);
  }
 
+void CustomGrid::DrawRowLabel( wxDC& dc, int row )
+{
+    //draw backgroud
+    dc.SetPen(*wxTRANSPARENT_PEN);
+    dc.SetBrush(wxBrush(m_labelBackgroundColour, wxBRUSHSTYLE_SOLID));
+    dc.DrawRectangle(wxRect(0, GetRowTop(row), m_rowLabelWidth,  GetRowHeight(row)));
+    //draw grid lines
+    dc.SetPen(GetDefaultGridLinePen());
+    dc.DrawLine(0, GetRowTop(row), 0, GetRowBottom(row));
+    dc.DrawLine(m_rowLabelWidth - 1, GetRowTop(row), m_rowLabelWidth - 1, GetRowBottom(row));
+    dc.DrawLine(0, GetRowBottom(row) - 1, m_rowLabelWidth - 1, GetRowBottom(row) - 1);
+    //draw label
+    dc.SetFont( m_labelFont );
+    dc.SetPen( wxPen(m_labelTextColour, 1, wxPENSTYLE_SOLID));
+    dc.DrawLabel(GetRowLabelValue(row), wxRect( 1, GetRowTop(row) + 1, m_rowLabelWidth - 2,
+                          GetRowHeight(row) - 2), wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL);
+
+}
 
 void CustomGrid::DrawColLabel( wxDC& dc, int col )
 {
@@ -181,6 +193,13 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
 
 void CustomGrid::OnPaint(wxPaintEvent &event)
 {
+    wxPaintDC pdc(GetGridCornerLabelWindow());
+    //draw background
+    pdc.SetPen(*wxTRANSPARENT_PEN);
+    wxColour colour;
+    GetGlobalColor(_T("DILG0"), &colour);
+    pdc.SetBrush( wxBrush(colour, wxBRUSHSTYLE_SOLID) );
+    pdc.DrawRectangle(wxRect(0, 0, m_rowLabelWidth - 1,  m_colLabelHeight - 1));
     //draw setting button
     wxBitmap bmp;
     int w = _img_setting->GetWidth();
@@ -201,7 +220,6 @@ void CustomGrid::OnPaint(wxPaintEvent &event)
     if (d == 0)
         return;
     //draw
-	wxPaintDC pdc(GetGridCornerLabelWindow());
     pdc.DrawBitmap( image, w/3, 0 );
 
     //draw grid lines

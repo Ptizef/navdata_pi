@@ -106,6 +106,7 @@ private:
       //    The override PlugIn Methods
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
+      void SetColorScheme(PI_ColorScheme cs);
       bool RenderTargetPoint( wxDC *pdc );
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int  GetToolbarToolCount(void);

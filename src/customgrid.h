@@ -60,6 +60,7 @@ public:
     int       m_colLongname;
 
 private:
+    void DrawRowLabel(wxDC& dc, int row);
     void DrawColLabel(wxDC& dc, int col);
 	void OnPaint(wxPaintEvent &event);
     void DrawLongWptName();

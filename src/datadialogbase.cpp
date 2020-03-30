@@ -111,8 +111,6 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
 
 	this->Centre( wxBOTH );
 
-    DimeWindow( this );                                     //aplly global colours scheme
-
     // Connect Events
     //Connect( wxEVT_CLOSE_WINDOW, wxCloseEventHandler( DataTableBase::OnClose ) );
 }
@@ -163,9 +161,6 @@ SettingsBase::SettingsBase( wxWindow* parent, wxWindowID id, const wxString& tit
     Sizer01->Fit( this );
 
     this->Centre( wxBOTH );
-
-    DimeWindow( this );                                     //aplly global colours scheme
-
 }
 
 
