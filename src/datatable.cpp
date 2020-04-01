@@ -120,8 +120,6 @@ void DataTable::InitDataTable()
     m_pDataCol = new wxGridCellAttr();
     m_pDataCol->SetFont( font );
     m_pDataCol->SetReadOnly();
-    //Dim grid & Dialog
-    DimGridDialog();
     //create grid and populate labels
     wxString sl;
     sl.Append(_("RNG")).Append(_T("(")).Append(getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat())).Append(_T(")"));
@@ -137,6 +135,8 @@ void DataTable::InitDataTable()
     }
     m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
+	//Dim grid & Dialog
+    DimGridDialog();
     //set scroll step Y
     m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
 }
@@ -146,15 +146,16 @@ void DataTable::DimGridDialog()
     //dim grid
     wxColour colour;
     GetGlobalColor(_T("DILG0"), &colour);       //colour for grid cells & dialogs background
-    m_pDataCol->SetBackgroundColour( colour );
-    m_pDataTable->SetCellHighlightColour( colour ); //do not show cursor position or selection
-    SetBackgroundColour( colour );
+    m_pDataCol->SetBackgroundColour(colour);
+    m_pDataTable->SetCellHighlightColour(colour); //do not show cursor position or selection
+    SetBackgroundColour(colour);
+	m_pDataTable->CacheCornerLabel(colour);
     GetGlobalColor(_T("DILG1"), &colour);       //colour for grid head labels background
     m_pDataTable->SetLabelBackgroundColour(colour);
     GetGlobalColor(_T("GREY3"), &colour);       //colour for all texts and labels
-    m_pDataCol->SetTextColour( colour );
-    SetForegroundColour( colour );
-    m_pDataTable->SetLabelTextColour( colour );
+    m_pDataCol->SetTextColour(colour);
+    SetForegroundColour(colour);
+    m_pDataTable->SetLabelTextColour(colour);
 }
 
 void DataTable::UpdateRouteData( wxString pointGuid,

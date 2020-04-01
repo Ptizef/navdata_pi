@@ -74,7 +74,6 @@ CustomGrid::CustomGrid( wxWindow *parent, wxWindowID id, const wxPoint &pos,
     GetGridWindow()->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent, this );
     GetGridWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseEvent, this );
     GetGridWindow()->Bind( wxEVT_MOTION, &CustomGrid::OnMouseEvent, this );
-	GetGridCornerLabelWindow()->Bind(wxEVT_PAINT, &CustomGrid::OnPaint, this);
     if( IsTouchInterface_PlugIn() )
         GetGridColLabelWindow()->Bind( wxEVT_LEFT_UP, &CustomGrid::OnMouseRollOverColLabel,this);
     else {
@@ -191,41 +190,49 @@ void CustomGrid::DrawColLabel( wxDC& dc, int col )
     }
 }
 
-void CustomGrid::OnPaint(wxPaintEvent &event)
+void CustomGrid::DrawCornerLabel(wxDC& dc)
 {
-    wxPaintDC pdc(GetGridCornerLabelWindow());
-    //draw background
-    pdc.SetPen(*wxTRANSPARENT_PEN);
-    wxColour colour;
-    GetGlobalColor(_T("DILG0"), &colour);
-    pdc.SetBrush( wxBrush(colour, wxBRUSHSTYLE_SOLID) );
-    pdc.DrawRectangle(wxRect(0, 0, m_rowLabelWidth - 1,  m_colLabelHeight - 1));
-    //draw setting button
-    wxBitmap bmp;
-    int w = _img_setting->GetWidth();
-    int h = _img_setting->GetHeight();
-    double scale = (((double)(m_colLabelHeight / 1.4) / h) * 4) / 4.;
-    w *= scale;
-    h *= scale;
-    wxString file = g_shareLocn + _T("setting.svg");
-    if( wxFile::Exists( file ) ){
-        bmp = GetBitmapFromSVGFile( file, w, h);
-    } else {
-        wxImage im = _img_setting->ConvertToImage();
-        bmp =  wxBitmap(im.Scale( w, h) );
-    }
-    wxImage image = bmp.ConvertToImage();
-    //control image
-    unsigned char *d = image.GetData();
-    if (d == 0)
-        return;
-    //draw
-    pdc.DrawBitmap( image, w/3, 0 );
+	//control cahed image
+	unsigned char *d = m_cachedCornerImage.GetData();
+	if (d == 0)
+		return;
+	//draw
+	dc.DrawBitmap(m_cachedCornerImage, 0, 0);
+}
 
-    //draw grid lines
-    pdc.SetPen(GetDefaultGridLinePen());
-    pdc.DrawLine(0, m_colLabelHeight - 1, m_rowLabelWidth, m_colLabelHeight - 1);
-    pdc.DrawLine(m_rowLabelWidth- 1, 0, m_rowLabelWidth - 1, m_colLabelHeight - 1);
+void CustomGrid::CacheCornerLabel(wxColour colour)
+{
+	wxMemoryDC  mdc;
+	wxBitmap  mbmp(m_rowLabelWidth, m_colLabelHeight);
+	mdc.SelectObject(mbmp);
+	//draw background
+	mdc.SetPen(*wxTRANSPARENT_PEN);
+	mdc.SetBrush(wxBrush(colour, wxBRUSHSTYLE_SOLID));
+	mdc.DrawRectangle(wxRect(0, 0, m_rowLabelWidth, m_colLabelHeight));
+	//draw setting button
+	wxBitmap bmp;
+	int w = _img_setting->GetWidth();
+	int h = _img_setting->GetHeight();
+	double scale = (((double)(m_colLabelHeight / 1.4) / h) * 4) / 4.;
+	w *= scale;
+	h *= scale;
+	wxString file = g_shareLocn + _T("setting.svg");
+	if (wxFile::Exists(file)) {
+		bmp = GetBitmapFromSVGFile(file, w, h);
+	}
+	else {
+		wxImage im = _img_setting->ConvertToImage();
+		bmp = wxBitmap(im.Scale(w, h));
+	}
+	if(bmp.IsOk())
+		mdc.DrawBitmap(bmp, w / 3, 0);
+	//draw grid lines
+	mdc.SetPen(GetDefaultGridLinePen());
+	mdc.DrawLine(0, m_colLabelHeight - 1, m_rowLabelWidth, m_colLabelHeight - 1);
+	mdc.DrawLine(m_rowLabelWidth - 1, 0, m_rowLabelWidth - 1, m_colLabelHeight - 1);
+	mdc.SelectObject(wxNullBitmap);
+	//Save cached image
+	m_cachedCornerImage = mbmp.ConvertToImage();
 }
 
 void CustomGrid::OnScroll( wxScrollEvent& event )

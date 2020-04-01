@@ -54,6 +54,7 @@ public:
     void GetFirstVisibleCell(int& frow, int& fcol);
     void CorrectUnwantedScroll();
     void OnMouseEvent(wxMouseEvent& event);
+	void CacheCornerLabel(wxColour colour);
 
     DataTable *m_pParent;
     wxTimer   m_stopLoopTimer;
@@ -62,7 +63,7 @@ public:
 private:
     void DrawRowLabel(wxDC& dc, int row);
     void DrawColLabel(wxDC& dc, int col);
-	void OnPaint(wxPaintEvent &event);
+	void DrawCornerLabel(wxDC& dc);
     void DrawLongWptName();
     void GetLastVisibleCell(int& lrow, int& lcol);
     void OnScroll(wxScrollEvent& event);
@@ -77,6 +78,7 @@ private:
     wxTimer  m_nameLoopTimer;
     int      m_nameFlag;
     wxString m_LongName;
+	wxImage   m_cachedCornerImage;
 
 #ifdef __WXOSX__
     bool     m_bLeftDown;
