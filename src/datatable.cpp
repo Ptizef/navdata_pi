@@ -84,10 +84,6 @@ void DataTable::InitDataTable()
                 win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
                 win->SetFont( font );
             }
-            if( win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
-                win->SetMinSize(wxSize(w, -1));
-                 win->SetSize(wxSize(w, -1));
-            }
         }
         node = node->GetNext();
     }
@@ -106,7 +102,7 @@ void DataTable::InitDataTable()
     }
     //size grid data
     int h;
-    GetTextExtent(wxString(_T("300°300°(M) ")), &w, &h, 0, 0, &font);
+    GetTextExtent(wxString(_T("30003000(M)")), &w, &h, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
     m_pDataTable->SetDefaultRowSize( h + 4, true);
     //Set scroll step X
@@ -130,6 +126,7 @@ void DataTable::InitDataTable()
     }
     m_pDataTable->SetLabelFont( font );
     m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
+    m_pDataTable->SetColLabelSize(h + 8);
 	//Dim grid & Dialog
     DimGridDialog();
     //set scroll step Y
@@ -410,23 +407,33 @@ void DataTable::SetTableSizePosition(bool moveflag, bool calcTextHeight)
                     m_pDataTable->GetNumberCols(): m_numVisCols;
 
     m_pTripSizer00->Show(g_showTripData);
-    /*If trip data visible but not before, we have to set again the size of at least one TextCtrl
-     * to be used to calculate the dialog best height*/
-    if(calcTextHeight){
+
+    //If TripData are visible for the first time (plugin start or change option) set textCtrl size
+    if(g_showTripData && (calcTextHeight || moveflag)){
         wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-        int w;
-        GetTextExtent(wxString(_T("ABCDEFG0000")), &w, NULL, 0, 0, &font);
-        m_pStartDate->SetMinSize(wxSize( w, - 1));
+        int w, h;
+        GetTextExtent(wxString(_T("ABCDEFG0000")), &w, &h, 0, 0, &font);
+        wxWindowListNode *node =  this->GetChildren().GetFirst();
+        while( node ) {
+            wxWindow *win = node->GetData();
+            if( win ){
+                if(win->IsKindOf(CLASSINFO(wxTextCtrl))){
+                    win->SetMinSize(wxSize(w, h+4));
+                    win->SetMaxSize(wxSize(w, h+4));
+                }
+            }
+                node = node->GetNext();
+        }
     }
     //)adjust visibles columns number
     int scw = GetNAVCanvas()->GetSize().GetWidth();
     int w = GetDataGridWidth(numVisCols);
-    if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1 ){
+    if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1){
         m_dialPosition.x = scw * 0.1;
 		scw *= 0.8;
         if(w > scw ){
             for( int i = numVisCols; i > 0; i-- ){
-				if(GetDataGridWidth(i) <= scw ) {
+                if(GetDataGridWidth(i) <= scw) {
                     numVisCols = i;
                     break;
                 }
@@ -443,6 +450,11 @@ void DataTable::SetTableSizePosition(bool moveflag, bool calcTextHeight)
 
     if( moveflag )
 		this->Move(m_dialPosition);
+
+    //why is this needed?
+    if( calcTextHeight ){
+        m_SizeTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
+    }
 
 	m_targetFlag = true;
 
@@ -493,26 +505,10 @@ int DataTable::GetDialogHeight( int nVisCols )
          *if the sizer has 6 columns, there is 2 data lines + 1 box sizer line
          *if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
          *if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
-		int col;
-        int lines;
-        switch (nVisCols) {
-		case 1:
-        case 2:
-            col = 2;
-            lines = 6;
-            break;
-        case 3:
-        case 4:
-            col = 4;
-            lines = 4;
-            ; break;
-		default :
-            col = 6;
-            lines = 3;
-            break;
-        }
-        m_pTripSizer01->SetCols(col);
-        h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * lines;
+        int cols[7] = { 0, 2, 2, 4, 4, 6, 6 };
+        int lines[7] = { 0, 6, 6, 4, 4, 3, 3 };
+        m_pTripSizer01->SetCols(nVisCols > 6? 6: cols[nVisCols]);
+        h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * (nVisCols > 6? 3: lines[nVisCols]);
     }
     //then compute and set best grid height
 	m_numVisRows = 5;
