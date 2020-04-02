@@ -44,7 +44,7 @@
 #endif
 #define SECONDS_PER_DAY             86400
 #define ACTIVE_POINT_IDX            0
-#define SINGLE_BORDER_THICKNESS     5
+#define SINGLE_BORDER_THICKNESS     3
 #define DOUBLE_BORDER_THICKNESS     10
 #ifdef __WXMSW__
     #define SCROLL_BAR_THICKNESS    20
@@ -74,7 +74,7 @@ public:
     void UpdateRouteData();
     void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
     void UpdateTripData();
-    void SetTableSizePosition(bool moveflag);
+    void SetTableSizePosition(bool moveflag, bool calcTextHeight = false);
     void SetTargetFlag(bool flag) {m_targetFlag = flag;}
     void CloseDialog();
     wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}

@@ -67,17 +67,17 @@ class DataTableBase : public wxDialog
 
 	protected:
         wxStaticText* m_pStartDText;
-        wxStaticText* m_pStartDate;
+        wxTextCtrl*   m_pStartDate;
         wxStaticText* m_pStartDTextat;
-        wxStaticText* m_pStartTime;
+        wxTextCtrl*   m_pStartTime;
         wxStaticText* m_pDistText;
-        wxStaticText* m_pDistValue;
+        wxTextCtrl*   m_pDistValue;
         wxStaticText* m_pTimetText;
-        wxStaticText* m_pTimeValue;
+        wxTextCtrl*   m_pTimeValue;
         wxStaticText* m_pSpeedText;
-        wxStaticText* m_pSpeedValue;
-        wxFlexGridSizer* m_pTripSizer00;
+        wxTextCtrl*   m_pSpeedValue;
         wxFlexGridSizer* m_pTripSizer01;
+        wxFlexGridSizer* m_pTripSizer00;
 
 		// Virtual event handlers, overide them in your derived class
         //virtual void OnClose( wxCloseEvent& event ) { event.Skip(); }
@@ -86,6 +86,7 @@ class DataTableBase : public wxDialog
         CustomGrid* m_pDataTable;
         DataTableBase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = _T("Navigation data"), const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( -1,-1 ), long style = wxCAPTION|wxRESIZE_BORDER );
         ~DataTableBase();
+
 };
 
 #endif //__DATADIALOGBASE_H__

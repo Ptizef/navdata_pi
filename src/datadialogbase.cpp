@@ -67,35 +67,34 @@ DataTableBase::DataTableBase( wxWindow* parent, wxWindowID id, const wxString& t
     m_pTripSizer01->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_ALL );
 
     m_pStartDText = new wxStaticText( this, wxID_ANY, _("Started"), wxDefaultPosition, wxSize( -1, -1 ), 0);
-    m_pTripSizer01->Add( m_pStartDText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+    m_pTripSizer01->Add( m_pStartDText, 0, wxLEFT|wxTOP|wxEXPAND, 3 );
 
-    m_pStartDate = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pStartDate, 0, wxALL|wxEXPAND, 5 );
+    m_pStartDate = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), wxTE_READONLY);
+    m_pTripSizer01->Add( m_pStartDate, 0, wxALL|wxEXPAND, 2 );
 
     m_pStartDTextat = new wxStaticText( this, wxID_ANY, _("at"), wxDefaultPosition, wxSize( -1, -1 ), wxALIGN_CENTRE_HORIZONTAL|wxST_NO_AUTORESIZE);
-    m_pTripSizer01->Add( m_pStartDTextat, 0, wxALIGN_CENTRE_HORIZONTAL|wxLEFT|wxTOP, 5 );
+    m_pTripSizer01->Add( m_pStartDTextat, 0, wxALIGN_CENTRE_HORIZONTAL|wxLEFT|wxTOP, 3 );
 
-    m_pStartTime = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pStartTime->Wrap( -1 );
-    m_pTripSizer01->Add( m_pStartTime, 0, wxALL|wxEXPAND, 5 );
+    m_pStartTime = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), wxTE_READONLY);
+    m_pTripSizer01->Add( m_pStartTime, 0, wxALL|wxEXPAND, 2 );
 
     m_pTimetText = new wxStaticText( this, wxID_ANY, _("TimeSpent"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+    m_pTripSizer01->Add( m_pTimetText, 0, wxLEFT|wxTOP|wxEXPAND, 3 );
 
-    m_pTimeValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pTimeValue, 0, wxALL|wxEXPAND, 5 );
+    m_pTimeValue = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), wxTE_READONLY);
+    m_pTripSizer01->Add( m_pTimeValue, 0, wxALL|wxEXPAND, 2 );
 
     m_pDistText = new wxStaticText( this, wxID_ANY, _("Distance"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+    m_pTripSizer01->Add( m_pDistText, 0, wxLEFT|wxTOP|wxEXPAND, 3 );
 
-    m_pDistValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pDistValue, 0, wxALL|wxEXPAND, 5 );
+    m_pDistValue = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), wxTE_READONLY);
+    m_pTripSizer01->Add( m_pDistValue, 0, wxALL|wxEXPAND, 2 );
 
     m_pSpeedText = new wxStaticText( this, wxID_ANY, _("Avg.speed"), wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pSpeedText, 0, wxLEFT|wxTOP|wxEXPAND, 5 );
+    m_pTripSizer01->Add( m_pSpeedText, 0, wxLEFT|wxTOP|wxEXPAND, 3 );
 
-    m_pSpeedValue = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), 0 );
-    m_pTripSizer01->Add( m_pSpeedValue, 0, wxALL|wxEXPAND, 5 );
+    m_pSpeedValue = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize( -1, -1 ), wxTE_READONLY);
+    m_pTripSizer01->Add( m_pSpeedValue, 0, wxALL|wxEXPAND, 2 );
 
     stboxsizer02->Add( m_pTripSizer01, 1, wxEXPAND, 0 );
 

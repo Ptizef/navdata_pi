@@ -272,10 +272,8 @@ void CustomGrid::OnLabelClik( wxGridEvent& event)
                 if(g_showTripData ){
                     m_pParent->UpdateTripData();
                     m_pParent->pPlugin->m_lenghtTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
-                    //curiously in this case two calculations are needed to obtain the right result
-                    m_pParent->SetTableSizePosition(false);
                 }
-                m_pParent->SetTableSizePosition(false);
+                m_pParent->SetTableSizePosition(false, g_showTripData);
             }
             wxString s = g_withSog? _("SOG"): _("VMG");
             SetRowLabelValue( 3, _("TTG @ ") + s );

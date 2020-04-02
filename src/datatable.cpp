@@ -70,21 +70,26 @@ void DataTable::InitDataTable()
     //grid level
     Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
     Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-    //get global Font
+    //set trip texts Font and size
     wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-    //wxStaticTexts level
+    int w;
+    GetTextExtent(wxString(_T("ABCDEFG0000")), &w, NULL, 0, 0, &font);
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     while( node ) {
         wxWindow *win = node->GetData();
         if( win ){
             win->SetFont( font );
-            if( win->IsKindOf(CLASSINFO(wxStaticText)) ){
+            if( win->IsKindOf(CLASSINFO(wxStaticText)) || win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
                 win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
                 win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
                 win->SetFont( font );
             }
-            node = node->GetNext();
+            if( win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
+                win->SetMinSize(wxSize(w, -1));
+                 win->SetSize(wxSize(w, -1));
+            }
         }
+        node = node->GetNext();
     }
     //connect timers
 	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
@@ -99,19 +104,9 @@ void DataTable::InitDataTable()
         pConf->Read(_T("ShowTripData"), &g_showTripData,1);
         pConf->Read(_T("ShowTTGETAatSOG"), &g_withSog,0);
     }
-    //set text controls sizing trip data
-    int w;
-    GetTextExtent( wxDateTime::Now().Format(_T("%b %d %Y")), &w, NULL, 0, 0, &font); // Time width text control size
-    m_pStartDate->SetMinSize( wxSize(w, -1) );
-    GetTextExtent( wxDateTime::Now().Format(_T("at %H:%M:%S")), &w, NULL, 0, 0, &font); // Time width text control size
-    m_pStartTime->SetMinSize( wxSize(w, -1) );
-    GetTextExtent( _T("0000.0NMI"), &w, NULL, 0, 0, &font); // Lenght width text control size
-    m_pDistValue->SetMinSize( wxSize(w, -1) );
-    GetTextExtent( _T("00h 00m"), &w, NULL, 0, 0, &font); // duration width text control size
-    m_pTimeValue->SetMinSize( wxSize(w, -1) );
-	//set the best size for all columns
+    //size grid data
     int h;
-    GetTextExtent(wxString(_T("300°300°(M)")), &w, &h, 0, 0, &font);
+    GetTextExtent(wxString(_T("300°300°(M) ")), &w, &h, 0, 0, &font);
     m_pDataTable->SetDefaultColSize( w, true);
     m_pDataTable->SetDefaultRowSize( h + 4, true);
     //Set scroll step X
@@ -144,18 +139,30 @@ void DataTable::InitDataTable()
 void DataTable::DimGridDialog()
 {
     //dim grid
-    wxColour colour;
-    GetGlobalColor(_T("DILG0"), &colour);       //colour for grid cells & dialogs background
-    m_pDataCol->SetBackgroundColour(colour);
-    m_pDataTable->SetCellHighlightColour(colour); //do not show cursor position or selection
-    SetBackgroundColour(colour);
-	m_pDataTable->CacheCornerLabel(colour);
-    GetGlobalColor(_T("DILG1"), &colour);       //colour for grid head labels background
-    m_pDataTable->SetLabelBackgroundColour(colour);
-    GetGlobalColor(_T("GREY3"), &colour);       //colour for all texts and labels
-    m_pDataCol->SetTextColour(colour);
-    SetForegroundColour(colour);
-    m_pDataTable->SetLabelTextColour(colour);
+    wxColour bcolour,fcolour;
+    GetGlobalColor(_T("DILG0"), &bcolour);       //colour for grid labels & dialogs background
+    m_pDataTable->SetCellHighlightColour(bcolour); //do not show cursor position or selection
+    m_pDataTable->SetLabelBackgroundColour(bcolour);
+    SetBackgroundColour(bcolour);
+    //cache whole corner label including settings icon (ovoid flicker in MSW
+    m_pDataTable->CacheCornerLabel(bcolour);
+    GetGlobalColor(_T("DILG1"), &bcolour);       //colour for grid data & trip data background
+    m_pDataCol->SetBackgroundColour(bcolour);
+    GetGlobalColor(_T("GREY3"), &fcolour);       //colour for all texts and labels
+    m_pDataCol->SetTextColour(fcolour);
+    m_pDataTable->SetLabelTextColour(fcolour);
+    SetForegroundColour(fcolour);
+    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    while( node ) {
+        wxWindow *win = node->GetData();
+        if( win ){
+            if( win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
+                win->SetBackgroundColour(bcolour);
+                win->SetForegroundColour(fcolour);
+            }
+        }
+        node = node->GetNext();
+    }
 }
 
 void DataTable::UpdateRouteData( wxString pointGuid,
@@ -352,21 +359,21 @@ void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan t
     if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
 
     if( !g_showTripData ) return;
-        m_pStartDate->SetLabel( starttime.Format(_T("%b %d %Y")) );
-        m_pStartTime->SetLabel( starttime.Format(_T("%H:%M:%S")) );
+        m_pStartDate->SetValue( starttime.Format(_T("%b %d %Y")) );
+        m_pStartTime->SetValue( starttime.Format(_T("%H:%M:%S")) );
         tdist = toUsrDistance_Plugin( tdist, pPlugin->GetDistFormat());
         wxString sd = tdist > 999.99 ? wxString(_T("%1.0f"),wxConvUTF8 ):
                                        tdist > 99.99 ? wxString(_T("%1.1f"),wxConvUTF8 ):
                                        wxString(_T("%1.2f"),wxConvUTF8 );
-        m_pDistValue->SetLabel( wxString::Format( sd, tdist )
+        m_pDistValue->SetValue( wxString::Format( sd, tdist )
                                 + getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat() ) );
-        m_pTimeValue->SetLabel( times.Format(_T("%Hh %Mm")) );
+        m_pTimeValue->SetValue( times.Format(_T("%Hh %Mm")) );
         double th = times.GetSeconds().ToDouble() / 3600;
         double sp = tdist / ( th );
         if( std::isnan(sp) )
-            m_pSpeedValue->SetLabel( _T("----") );
+            m_pSpeedValue->SetValue( _T("----") );
         else
-            m_pSpeedValue->SetLabel( wxString::Format( wxString("%2.2f", wxConvUTF8 ),
+            m_pSpeedValue->SetValue( wxString::Format( wxString("%2.2f", wxConvUTF8 ),
                         toUsrSpeed_Plugin( sp, pPlugin->GetSpeedFormat() ) )
                                + getUsrSpeedUnit_Plugin( pPlugin->GetSpeedFormat() ) );
 }
@@ -377,11 +384,11 @@ void DataTable::UpdateTripData()
     if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
 
     if( !g_showTripData ) return;
-    m_pStartDate->SetLabel( _T("----") );
-    m_pStartTime->SetLabel( _T("----") );
-    m_pDistValue->SetLabel( _T("----") );
-    m_pTimeValue->SetLabel( _T("----") );
-    m_pSpeedValue->SetLabel( _T("----") );
+    m_pStartDate->SetValue( _T("----") );
+    m_pStartTime->SetValue( _T("----") );
+    m_pDistValue->SetValue( _T("----") );
+    m_pTimeValue->SetValue( _T("----") );
+    m_pSpeedValue->SetValue( _T("----") );
 }
 
 void DataTable::MakeVisibleCol( int col )
@@ -394,7 +401,7 @@ void DataTable::MakeVisibleCol( int col )
 }
 
 wxWindow *GetNAVCanvas();
-void DataTable::SetTableSizePosition(bool moveflag )
+void DataTable::SetTableSizePosition(bool moveflag, bool calcTextHeight)
 {
     m_InvalidateSizeEvent = true;
 
@@ -403,6 +410,14 @@ void DataTable::SetTableSizePosition(bool moveflag )
                     m_pDataTable->GetNumberCols(): m_numVisCols;
 
     m_pTripSizer00->Show(g_showTripData);
+    /*If trip data visible but not before, we have to set again the size of at least one TextCtrl
+     * to be used to calculate the dialog best height*/
+    if(calcTextHeight){
+        wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
+        int w;
+        GetTextExtent(wxString(_T("ABCDEFG0000")), &w, NULL, 0, 0, &font);
+        m_pStartDate->SetMinSize(wxSize( w, - 1));
+    }
     //)adjust visibles columns number
     int scw = GetNAVCanvas()->GetSize().GetWidth();
     int w = GetDataGridWidth(numVisCols);
@@ -495,9 +510,9 @@ int DataTable::GetDialogHeight( int nVisCols )
             col = 6;
             lines = 3;
             break;
-		}
-		m_pTripSizer01->SetCols(col);
-        h = (m_pStartDText->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * lines;
+        }
+        m_pTripSizer01->SetCols(col);
+        h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * lines;
     }
     //then compute and set best grid height
 	m_numVisRows = 5;
