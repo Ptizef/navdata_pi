@@ -54,6 +54,7 @@
 
 
 class navdata_pi;
+class TripData;
 
 //----------------------------------------------------------------------------------------------------------
 //    Data table dialog Specification
@@ -72,7 +73,7 @@ public:
     void UpdateRouteData(wxString pointGuid,
                     double shiplon, double shiplat, double shipcog, double shipsog );
     void UpdateRouteData();
-    void UpdateTripData(wxDateTime starttime, double tdist, wxTimeSpan times);
+    void UpdateTripData(TripData *ptripData);
     void UpdateTripData();
     void SetTableSizePosition(bool moveflag, bool calcTextHeight = false);
     void SetTargetFlag(bool flag) {m_targetFlag = flag;}

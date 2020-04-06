@@ -227,9 +227,9 @@ void DataTable::UpdateRouteData( wxString pointGuid,
 					}
 					//sbrg
 					if (brg > 359.5) brg = 0;
-					if (pPlugin->GetShowMag() == 0 || pPlugin->GetShowMag() == 2)
+                    if (pPlugin->GetOcpnStyleBrg() == 0 || pPlugin->GetOcpnStyleBrg() == 2)
 						sbrg << wxString::Format(wxString("%3.0f°", wxConvUTF8), brg);
-					if (pPlugin->GetShowMag() == 1 || pPlugin->GetShowMag() == 2)
+                    if (pPlugin->GetOcpnStyleBrg() == 1 || pPlugin->GetOcpnStyleBrg() == 2)
 						sbrg << wxString::Format(wxString("%3.0f°(M)", wxConvUTF8), pPlugin->GetMag(brg));
 					//srng with eventually nrng
                     double deltarng = fabs( rng - nrng );
@@ -350,23 +350,36 @@ void DataTable::UpdateRouteData()
     m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
 }
 
-void DataTable::UpdateTripData( wxDateTime starttime, double tdist, wxTimeSpan times )
+void DataTable::UpdateTripData(TripData *ptripData)
 {
     //Do not update data if displaying the long way point name
     if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
 
+    if(!ptripData){
+        UpdateTripData();
+        return;
+    }
     if( !g_showTripData ) return;
-        m_pStartDate->SetValue( starttime.Format(_T("%b %d %Y")) );
-        m_pStartTime->SetValue( starttime.Format(_T("%H:%M:%S")) );
-        tdist = toUsrDistance_Plugin( tdist, pPlugin->GetDistFormat());
-        wxString sd = tdist > 999.99 ? wxString(_T("%1.0f"),wxConvUTF8 ):
-                                       tdist > 99.99 ? wxString(_T("%1.1f"),wxConvUTF8 ):
-                                       wxString(_T("%1.2f"),wxConvUTF8 );
-        m_pDistValue->SetValue( wxString::Format( sd, tdist )
-                                + getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat() ) );
-        m_pTimeValue->SetValue( times.Format(_T("%Hh %Mm")) );
-        double th = times.GetSeconds().ToDouble() / 3600;
+        //start time
+        m_pStartDate->SetValue( ptripData->m_startDate.Format(_T("%b %d/%Y")) );
+        m_pStartTime->SetValue( ptripData->m_startDate.Format(_T("%H:%M:%S")) );
+        // total time
+        wxTimeSpan span =  ptripData->m_endTime - ptripData->m_startDate;
+        m_pTimeValue->SetValue( span.Format(_T("%Hh%Mm")) );
+        if(ptripData->m_isEnded){
+            m_pEndDate->SetValue(ptripData->m_endTime.Format(_T("%d/%y %H:%M")));
+        } else {
+            m_pEndDate->SetValue( _T("---") );
+        }
+        //dist and speed
+        double tdist = ptripData->m_totalDist + ptripData->m_tempDist;
+        double th = span.GetSeconds().ToDouble() / 3600; //total time in hours
         double sp = tdist / ( th );
+        tdist = toUsrDistance_Plugin( tdist, pPlugin->GetDistFormat());
+        int c = tdist > 999.99 ? 0: tdist > 9.99 ? 1: 2;
+        m_pDistValue->SetValue( wxString::Format( wxString(_T("%1.*f")), c, tdist )
+                                + getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat() ) );
+        //speed
         if( std::isnan(sp) )
             m_pSpeedValue->SetValue( _T("----") );
         else
@@ -386,13 +399,14 @@ void DataTable::UpdateTripData()
     m_pDistValue->SetValue( _T("----") );
     m_pTimeValue->SetValue( _T("----") );
     m_pSpeedValue->SetValue( _T("----") );
+    m_pEndDate->SetValue( _T("---") );
 }
 
 void DataTable::MakeVisibleCol( int col )
 {
     int row, fcol;
     m_pDataTable->GetFirstVisibleCell( row, fcol );
-    if( m_pDataTable->IsVisible(row, col, true) ) return;
+    //if( m_pDataTable->IsVisible(row, col, true) ) return;
     m_pDataTable->MakeCellVisible( row, m_pDataTable->GetNumberCols() - 1 );
     m_pDataTable->MakeCellVisible( row, col );
 }
@@ -506,7 +520,7 @@ int DataTable::GetDialogHeight( int nVisCols )
          *if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
          *if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
         int cols[7] = { 0, 2, 2, 4, 4, 6, 6 };
-        int lines[7] = { 0, 6, 6, 4, 4, 3, 3 };
+        int lines[7] = { 0, 7, 7, 4, 4, 3, 3 };
         m_pTripSizer01->SetCols(nVisCols > 6? 6: cols[nVisCols]);
         h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * (nVisCols > 6? 3: lines[nVisCols]);
     }
