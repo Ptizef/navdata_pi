@@ -35,8 +35,6 @@
 #include <wx/grid.h>
 
 #include "datadialogbase.h"
-#include "vector2D.h"
-#include "customgrid.h"
 #include <wx/dcgraph.h>
 
 #ifndef PI
@@ -44,8 +42,6 @@
 #endif
 #define SECONDS_PER_DAY             86400
 #define ACTIVE_POINT_IDX            0
-#define SINGLE_BORDER_THICKNESS     5
-#define DOUBLE_BORDER_THICKNESS     10
 #ifdef __WXMSW__
     #define SCROLL_BAR_THICKNESS    20
 #else
@@ -75,47 +71,18 @@ public:
     void UpdateRouteData();
     void UpdateTripData(TripData *ptripData);
     void UpdateTripData();
-    void SetTableSizePosition(bool moveflag, bool calcTextHeight = false);
-    void SetTargetFlag(bool flag) {m_targetFlag = flag;}
+    void SetTableSizePosition();
     void CloseDialog();
-    wxPoint2DDouble GetSelPointPos() {return m_SelPointPos;}
-    void DimGridDialog();
+    void DimTripDialog();
+    void SetTripDialogFont();
 private:
-    void AddDataCol(int num_cols);
-    wxString FormatDistance(double val1 , double val2 = 0., bool delta = false);
-    void BrgRngMercatorToActiveNormalArrival(double wptlat, double wptlon,
-                                  double wptprevlat, double wptprevlon,
-                                  double glat, double glon,
-                                  double *brg, double *nrng);
-    void MakeVisibleCol(int col);
     int  GetDialogHeight(int nVisCols);
     int  GetDataGridWidth(int nVisCols);
-    int  GetDataGridHeight(int nVisCols);
-	void OnSize(wxSizeEvent &event);
-	void OnSizeTimer(wxTimerEvent & event);
+    void OnPaintEvent(wxPaintEvent &event);
+    void OnMouseEvent(wxMouseEvent &event);
 
-    wxGridCellAttr *m_pDataCol;
-    bool           m_targetFlag;
-    wxPoint2DDouble  m_SelPointPos;
-    int            m_numVisCols;
-    int            m_numVisRows;
-    bool           m_InvalidateSizeEvent;
+    int            m_numDialCols;
     wxPoint        m_dialPosition;
-	wxTimer		   m_SizeTimer;
-};
-
-//----------------------------------------------------------------------------------------------------------
-//    Settings dialog Specification
-//----------------------------------------------------------------------------------------------------------
-class Settings: public SettingsBase
-{
-private:
-    void OnOKButton(wxCommandEvent& event);
-
-public:
-    Settings(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style );
-
-     ~Settings(){}
 };
 
 #endif //__DATATABLE_H__

@@ -35,546 +35,285 @@
 #include <wx/grid.h>
 #include "navdata_pi.h"
 #include <wx/tokenzr.h>
+#include "styles.h"
 
-extern wxString       g_activeRouteGuid;
-extern wxString       g_selectedPointGuid;
-extern wxString       g_shareLocn;
-extern int            g_selectedPointCol;
-extern bool           g_showTripData;
-extern bool           g_withSog;
-extern wxPoint        g_scrollPos;
+extern int            g_ocpnDistFormat;
+extern int            g_ocpnSpeedFormat;
+extern ocpnStyle::StyleManager* g_StyleManager;
 
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
 //----------------------------------------------------------------------------------------------------------
-
 DataTable::DataTable(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ,navdata_pi *ppi )
     : DataTableBase(parent, id, title, pos, size, style )
 {
     pPlugin = ppi;
+    InitDataTable();
 }
 
 DataTable::~DataTable(void)
-{ 
-	delete m_pDataTable;
-}
+{}
 
 void DataTable::InitDataTable()
 {
-    m_pDataTable->m_pParent = this;
-    g_scrollPos = wxPoint(0, 0);
-
-    //connect events
-    //dialog level
-    Bind( wxEVT_SIZE, &DataTable::OnSize, this );
-    //grid level
-    Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-    Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-    //set trip texts Font and size
-    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-    int w;
-    GetTextExtent(wxString(_T("ABCDEFG0000")), &w, NULL, 0, 0, &font);
-    wxWindowListNode *node =  this->GetChildren().GetFirst();
-    while( node ) {
-        wxWindow *win = node->GetData();
-        if( win ){
-            win->SetFont( font );
-            if( win->IsKindOf(CLASSINFO(wxStaticText)) || win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
-                win->Bind( wxEVT_LEFT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-                win->Bind( wxEVT_RIGHT_DOWN, &CustomGrid::OnMouseEvent,m_pDataTable );
-                win->SetFont( font );
-            }
-        }
-        node = node->GetNext();
-    }
-    //connect timers
-	m_SizeTimer.Bind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
-
     //get navdata_pi options
     wxFileConfig *pConf = GetOCPNConfigObject();
+    int numCols;
     if (pConf) {
         pConf->SetPath(_T("/Settings/NAVDATA"));
-        pConf->Read(_T("DataTablePosition_x"), &m_dialPosition.x, 0);
-        pConf->Read(_T("DataTablePosition_y"), &m_dialPosition.y, 0);
-        pConf->Read(_T("NumberColVisibles"), &m_numVisCols, -1);
-        pConf->Read(_T("ShowTripData"), &g_showTripData,1);
-        pConf->Read(_T("ShowTTGETAatSOG"), &g_withSog,0);
+        pConf->Read(_T("DataTablePosition_x"), &m_dialPosition.x, 60);
+        pConf->Read(_T("DataTablePosition_y"), &m_dialPosition.y, 30);
+        pConf->Read(_T("NumberColVisibles"), &numCols, 1);
     }
-    //size grid data
-    int h;
-    GetTextExtent(wxString(_T("30003000(M)")), &w, &h, 0, 0, &font);
-    m_pDataTable->SetDefaultColSize( w, true);
-    m_pDataTable->SetDefaultRowSize( h + 4, true);
-    //Set scroll step X
-    m_pDataTable->SetScrollLineX(w);
-    //init cell attr
-    m_pDataCol = new wxGridCellAttr();
-    m_pDataCol->SetFont( font );
-    m_pDataCol->SetReadOnly();
-    //create grid and populate labels
-    wxString sl;
-    sl.Append(_("RNG")).Append(_T("(")).Append(getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat())).Append(_T(")"));
-    const wxString s[] = {_("BRG"), sl, _("Total RNG") ,_("TTG @ "), _("ETA @ "), _T("END") };
-    wxString v = wxEmptyString;
-    for( int i = 0;; i++ ){
-        m_pDataTable->AppendRows();
-        if( i == 3 || i == 4 ){
-            v = g_withSog? _("SOG"): _("VMG");
-        }
-        m_pDataTable->SetRowLabelValue(i, s[i] + v );
-        if( s[i + 1] == _T("END") ) break;
-    }
-    m_pDataTable->SetLabelFont( font );
-    m_pDataTable->SetRowLabelSize(wxGRID_AUTOSIZE);
-    m_pDataTable->SetColLabelSize(h + 8);
-	//Dim grid & Dialog
-    DimGridDialog();
-    //set scroll step Y
-    m_pDataTable->SetScrollLineY( m_pDataTable->GetRowSize(0) );
+    m_numDialCols = numCols > 3? 3: numCols < 1? 1: numCols;
+
+    //connect timers at data table label level
+    Bind(wxEVT_PAINT, &DataTable::OnPaintEvent, this);
+    Bind(wxEVT_LEFT_UP, &DataTable::OnMouseEvent, this);
+    Bind(wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent, this);
+    Bind(wxEVT_MOTION, &DataTable::OnMouseEvent, this);
 }
 
-void DataTable::DimGridDialog()
+void DataTable::DimTripDialog()
 {
-    //dim grid
-    wxColour bcolour,fcolour;
-    GetGlobalColor(_T("DILG0"), &bcolour);       //colour for grid labels & dialogs background
-    m_pDataTable->SetCellHighlightColour(bcolour); //do not show cursor position or selection
-    m_pDataTable->SetLabelBackgroundColour(bcolour);
-    SetBackgroundColour(bcolour);
-    //cache whole corner label including settings icon (ovoid flicker in MSW
-    m_pDataTable->CacheCornerLabel(bcolour);
-    GetGlobalColor(_T("DILG1"), &bcolour);       //colour for grid data & trip data background
-    m_pDataCol->SetBackgroundColour(bcolour);
-    GetGlobalColor(_T("GREY3"), &fcolour);       //colour for all texts and labels
-    m_pDataCol->SetTextColour(fcolour);
-    m_pDataTable->SetLabelTextColour(fcolour);
-    SetForegroundColour(fcolour);
+    ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
+
+    //Dialog background colour
+    wxColour back_color;
+    GetGlobalColor(_T("DILG1"), &back_color);
+    SetBackgroundColour(back_color);
+
+    //data and label colours
+    GetGlobalColor(_T("UBLCK"), &back_color);
+    wxColour val_color = GetFontColour_PlugIn( _("Console Value") );
+    wxColour leg_color = GetFontColour_PlugIn( _("Console Legend") );  
+    wxColour def_col = style->consoleFontColor; //default colour from style
+    // Make sure that the background color and the text colors are not too close, for contrast
+    wxColour legend_color = leg_color;
+    if( (abs(legend_color.Red() - back_color.Red()) < 5) &&
+            (abs(legend_color.Green() - back_color.Blue()) < 5) &&
+            (abs(legend_color.Blue() - back_color.Blue()) < 5))
+        leg_color = def_col;
+    wxColour value_color = val_color;
+    if( (abs(value_color.Red() - back_color.Red()) < 5) &&
+            (abs(value_color.Green() - back_color.Blue()) < 5) &&
+            (abs(value_color.Blue() - back_color.Blue()) < 5))
+        val_color = def_col;
     wxWindowListNode *node =  this->GetChildren().GetFirst();
+    int i = 0;
     while( node ) {
         wxWindow *win = node->GetData();
         if( win ){
             if( win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
-                win->SetBackgroundColour(bcolour);
-                win->SetForegroundColour(fcolour);
-            }
-        }
-        node = node->GetNext();
-    }
-}
-
-void DataTable::UpdateRouteData( wxString pointGuid,
-                double shiplat, double shiplon, double shipcog, double shipsog )
-{
-    //Do not update data if displaying the long way point name
-    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
-
-    //if no active route set a one empty column grid
-    if (g_activeRouteGuid == wxEmptyString) {
-        UpdateRouteData();
-        return;
-    }
-    //find active route and wpts
-    g_selectedPointCol = wxNOT_FOUND;
-    std::unique_ptr<PlugIn_Route> r;
-    r = GetRoute_Plugin( g_activeRouteGuid );
-    //set label route name in title
-    wxString title = r.get()->m_NameString;
-    if( title.IsEmpty() )
-        title = _("Unnamed route");
-    SetTitle(title);
-    //populate cols
-    m_pDataTable->BeginBatch();
-    double brg, rng, speed, nrng;
-    speed = 0.; nrng = 0.;
-    double latprev, lonprev, trng = 0.;
-    float tttg_sec =0.;
-    int ncols = wxNOT_FOUND;
-    bool first = true;
-    wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
-    while( node ){
-        PlugIn_Waypoint *wpt = node->GetData();
-        if(wpt) {
-            wxString srng, sbrg;
-            if( first ){
-                latprev = wpt->m_lat;
-                lonprev = wpt->m_lon;
-                first = false;
-            }
-            if( wpt->m_GUID == pointGuid ) //find active wpt
-                ncols = ACTIVE_POINT_IDX;
-            if( ncols > wxNOT_FOUND ){
-                AddDataCol( ncols );
-                if( wpt->m_GUID == g_selectedPointGuid ){
-                    if( ncols > ACTIVE_POINT_IDX ){
-                        g_selectedPointCol = ncols;
-                        m_SelPointPos.m_x = wpt->m_lat;
-                        m_SelPointPos.m_y = wpt->m_lon;
-                    }
-                }
-                m_pDataTable->SetColLabelValue( ncols, wpt->m_MarkName );
-                if( ncols == ACTIVE_POINT_IDX ){ //active leg from ownship to active point
-					//rng, brg, nrng
-                    rng = DistGreatCircle_Plugin( shiplat, shiplon, wpt->m_lat, wpt->m_lon );
-                    BrgRngMercatorToActiveNormalArrival( wpt->m_lat, wpt->m_lon, latprev, lonprev,
-                                            shiplat, shiplon, &brg, &nrng);
-					//vmg
-					if (!std::isnan(shipcog) && !std::isnan(shipsog)) {
-						double vmg = shipsog * cos((brg - shipcog) * PI / 180.);
-						if (g_withSog)
-							speed = shipsog;
-						else
-							speed = vmg;
-					}
-					//sbrg
-					if (brg > 359.5) brg = 0;
-                    if (pPlugin->GetOcpnStyleBrg() == 0 || pPlugin->GetOcpnStyleBrg() == 2)
-						sbrg << wxString::Format(wxString("%3.0f°", wxConvUTF8), brg);
-                    if (pPlugin->GetOcpnStyleBrg() == 1 || pPlugin->GetOcpnStyleBrg() == 2)
-						sbrg << wxString::Format(wxString("%3.0f°(M)", wxConvUTF8), pPlugin->GetMag(brg));
-					//srng with eventually nrng
-                    double deltarng = fabs( rng - nrng );
-                    bool delta = false;
-                    if( ( deltarng > .01 ) && ( ( deltarng / rng ) > .10 ) && ( rng < 10.0 ) )
-                        delta = true;
-                    srng = FormatDistance( rng, nrng, delta );
-					//total rng
-                    trng = rng;
-                } else {// following legs
-                    //brg, rng
-                    DistanceBearingMercator_Plugin(wpt->m_lat, wpt->m_lon, latprev, lonprev,
-                                &brg, &rng);
-                    srng = FormatDistance( rng );
-                    sbrg << wxString::Format( wxString("%3d°", wxConvUTF8 ), (int)brg );
-					//total rng
-                    trng += rng;
-                }
-                // print brg, ttg, eta
-                wxString tttg_s, teta_s;
-                if( speed > 0. ) {
-                    float ttg_sec;
-                    /*TTG and ETA based on VMG for active leg then on SOG for
-                     * the following legs*/
-                    if( ncols == ACTIVE_POINT_IDX )
-                        ttg_sec = ( rng / speed ) * 3600.;
-                    else
-                        ttg_sec = ( rng / shipsog ) * 3600.;
-                    tttg_sec += ttg_sec;
-                    wxTimeSpan tttg_span = wxTimeSpan::Seconds( (long) tttg_sec );
-                    //Show also #days if TTG > 24 h
-                    tttg_s = tttg_sec > SECONDS_PER_DAY ?
-                            tttg_span.Format(_T("%Dd %H:%M")) : tttg_span.Format("%H:%M:%S");
-                    wxDateTime dtnow, eta;
-                    dtnow.SetToCurrent();
-                    eta = dtnow.Add( tttg_span );
-                    teta_s = tttg_sec > SECONDS_PER_DAY ?
-                            eta.Format(_T("(%d) %H:%M")) : eta.Format(_T("%H:%M"));
-                }
+                win->SetBackgroundColour(back_color);
+                if(i%2 == 0)
+                    win->SetForegroundColour(leg_color);
                 else
-                {
-                    tttg_s = _T("---");
-                    teta_s = _T("---");
-                }
-                //update cells
-                for (int j = 0; j < m_pDataTable->GetNumberRows(); j++ ){
-                m_pDataCol->IncRef();
-                    switch(j){
-                    case 0:
-                        m_pDataTable->SetCellValue( j, ncols, sbrg );
-                        break;
-                    case 1:
-                        m_pDataTable->SetCellValue( j, ncols, srng );
-                        break;
-                    case 2:
-                        if( ncols == 0 )
-                            m_pDataTable->SetCellValue( j, ncols, _T("---") );
-                        else
-                            m_pDataTable->SetCellValue( j, ncols, FormatDistance( trng ) );
-                        break;
-                    case 3:
-                        m_pDataTable->SetCellValue( j, ncols, tttg_s );
-                        break;
-                    case 4:
-                        m_pDataTable->SetCellValue( j, ncols, teta_s );
-                    }
-                }
-                ncols++;
+                    win->SetForegroundColour(val_color);
+                i++;
             }
         }
-        latprev = wpt->m_lat;
-        lonprev = wpt->m_lon;
         node = node->GetNext();
     }
-    //Clear all useless lines if exist
-    int ex = m_pDataTable->GetNumberCols() - ncols;
-    if( ex > 0 )
-        m_pDataTable->DeleteCols( ncols, ex );
-    //set visible point
-    if( g_selectedPointCol == wxNOT_FOUND ){
-        if ( !g_selectedPointGuid.IsEmpty() )
-            MakeVisibleCol( 0 );
-        g_selectedPointGuid = wxEmptyString;
-	}
-	else {
-		if (m_targetFlag)
-			MakeVisibleCol(g_selectedPointCol);
-	}
-    //close counters
-    m_pDataTable->EndBatch();
-    m_pDataCol->DecRef();              // Give up pointer control to Grid
-    m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
 }
 
-void DataTable::UpdateRouteData()
+void DataTable::SetTripDialogFont()
 {
-    //Do not update data if displaying the long way point name
-    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
-
-    //in this case there is no active route so create a one empty column grid
-    SetTitle(_("No Active Route!"));
-    //populate cols
-    m_pDataTable->BeginBatch();
-    AddDataCol( 0 );
-    m_pDataTable->SetColLabelValue( 0, _T("----") );
-    //update cells
-    for (int j = 0; j < m_pDataTable->GetNumberRows(); j++ ){
-        m_pDataCol->IncRef();
-        m_pDataTable->SetCellValue( j, 0, _T("---") );
+    int w, wt, h;
+    wxFont leg_font = GetOCPNGUIScaledFont_PlugIn( _("Console Legend") );
+    wxFont val_font = GetOCPNGUIScaledFont_PlugIn( _("Console Value") );
+    GetTextExtent(wxString(_T("Abcdefghijkln")), &wt, NULL, 0, 0, &leg_font);
+    GetTextExtent(wxString(_T("ABCDEFG000i")), &w, &h, 0, 0, &val_font);
+    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    int i = 0;
+    while( node ) {
+        wxWindow *win = node->GetData();
+        if( win ){
+            if(win->IsKindOf(CLASSINFO(wxTextCtrl))){
+                if(i%2 == 0){
+                    win->SetFont(leg_font);
+                    win->SetMinSize(wxSize(wt, h+4));
+                    win->SetMaxSize(wxSize(wt, h+4));
+                } else {
+                    win->SetFont( val_font );
+                    win->SetMinSize(wxSize(w, h+4));
+                    win->SetMaxSize(wxSize(w, h+4));
+                }
+                i++;
+            }
+        }
+            node = node->GetNext();
     }
-    //Clear all useless lines if exist
-    int ex = m_pDataTable->GetNumberCols() - 1;
-    if( ex > 0 )
-        m_pDataTable->DeleteCols( 1, ex );
-    //close counters
-    m_pDataTable->EndBatch();
-    m_pDataCol->DecRef();              // Give up pointer control to Grid
-    m_pDataTable->GetFirstVisibleCell(g_scrollPos.y, g_scrollPos.x);
 }
 
 void DataTable::UpdateTripData(TripData *ptripData)
 {
-    //Do not update data if displaying the long way point name
-    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
-
     if(!ptripData){
         UpdateTripData();
         return;
     }
-    if( !g_showTripData ) return;
         //start time
-        m_pStartDate->SetValue( ptripData->m_startDate.Format(_T("%b %d/%Y")) );
+        m_pStartDate->SetValue( ptripData->m_startDate.Format(_T("%x")) );
         m_pStartTime->SetValue( ptripData->m_startDate.Format(_T("%H:%M:%S")) );
         // total time
         wxTimeSpan span =  ptripData->m_endTime - ptripData->m_startDate;
-        m_pTimeValue->SetValue( span.Format(_T("%Hh%Mm")) );
+        double th = span.GetSeconds().ToDouble() / 3600; //total time in hours
+        if( th < 23 )
+            m_pTimeValue->SetValue( span.Format(_T("%H:%M:%S")) );
+        else
+            m_pTimeValue->SetValue( span.Format(_T("%Dd %H:%M")) );
+
+        //end time
         if(ptripData->m_isEnded){
-            m_pEndDate->SetValue(ptripData->m_endTime.Format(_T("%d/%y %H:%M")));
+            wxString send = ptripData->m_endTime.Format(_T("%x")).BeforeLast('/');
+            send << ptripData->m_startDate.Format(_T(" %H:%M"));
+            m_pEndDate->SetValue(send);
         } else {
             m_pEndDate->SetValue( _T("---") );
         }
-        //dist and speed
+        //dist
         double tdist = ptripData->m_totalDist + ptripData->m_tempDist;
-        double th = span.GetSeconds().ToDouble() / 3600; //total time in hours
-        double sp = tdist / ( th );
-        tdist = toUsrDistance_Plugin( tdist, pPlugin->GetDistFormat());
-        int c = tdist > 999.99 ? 0: tdist > 9.99 ? 1: 2;
-        m_pDistValue->SetValue( wxString::Format( wxString(_T("%1.*f")), c, tdist )
-                                + getUsrDistanceUnit_Plugin( pPlugin->GetDistFormat() ) );
+        if( tdist > 0.1 ){
+            tdist = toUsrDistance_Plugin( tdist, g_ocpnDistFormat);
+            int c = tdist > 999.99 ? 0: tdist > 9.99 ? 1: 2;
+            m_pDistValue->SetValue( wxString::Format( wxString(_T("%1.*f")), c, tdist )
+                                + getUsrDistanceUnit_Plugin( g_ocpnDistFormat ) );
+        } else
+            m_pDistValue->SetValue( _T("---") );
         //speed
-        if( std::isnan(sp) )
-            m_pSpeedValue->SetValue( _T("----") );
-        else
+        double sp = tdist / ( th );
+        if( std::isnan(sp) ){
+            m_pSpeedValue->SetValue( _T("---") );
+            return;
+        }
+        if( tdist > 0.1 ){
             m_pSpeedValue->SetValue( wxString::Format( wxString("%2.2f", wxConvUTF8 ),
-                        toUsrSpeed_Plugin( sp, pPlugin->GetSpeedFormat() ) )
-                               + getUsrSpeedUnit_Plugin( pPlugin->GetSpeedFormat() ) );
+                        toUsrSpeed_Plugin( sp, g_ocpnSpeedFormat ) )
+                               + getUsrSpeedUnit_Plugin( g_ocpnSpeedFormat ) );
+        } else
+            m_pSpeedValue->SetValue( _T("---") );
 }
 
 void DataTable::UpdateTripData()
 {
-    //Do not update data if displaying the long way point name
-    if(m_pDataTable->m_colLongname != wxNOT_FOUND) return;
-
-    if( !g_showTripData ) return;
-    m_pStartDate->SetValue( _T("----") );
-    m_pStartTime->SetValue( _T("----") );
-    m_pDistValue->SetValue( _T("----") );
-    m_pTimeValue->SetValue( _T("----") );
-    m_pSpeedValue->SetValue( _T("----") );
+    m_pStartDate->SetValue( _T("---") );
+    m_pStartTime->SetValue( _T("---") );
+    m_pDistValue->SetValue( _T("---") );
+    m_pTimeValue->SetValue( _T("---") );
+    m_pSpeedValue->SetValue( _T("---") );
     m_pEndDate->SetValue( _T("---") );
 }
 
-void DataTable::MakeVisibleCol( int col )
+void DataTable::SetTableSizePosition()
 {
-    int row, fcol;
-    m_pDataTable->GetFirstVisibleCell( row, fcol );
-    //if( m_pDataTable->IsVisible(row, col, true) ) return;
-    m_pDataTable->MakeCellVisible( row, m_pDataTable->GetNumberCols() - 1 );
-    m_pDataTable->MakeCellVisible( row, col );
-}
+    m_numDialCols = 1;
 
-wxWindow *GetNAVCanvas();
-void DataTable::SetTableSizePosition(bool moveflag, bool calcTextHeight)
-{
-    m_InvalidateSizeEvent = true;
+    this->Fit();
 
-    //find the baest visible column number for the route
-    int numVisCols = (m_numVisCols > m_pDataTable->GetNumberCols() || m_numVisCols == - 1 )?
-                    m_pDataTable->GetNumberCols(): m_numVisCols;
-
-    m_pTripSizer00->Show(g_showTripData);
-
-    //If TripData are visible for the first time (plugin start or change option) set textCtrl size
-    if(g_showTripData && (calcTextHeight || moveflag)){
-        wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog") );
-        int w, h;
-        GetTextExtent(wxString(_T("ABCDEFG0000")), &w, &h, 0, 0, &font);
-        wxWindowListNode *node =  this->GetChildren().GetFirst();
-        while( node ) {
-            wxWindow *win = node->GetData();
-            if( win ){
-                if(win->IsKindOf(CLASSINFO(wxTextCtrl))){
-                    win->SetMinSize(wxSize(w, h+4));
-                    win->SetMaxSize(wxSize(w, h+4));
-                }
-            }
-                node = node->GetNext();
-        }
-    }
-    //)adjust visibles columns number
-    int scw = GetNAVCanvas()->GetSize().GetWidth();
-    int w = GetDataGridWidth(numVisCols);
-    if(m_dialPosition.x + w > scw - 1 || m_dialPosition.x < 1){
-        m_dialPosition.x = scw * 0.1;
-		scw *= 0.8;
-        if(w > scw ){
-            for( int i = numVisCols; i > 0; i-- ){
-                if(GetDataGridWidth(i) <= scw) {
-                    numVisCols = i;
-                    break;
-                }
-            }
-            w = GetDataGridWidth(numVisCols);
-        }
-    }
-    int h = GetDialogHeight(numVisCols);
-    this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
-    this->SetClientSize(wxSize(w, h));
+    int hd = GetDialogHeight(m_numDialCols);
+    this->SetClientSize(wxSize(GetDataGridWidth(m_numDialCols), hd));
 
     this->Layout();
     RequestRefresh(this);
 
-    if( moveflag )
-		this->Move(m_dialPosition);
-
-    //why is this needed?
-    if( calcTextHeight ){
-        m_SizeTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
-    }
-
-	m_targetFlag = true;
-
-	m_InvalidateSizeEvent = false;
-}
-
-void DataTable::OnSize( wxSizeEvent& event )
-{
-    if(m_InvalidateSizeEvent)
-        return;
-
-    //do not recompute the  visible column number if there is no active route
-    if( !g_activeRouteGuid.IsEmpty() ){
-        int tempDialWidth = event.GetSize().GetWidth();
-        m_numVisCols = (tempDialWidth - (DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize())) / m_pDataTable->GetDefaultColSize();
-    }
-    m_SizeTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
-
-    event.Skip();
-}
-
-void DataTable::OnSizeTimer(wxTimerEvent & event)
-{
-	m_InvalidateSizeEvent = true;
-
-    //find the baest visible column number for the route
-    int numVisCols = (m_numVisCols > m_pDataTable->GetNumberCols() || m_numVisCols == - 1 )?
-                    m_pDataTable->GetNumberCols(): m_numVisCols;
-    int w = GetDataGridWidth(numVisCols);
-    int h = GetDialogHeight(numVisCols);
-    this->SetMinClientSize(wxSize(GetDataGridWidth(1), h));
-    this->SetClientSize(wxSize(w, h));
-
-	this->Layout();
-    RequestRefresh(this);
-
-	m_targetFlag = true;
-
-	m_InvalidateSizeEvent = false;
+    this->Move(m_dialPosition);
 }
 
 int DataTable::GetDialogHeight( int nVisCols )
 {
-    //compute best trip data height
-    int h = 0;
-	if (g_showTripData) {
-        /*Compute Trip Data (get number of sizer column then compute height)
-         *if the sizer has 6 columns, there is 2 data lines + 1 box sizer line
-         *if the sizer has 4 columns, there is 3 data lines + 1 box sizer line
-         *if the sizer has 2 colums, there is 5 data lines + 1 box sizer line*/
-        int cols[7] = { 0, 2, 2, 4, 4, 6, 6 };
-        int lines[7] = { 0, 7, 7, 4, 4, 3, 3 };
-        m_pTripSizer01->SetCols(nVisCols > 6? 6: cols[nVisCols]);
-        h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * (nVisCols > 6? 3: lines[nVisCols]);
-    }
-    //then compute and set best grid height
-	m_numVisRows = 5;
-	//get display zone heigh
-    int sch = GetNAVCanvas()->GetSize().GetHeight() - 1;
-    int ht = GetDataGridHeight(m_numVisRows);
-    if (m_dialPosition.y + ht +h > sch || m_dialPosition.y < 1) {
-        m_dialPosition.y = sch * 0.1;
-		sch -= m_dialPosition.y;
-        if (ht + h > sch) {
-			for (int j = m_numVisRows; j > 0; j--) {
-				if (h + GetDataGridHeight(j) <= sch) {
-					m_numVisRows = j;
-					break;
-				}
-			}
-			//show at least one row
-            if (m_numVisRows < 1) m_numVisRows = 1;
-            ht = GetDataGridHeight(m_numVisRows);
-		}
-        //add a margin
-	}//
-    //add space for an horizontal scroll bar and margin if necessary
-    ht += (nVisCols < m_pDataTable->GetNumberCols())? SCROLL_BAR_THICKNESS: 0;
-    if( g_showTripData )
-        h += SINGLE_BORDER_THICKNESS;
-    else
-        ht += DOUBLE_BORDER_THICKNESS;
-
-    //set route data grid minsize
-    this->m_pDataTable->SetMinSize( wxSize(GetDataGridWidth(nVisCols), ht));
-
-    //return whole dialog best heigh
-    return ht + h;
+    m_pTripSizer01->SetCols(nVisCols * 2);
+    int h = (m_pStartDate->GetSize().GetHeight() + SINGLE_BORDER_THICKNESS) * (6 / nVisCols);
+    return h + DIALOG_CAPTION_HEIGHT;
 }
 
 int DataTable::GetDataGridWidth(int nVisCols)
 {
-    int scbw = (m_numVisRows < m_pDataTable->GetNumberRows()) ? SCROLL_BAR_THICKNESS : 0;
-    return  DOUBLE_BORDER_THICKNESS + m_pDataTable->GetRowLabelSize() + (m_pDataTable->GetDefaultColSize() * nVisCols) + scbw;
+    int w =  ( DOUBLE_BORDER_THICKNESS + m_pTimetText->GetSize().GetX() + m_pStartTime->GetSize().GetX()) * nVisCols;
+    return w + SINGLE_BORDER_THICKNESS;
 }
 
-int DataTable::GetDataGridHeight(int nVisCols)
+void DataTable::OnPaintEvent( wxPaintEvent &event )
 {
-    return m_pDataTable->GetColLabelSize() + (m_pDataTable->GetDefaultRowSize() * nVisCols);
+    //caption size
+    const int sx = GetSize().x;
+    //caption font
+    wxFont font = GetOCPNGUIScaledFont_PlugIn(_("Dialog"));
+    wxFont lfont = *FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
+                font.GetStyle(), wxFONTWEIGHT_BOLD, false, font.GetFaceName() );
+    //draw in a memory dc then blit
+    wxMemoryDC mdc;
+    wxBitmap bmp(GetSize());
+    mdc.SelectObject(bmp);
+    //draw caption background
+    wxColour bcolour, fcolour;
+    GetGlobalColor(_T("DILG0"), &bcolour);
+    mdc.SetPen(*wxTRANSPARENT_PEN);
+    mdc.SetBrush(wxBrush(bcolour, wxBRUSHSTYLE_SOLID));
+    mdc.DrawRectangle(wxRect(0 , 0, sx, DIALOG_CAPTION_HEIGHT));
+    //draw caption label
+    mdc.SetFont(lfont);
+    mdc.SetPen(wxPen(fcolour,wxPENSTYLE_SOLID));
+    mdc.SetBrush(*wxTRANSPARENT_BRUSH);
+    mdc.DrawLabel( _("Trip Data"), wxRect(0 , 0, sx, DIALOG_CAPTION_HEIGHT),wxALIGN_CENTER);
+
+    wxPaintDC pdc(this);
+    pdc.Blit( 0, 0, sx, DIALOG_CAPTION_HEIGHT, &mdc, 0, 0 );
+
+    event.Skip();
+}
+
+void DataTable::OnMouseEvent( wxMouseEvent &event )
+{
+    static wxPoint s_gspt;
+    int x, y;
+
+    event.GetPosition( &x, &y );
+    wxPoint spt = wxPoint( x, y );
+    spt = ClientToScreen( spt );
+
+#ifdef __WXOSX__
+    wxPoint par_pos = par_pos_old;
+    if (!m_bLeftDown && event.LeftIsDown())
+    {
+        m_bLeftDown = true;
+        s_gspt = spt;
+        if (!HasCapture()) CaptureMouse();
+    }
+    else if (m_bLeftDown && !event.LeftIsDown())
+    {
+        m_bLeftDown = false;
+        if (HasCapture()) ReleaseMouse();
+    }
+#else
+
+    if( event.LeftDown() ) {
+        s_gspt = spt;
+        if (!HasCapture()) CaptureMouse();
+    }
+
+    if( event.LeftUp() ) {
+        if( HasCapture() ) ReleaseMouse();
+    }
+#endif
+
+    if( event.Dragging() ) {
+
+        wxPoint cons_pos = GetScreenPosition();//GetPosition();
+
+        wxPoint cons_pos_old = cons_pos;
+        cons_pos.x += spt.x - s_gspt.x;
+        cons_pos.y += spt.y - s_gspt.y;
+
+        if( cons_pos != cons_pos_old ) {
+            Move( cons_pos );
+            pPlugin->m_consPosition = cons_pos;
+        }
+        s_gspt = spt;
+    }
 }
 
 void DataTable::CloseDialog()
 {
-    //disconnect timer
-    m_SizeTimer.Unbind(wxEVT_TIMER, &DataTable::OnSizeTimer, this);
-
     m_dialPosition = this->GetPosition();
 
     this->Show(false);
@@ -584,100 +323,6 @@ void DataTable::CloseDialog()
         pConf->SetPath ( _T ( "/Settings/NAVDATA" ) );
         pConf->Write(_T("DataTablePosition_x"), m_dialPosition.x);
         pConf->Write(_T("DataTablePosition_y"), m_dialPosition.y);
-        pConf->Write(_T("NumberColVisibles"), m_numVisCols);
-        pConf->Write(_T("ShowTripData"), g_showTripData);
-        pConf->Write(_T("ShowTTGETAatSOG"), g_withSog);
+        pConf->Write(_T("NumberColVisibles"), m_numDialCols);
     }
-}
-
-void DataTable::AddDataCol( int num_cols )
-{
-    if(m_pDataTable->GetNumberCols() == num_cols) {
-        m_pDataTable->AppendCols(1);
-        m_pDataCol->IncRef();
-        m_pDataTable->SetColAttr(num_cols, m_pDataCol);
-    }
-}
-
-wxString DataTable::FormatDistance( double val1, double val2, bool delta ){
-    wxString srng;
-    if( delta ){
-        if( val2 < 10.0 )
-            srng.Printf( _T("%5.2f/%5.2f"), toUsrDistance_Plugin( val1, pPlugin->GetDistFormat() ), toUsrDistance_Plugin( val2, pPlugin->GetDistFormat() ) );
-        else
-            srng.Printf( _T("%5.1f/%5.1f"), toUsrDistance_Plugin( val1, pPlugin->GetDistFormat() ), toUsrDistance_Plugin( val2, pPlugin->GetDistFormat() ) );
-    } else {
-        if( val1 < 10.0 )
-            srng.Printf( _T("%6.2f"), toUsrDistance_Plugin( val1, pPlugin->GetDistFormat() ) );
-        else
-            srng.Printf( _T("%6.1f"), toUsrDistance_Plugin( val1, pPlugin->GetDistFormat() ) );
-    }
-    return srng;
-}
-
-void DataTable::BrgRngMercatorToActiveNormalArrival(double wptlat, double wptlon,
-                                          double wptprevlat, double wptprevlon,
-                                          double glat, double glon,
-                                          double *brg, double *nrng)
-{
-            vector2D va, vb, vn;
-
-            double brg1, dist1, brg2, dist2;
-            DistanceBearingMercator_Plugin( wptlat, wptlon,
-                    wptprevlat, wptprevlon, &brg1,
-                    &dist1 );
-            vb.x = dist1 * sin( brg1 * PI / 180. );
-            vb.y = dist1 * cos( brg1 * PI / 180. );
-
-            DistanceBearingMercator_Plugin( wptlat, wptlon, glat, glon, &brg2,
-                    &dist2 );
-            va.x = dist2 * sin( brg2 * PI / 180. );
-            va.y = dist2 * cos( brg2 * PI / 180. );
-
-            *brg = brg2;
-
-            vGetLengthOfNormal( &va, &vb, &vn );             // NM
-    //    Calculate the distance to the arrival line, which is perpendicular to the current route segment
-    //    Taking advantage of the calculated normal from current position to route segment vn
-            vector2D vToArriveNormal;
-            vSubtractVectors( &va, &vn, &vToArriveNormal );
-
-            *nrng = vVectorMagnitude( &vToArriveNormal );
-}
-
-
-//----------------------------------------------------------------------------------------------------------
-//          Settings Dialog Implementation
-//----------------------------------------------------------------------------------------------------------
-
-Settings::Settings(wxWindow *parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style )
-    : SettingsBase(parent, id, title, pos, size, style )
-{
-    m_pShowTripData->SetValue( g_showTripData );
-    m_pShowspeed->SetSelection(g_withSog ? 1 : 0);
-
-    //dim the dialog
-    wxColour colour1, colour2;
-    GetGlobalColor(_T("DILG0"), &colour1);
-    GetGlobalColor(_T("GREY3"), &colour2);
-    SetBackgroundColour( colour1 );
-    SetForegroundColour( colour2 );
-    wxWindowListNode *node =  this->GetChildren().GetFirst();
-    while( node ) {
-        wxWindow *win = node->GetData();
-        if( win ){
-            win->SetBackgroundColour( colour1 );
-            win->SetForegroundColour( colour2 );
-        }
-        node = node->GetNext();
-    }
-
-    m_pSettingsOK->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( Settings::OnOKButton ), NULL, this );
-}
-
-void Settings::OnOKButton( wxCommandEvent& event )
-{
-        g_showTripData = m_pShowTripData->GetValue();
-        g_withSog = (m_pShowspeed->GetSelection() == 1);
-        this->EndModal(wxID_OK);
 }

@@ -41,6 +41,7 @@
 
 #include "version.h"
 #include "datatable.h"
+#include "routecanv.h"
 
 //----------------------------------------------------------------------------------------------------------
 //    The PlugIn Class Definition
@@ -63,6 +64,7 @@
 #define     TRACKPOINT_FIRST            1
 #define     OFFSET_LAT     1e-6
 
+//#define     DIALOG_CAPTION_HEIGHT 18
 #define     TIMER_INTERVAL_HOUR   3600000  //3600 s 1 hour
 #define     TIMER_INTERVAL_10SECOND 10000  //10 s
 #define     TIMER_INTERVAL_SECOND    1000  //1 s
@@ -73,7 +75,6 @@
 #define     NAME_LOOP_READY            -2
 #define     NAME_LOOP_STARTED          -1
 #define     NAME_NEW_LOOP               0
-
 
 class navdata_pi : public opencpn_plugin_116, wxTimer
 {
@@ -92,23 +93,19 @@ public:
       wxString GetCommonName();
       wxString GetShortDescription();
       wxString GetLongDescription();
-      //
-      double GetMag(double a);
-      int GetOcpnStyleBrg() {return m_ocpnStyleBrg;}
-      int GetDistFormat() {return m_ocpnDistFormat;}
-      int GetSpeedFormat() {return m_ocpnSpeedFormat;}
+      void PositionConsole();
       void CloseDataTable();
 
-      //Track variables
+      //Route point console variables
+      wxPoint    m_consPosition;
+      //Trip data variables
       TripData    *m_ptripData;
-      wxTimer     m_lenghtTimer;
-
 private:
       //    The override PlugIn Methods
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
       bool RenderGLOverlayMultiCanvas(wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex);
       void SetColorScheme(PI_ColorScheme cs);
-      bool RenderTargetPoint( wxDC *pdc );
+      bool RenderTargetPoint( wxDC *pdc, PlugIn_ViewPort *vp );
       void SetPluginMessage(wxString &message_id, wxString &message_body);
       int  GetToolbarToolCount(void);
       void OnToolbarToolCallback(int id);
@@ -120,34 +117,24 @@ private:
       void OnRotateTimer(wxTimerEvent & event);
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
-      float GetSelectRadius();
-      void SetVP(PlugIn_ViewPort *vp);
+      float GetSelectRadius(PlugIn_ViewPort *vp);
+      void SetVP(PlugIn_ViewPort *vp, int canvasIndex);
+      void CheckRoutePointSelectable();
 
       //toolbar variables
       int          m_leftclick_tool_id;
       unsigned int m_ToolIconType;
-
-      //data table variables
+      //Trip data variables
       DataTable   *m_pTable;
-      double      m_gLat;
-      double      m_gLon;
-      double      m_gCog;
-      double      m_gSog;
-      double      m_gWmmVar;
-
-      //Route & wpoint variables
-      wxString    m_activePointGuid;
-      PlugIn_ViewPort *m_vp;
-
+      //Routepoint console variables
+      int               m_blinkTrigger;
+      PlugIn_ViewPort   *m_vp[2];       //allow multi-canvas
+      RouteCanvas       *m_console;
       //ocpn options variables
-      int         m_ocpnDistFormat;
-      int         m_ocpnSpeedFormat;
-      double      m_ocpnUserVar;
-      int         m_ocpnStyleBrg;
-      float       m_selectionRadiusMM;
-      bool        m_ocpnOpenGL;
-
-      //Track variables
+      float       m_ocpnSelRadiusTouchMM;
+      float       m_ocpnSelRadiusMM;
+      //Trip calc variables
+      wxTimer     m_lenghtTimer;
       wxTimer     m_rotateTimer;
       wxString    m_gTrkGuid;
       int         m_gNodeNbr;

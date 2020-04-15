@@ -38,6 +38,8 @@
 
 #include "jsonreader.h"
 #include "jsonwriter.h"
+#include  "tinyxml.h"
+#include <wx/dir.h>
 
 // the class factories, used to create and destroy instances of the PlugIn
 
@@ -53,12 +55,16 @@ extern "C" DECL_EXP void destroy_pi(opencpn_plugin* p)
 // static variables
 wxString       g_shareLocn;
 wxString       g_activeRouteGuid;
+wxString       g_activePointGuid;
 wxString       g_selectedPointGuid;
-int            g_blinkTrigger;
-int            g_selectedPointCol;
-bool           g_showTripData;
-bool           g_withSog;
-wxPoint        g_scrollPos;
+bool           m_selectablePoint;
+double         g_Lat;
+double         g_Lon;
+double         g_Cog;
+double         g_Sog;
+int            g_ocpnDistFormat;
+int            g_ocpnSpeedFormat;
+
 
 int NextPow2(int size)
 {
@@ -69,17 +75,6 @@ int NextPow2(int size)
         shift <<= 1;
     }
     return n + 1;
-}
-
-wxWindow *GetNAVCanvas()
-{
-    wxWindow *wx;
-    // If multicanvas are active, render the overlay on the Left canvas only
-    if(GetCanvasCount() > 1)            // multi?
-        wx = GetCanvasByIndex(0);
-    else
-        wx = GetOCPNCanvasWindow();
-    return wx;
 }
 
 //-------------------------------------------------------
@@ -102,7 +97,8 @@ navdata_pi::~navdata_pi(void)
     delete _img_activewpt;
     delete _img_targetwpt;
     delete _img_setting;
-    delete m_vp;
+    delete m_vp[0];
+    delete m_vp[1];
  }
 
 int navdata_pi::Init(void){
@@ -113,19 +109,25 @@ int navdata_pi::Init(void){
     AddLocaleCatalog( _T("opencpn-navdata_pi") );
 
     m_pTable = NULL;
-    m_vp = NULL;
     m_ptripData = NULL;
-
+    m_console = NULL;
+    m_selectablePoint = false;
     g_selectedPointGuid = wxEmptyString;
     m_gTrkGuid = wxEmptyString;
     g_activeRouteGuid = wxEmptyString;
     m_gMustRotate = false;
     m_gHasRotated = false;
-    g_blinkTrigger = 0;
-	m_gWmmVar = NAN;
+    m_blinkTrigger = 0;
+    //allow multi-canvas
+    m_vp[0] = new PlugIn_ViewPort;
+    m_vp[1] = NULL;
+    if(GetCanvasCount() > 1)
+        m_vp[1] = new PlugIn_ViewPort;
+
+    LoadocpnConfig();
 
     //find and store share path
-    g_shareLocn =*GetpSharedDataLocation() +
+    g_shareLocn = *GetpSharedDataLocation() +
                     _T("plugins") + wxFileName::GetPathSeparator() +
                     _T("navdata_pi") + wxFileName::GetPathSeparator()
                     +_T("data") + wxFileName::GetPathSeparator();
@@ -155,13 +157,26 @@ int navdata_pi::Init(void){
 
 bool navdata_pi::DeInit(void)
 {
-    //disconnect timers
+    //stop and disconnect timers
+    m_rotateTimer.Stop();
+    m_lenghtTimer.Stop();
     m_lenghtTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnTripLenghtTimer), NULL, this );
     m_rotateTimer.Disconnect(wxEVT_TIMER, wxTimerEventHandler(navdata_pi::OnRotateTimer), NULL, this );
 
+    //save RoutePointconsole position
+    wxFileConfig *pConf = GetOCPNConfigObject();
+    if(pConf) {
+        pConf->SetPath ( _T ( "/Settings/NAVDATA" ) );
+        pConf->Write(_T("NavDataConsolePosition_x"), m_consPosition.x);
+        pConf->Write(_T("NavDataConsolePosition_Y"), m_consPosition.y);
+    }
+
+    delete m_console;
+    m_console = NULL;
+
     if(m_ptripData){
         if(!m_ptripData->m_isEnded){
-            m_ptripData->m_totalDist += GetDistFromLastTrkPoint(m_gLat, m_gLon);
+            m_ptripData->m_totalDist += GetDistFromLastTrkPoint(g_Lat, g_Lon);
             m_ptripData->m_isEnded = true;
             m_ptripData->m_endTime = wxDateTime::Now();
             //wxString s = wxString::Format(wxString(_T("Do you want to save this trip\nlenght = %f")), m_ptripData->m_totalDist);
@@ -227,31 +242,25 @@ void navdata_pi::LoadocpnConfig()
       wxFileConfig *pConf = GetOCPNConfigObject();
       if(pConf)
       {
-		  bool showtrue, showmag;
           pConf->SetPath(_T("/Settings"));
-		  pConf->Read(_T("ShowTrue"), &showtrue, 0);
-          pConf->Read(_T("ShowMag"), &showmag, 0);
-          pConf->Read(_T("UserMagVariation"), &m_ocpnUserVar, 0);
-          pConf->Read(_T("DistanceFormat"), &m_ocpnDistFormat, 0);
-          pConf->Read(_T("SpeedFormat"), &m_ocpnSpeedFormat, 0);
-          pConf->Read(_T("OpenGL"), &m_ocpnOpenGL, 1);
-          if(IsTouchInterface_PlugIn()){
-              pConf->Read( _T ( "SelectionRadiusTouchMM" ), &m_selectionRadiusMM);
-              m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 1.0);
-          } else {
-              pConf->Read( _T ( "SelectionRadiusMM" ), &m_selectionRadiusMM);
-              m_selectionRadiusMM = wxMax(m_selectionRadiusMM, 0.5);
-          }
-          m_ocpnStyleBrg = showmag ? showtrue ? 2 : 1 : 0;
+          pConf->Read(_T("DistanceFormat"), &g_ocpnDistFormat, 0);
+          pConf->Read(_T("SpeedFormat"), &g_ocpnSpeedFormat, 0);
+          pConf->Read( _T ( "SelectionRadiusTouchMM" ), &m_ocpnSelRadiusTouchMM);
+          pConf->Read( _T ( "SelectionRadiusMM" ), &m_ocpnSelRadiusMM);
+
+          m_ocpnSelRadiusTouchMM = wxMax(m_ocpnSelRadiusTouchMM, 1.0);
+          m_ocpnSelRadiusMM = wxMax(m_ocpnSelRadiusMM, 0.5);
 	  }
 }
 
 void navdata_pi::SetColorScheme(PI_ColorScheme cs)
 {
-    if( m_pTable ){
-        m_pTable->DimGridDialog();
-        RequestRefresh( m_pTable );
+    if(m_pTable){
+        m_pTable->DimTripDialog();
+        RequestRefresh(m_pTable);
     }
+    if(m_console)
+        m_console->SetColorScheme(cs);
 }
 
 void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
@@ -296,9 +305,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                  * 4)then update the trip data and eventually re-start the lenght timer for
                  *  the next lap;*/
                 double dist = 0.;
-                if(m_oldtpLat != m_gLat || m_oldtpLon != m_gLon){ //the boat has moved
+                if(m_oldtpLat != g_Lat || m_oldtpLon != g_Lon){ //the boat has moved
                     if(!m_ptripData->m_isEnded){
-                        dist = GetDistFromLastTrkPoint(m_gLat, m_gLon);
+                        dist = GetDistFromLastTrkPoint(g_Lat, g_Lon);
                         if( dist < .001 ) //no significant movement
                             dist = 0.;
                     }
@@ -369,11 +378,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         wxJSONReader p1reader;
         int pnumErrors = p1reader.Parse( message_body, &p1root );
         if ( pnumErrors == 0 ){
-            m_activePointGuid = p1root[_T("GUID")].AsString();
-            if( m_pTable ){
-                m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
-                m_pTable->SetTableSizePosition(false);
-            }
+            g_activePointGuid = p1root[_T("GUID")].AsString();
+            if( m_console && m_console->IsShown() )
+                CheckRoutePointSelectable();
         }
     }
 
@@ -384,48 +391,61 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         int p2numErrors = p2reader.Parse( message_body, &p2root );
         if ( p2numErrors == 0 ) {
             if( p2root.HasMember(_T("Next_WP"))){
-                m_activePointGuid = p2root[_T("GUID")].AsString();
-                if( m_pTable )
-                    m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+                g_activePointGuid = p2root[_T("GUID")].AsString();
+                if( m_console && m_console->IsShown() )
+                    CheckRoutePointSelectable();
             }
         }
-
     }
 
     else if(message_id == _T("OCPN_RTE_DEACTIVATED") || message_id == _T("OCPN_RTE_ENDED") )
     {
-        m_activePointGuid = wxEmptyString;
+        m_selectablePoint = false;
+        g_activePointGuid = wxEmptyString;
         g_activeRouteGuid = wxEmptyString;
-
-        if(m_pTable){
-            m_pTable->UpdateRouteData();
-            m_pTable->SetTableSizePosition(false);
-        }
+        delete m_console;
+        m_console = NULL;
     }
 
     else if(message_id == _T("OCPN_TRK_DEACTIVATED"))
     {
         m_rotateTimer.Stop();
-
         if(m_gMustRotate) return;
-
-        m_end_gLat = m_gLat;
-        m_end_gLon = m_gLon;
+        m_end_gLat = g_Lat;
+        m_end_gLon = g_Lon;
         m_ptripData->m_isEnded = true;
         m_ptripData->m_endTime = wxDateTime::Now();
-
         //get the last created track point to complete trip data
         m_lenghtTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
     }
+}
 
-    else if(message_id == _T("WMM_VARIATION_BOAT"))
-    {
-        wxJSONValue  root;
-        wxJSONReader reader;
-        int numErrors = reader.Parse( message_body, &root );
-        if ( numErrors == 0 )
-            m_gWmmVar = root[_T("Decl")].AsDouble();
+void navdata_pi::CheckRoutePointSelectable()
+{
+    //check if the selected point is still after the new active point
+    if( !m_selectablePoint ) return;
+    bool past = false, selectable;
+    std::unique_ptr<PlugIn_Route> r;
+    r = GetRoute_Plugin( g_activeRouteGuid );
+    wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
+    while( node ){
+        PlugIn_Waypoint *wpt = node->GetData();
+        if(wpt) {
+            selectable = past;
+            if( wpt->m_GUID == g_activePointGuid )
+                past = true;
+            if( wpt->m_GUID == g_selectedPointGuid ){
+                if( !selectable ){
+                    m_console->Show(false);
+                    g_selectedPointGuid = wxEmptyString;
+                    m_selectablePoint = false;
+                }
+                break;
+            }
+        }
+        node = node->GetNext();
     }
+
 }
 
 double navdata_pi::GetDistFromLastTrkPoint(double lat, double lon)
@@ -442,22 +462,51 @@ double navdata_pi::GetDistFromLastTrkPoint(double lat, double lon)
 
 void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
 {
+    static int new_canvas_nbr = GetCanvasCount();
+    static wxFont leg_font = GetOCPNGUIScaledFont_PlugIn( _("Console Legend") );
+    static wxFont label_font, val_font;
     //update route data
-    m_gLat = pfix.Lat;
-    m_gLon = pfix.Lon;
-    m_gCog = pfix.Cog;
-    m_gSog = pfix.Sog;
-    g_blinkTrigger++;
-    if( m_pTable ){
-        m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+    g_Lat = pfix.Lat;
+    g_Lon = pfix.Lon;
+    g_Cog = pfix.Cog;
+    g_Sog = pfix.Sog;
+    m_blinkTrigger++;
+    //ckeck font change
+    bool font_changed = false;
+    if( (m_console && m_console->IsShown()) || m_pTable ){
+        wxFont  lfont = GetOCPNGUIScaledFont_PlugIn( _("Console Legend"));
+        if( label_font != lfont ) {
+            if( label_font.IsOk() )
+                font_changed = true;
+            label_font = lfont;
+        }
+        wxFont  vfont = GetOCPNGUIScaledFont_PlugIn(_("Console Value"));
+        if( val_font != vfont ){
+            if( val_font.IsOk() )
+                font_changed = true;
+            val_font = vfont;
+        }
     }
-}
+    //check canvas number change. this seems to create crash so do not update data
+    if(GetCanvasCount() == new_canvas_nbr ) {
+        if( m_console && m_console->IsShown()){
+            if( font_changed )
+                m_console->ShowWithFreshFonts();
+            else
+                m_console->UpdateRouteData();
+        }
+    } else {
+        new_canvas_nbr = GetCanvasCount();
+        delete m_vp[1];
+        m_vp[1] = NULL;
+        if( new_canvas_nbr > 1 )
+            m_vp[1] = new PlugIn_ViewPort;
+    }
 
-void navdata_pi::SetVP(PlugIn_ViewPort *vp)
-{
-    if( m_vp != vp ) {
-        delete m_vp;
-        m_vp = new PlugIn_ViewPort(*vp);
+    if( m_pTable && font_changed ){
+        m_pTable->DimTripDialog();
+        m_pTable->SetTripDialogFont();
+        m_pTable->SetTableSizePosition();
     }
 }
 
@@ -465,36 +514,30 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
 {
     if( g_activeRouteGuid.IsEmpty() )
         return false;
-    if( !m_pTable )
-        return false;
     if( event.Dragging() ){
-        g_blinkTrigger = 0;
+        m_blinkTrigger = 0;
         return false;
     }
 
     if(IsTouchInterface_PlugIn()){
-        if(event.LeftDown() || event.RightDown()) {
-			m_pTable->m_pDataTable->m_stopLoopTimer.Start(TIMER_INTERVAL_MSECOND, wxTIMER_ONE_SHOT);
-            return false;
-        }
         if( !event.LeftUp() )
             return false;
     } else {
         if( !event.LeftDown() )
             return false;
     }
-    if( !m_vp )  //this should never happens but ...
+    if( !m_vp[GetCanvasIndexUnderMouse()] )
         return false;
     wxPoint p = event.GetPosition();
     double plat, plon;
-    GetCanvasLLPix( m_vp, p, &plat, &plon);
-    float selectRadius = GetSelectRadius();
+    GetCanvasLLPix( m_vp[GetCanvasIndexUnderMouse()], p, &plat, &plon);
+    float selectRadius = GetSelectRadius(m_vp[GetCanvasIndexUnderMouse()]);
     double dist_from_cursor = IDLE_STATE_NUMBER;
     /*walk along the route to find the selected wpt guid
      * way point visibility parameter unuseful here is use to
      * store if the selected is before or after the active point*/
     wxString SelGuid = wxEmptyString;
-    bool past = false, pastactive = false;
+    bool past = false;
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
     wxPlugin_WaypointListNode *node = r.get()->pWaypointList->GetFirst();
@@ -502,7 +545,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
         PlugIn_Waypoint *wpt = node->GetData();
         if(wpt) {
             wpt->m_IsVisible = past;
-            if( wpt->m_GUID == m_activePointGuid )
+            if( wpt->m_GUID == g_activePointGuid )
                 past = true;
             double of_lat = fabs(plat - wpt->m_lat);
             double of_lon = fabs(plon - wpt->m_lon);
@@ -511,7 +554,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
                 double dis = sqrt( pow(of_lat,2) + pow(of_lon,2) ) ;
                 if( dis < dist_from_cursor ) {
                     SelGuid = wpt->m_GUID;
-                    pastactive = wpt->m_IsVisible;
+                    m_selectablePoint = wpt->m_IsVisible;
                     dist_from_cursor = dis;
                 }
             }
@@ -520,87 +563,88 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     }
     if(SelGuid.IsEmpty())
         return false;
+
     if(g_selectedPointGuid != SelGuid){
         g_selectedPointGuid = SelGuid;
-        m_pTable->SetTargetFlag( true );
-        if( pastactive ){
-            g_blinkTrigger = 1;
-            RequestRefresh(GetNAVCanvas());
-            m_pTable->UpdateRouteData( m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog );
+        if( m_selectablePoint ){
+            m_blinkTrigger = 1;
+            for( int i = 0; i < GetCanvasCount(); i++ ){
+                RequestRefresh(GetCanvasByIndex(i));
+            }
+            if( !m_console )
+                m_console = new RouteCanvas( GetOCPNCanvasWindow(), this);
+            m_console->ShowWithFreshFonts();
+            m_console->SetColorScheme( (PI_ColorScheme) 0 );
+        } else {
+            if( m_console )
+                m_console->Show(false);
         }
-        if(!m_ocpnOpenGL)
-            pastactive = false;
-
-        return pastactive;
+        return m_selectablePoint;
     }
     return false;
 }
 
-float navdata_pi::GetSelectRadius()
+float navdata_pi::GetSelectRadius(PlugIn_ViewPort *vp)
 {
     int w, h;
     ::wxDisplaySize(&w, &h);
-    unsigned int radiusPixel = (w / PlugInGetDisplaySizeMM()) * m_selectionRadiusMM;
+    float radiusMM = IsTouchInterface_PlugIn()? m_ocpnSelRadiusTouchMM: m_ocpnSelRadiusMM;
+    unsigned int radiusPixel = (w / PlugInGetDisplaySizeMM()) * radiusMM;
     double  canvasScaleFactor = wxMax( w, h) / (PlugInGetDisplaySizeMM() / 1000.);
-    double trueScalePPM = canvasScaleFactor / m_vp->chart_scale;
+    double trueScalePPM = canvasScaleFactor / vp->chart_scale;
     float selectRadius =  radiusPixel / (trueScalePPM * 1852 * 60);
     return selectRadius;
 }
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    // If multicanvas are active, render the overlay on the left canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
-        return false;
     if( g_activeRouteGuid.IsEmpty() )
         return false;
-    if( !m_pTable )
+    //allow multi-canvas routePoint selection
+    if(m_vp[canvasIndex])
+        *m_vp[canvasIndex] = *vp;
+
+    if(!m_selectablePoint)
         return false;
 
-    SetVP( vp );
+    wxDC *pdc = (&dc);      //inform render of non GL mode
 
-    if( g_selectedPointCol == wxNOT_FOUND )
-        return false;
-
-   wxDC *pdc = (&dc);      //inform render of non GL mode
-
-    return RenderTargetPoint( pdc );
+    return RenderTargetPoint( pdc , vp);
 
 }
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    // If multicanvas are active, render the overlay on the left canvas only
-    if(GetCanvasCount() > 1 && canvasIndex != 0)           // multi?
-        return false;
     if( g_activeRouteGuid.IsEmpty() )
         return false;
-    if( !m_pTable )
+    //allow multi-canvas routePoint selection
+    if(m_vp[canvasIndex])
+        *m_vp[canvasIndex] = *vp;
+
+    if(!m_selectablePoint)
         return false;
 
-    SetVP( vp );
-
-    if( g_selectedPointCol == wxNOT_FOUND )
-        return false;
-
-    return RenderTargetPoint( NULL );		 //NULL inform renderer of GL mode
+    return RenderTargetPoint( NULL , vp );		 //NULL inform renderer of GL mode
 }
 
-bool navdata_pi::RenderTargetPoint( wxDC *pdc )
+bool navdata_pi::RenderTargetPoint( wxDC *pdc, PlugIn_ViewPort *vp )
 {
-    if( g_blinkTrigger & 1 ) {
+    if( !vp ) return false;
+    if( m_blinkTrigger & 1 || pdc ) {
         //way point position
-        wxPoint2DDouble pp = m_pTable->GetSelPointPos();
-        wxPoint r;
-        GetCanvasPixLL( m_vp, &r, pp.m_x, pp.m_y );
+        std::unique_ptr<PlugIn_Waypoint> rp;
+        rp = GetWaypoint_Plugin(g_selectedPointGuid);
+        if( !rp ) return false;
+        wxPoint p;
+        GetCanvasPixLL( vp, &p, rp.get()->m_lat, rp.get()->m_lon );
         //icon image
         float scale =  GetOCPNChartScaleFactor_Plugin();
         wxImage image;
         wxBitmap bmp;
         int  w = _img_target->GetWidth() * scale;
         int  h = _img_target->GetHeight() * scale;
-        int rx = r.x - w/2;
-        int ry = r.y - h/2;
+        int px = p.x - w/2;
+        int py = p.y - h/2;
         wxString file = g_shareLocn + _T("target.svg");
         if( wxFile::Exists( file ) ){
             bmp = GetBitmapFromSVGFile( file, w, h);
@@ -615,7 +659,7 @@ bool navdata_pi::RenderTargetPoint( wxDC *pdc )
             return false;
         //draw
         if( pdc ){                // no GL
-        //    pdc->DrawBitmap( image, rx, ry, true );		Don't work properly in this mode!
+            pdc->DrawBitmap( image, px, py );		//Don't work properly in this mode!
         }
 #ifdef ocpnUSE_SVG
         else {                    // GL
@@ -667,8 +711,8 @@ bool navdata_pi::RenderTargetPoint( wxDC *pdc )
 
             float ws = w;
             float hs = h;
-            float xs = rx;
-            float ys = ry;
+            float xs = px;
+            float ys = py;
             float u = (float)w/glw, v = (float)h/glh;
 
             glBegin(GL_QUADS);
@@ -697,6 +741,11 @@ void navdata_pi::OnTripLenghtTimer( wxTimerEvent & event)
     SendPluginMessage( _T("OCPN_TRACK_REQUEST"), out );
 }
 
+void navdata_pi::PositionConsole()
+{
+    m_console->Move( m_consPosition );
+}
+
 void navdata_pi::OnRotateTimer( wxTimerEvent & event)
 {
     int rotateTime, rotateTimeType;
@@ -714,7 +763,7 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
     switch( rotateTimeType )
     {
         case TIME_TYPE_LMT:
-            rotate_at = rotateTime + wxRound(m_gLon * 3600. / 15.);
+            rotate_at = rotateTime + wxRound(g_Lon * 3600. / 15.);
             break;
         case TIME_TYPE_COMPUTER:
             rotate_at = rotateTime;
@@ -746,40 +795,22 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
     }
 }
 
-double navdata_pi::GetMag(double a)
-{
-    if(!std::isnan(m_gWmmVar)) {
-        if((a - m_gWmmVar) >360.)
-            return (a - m_gWmmVar - 360.);
-        else
-            return ((a - m_gWmmVar) >= 0.) ? (a - m_gWmmVar) : (a - m_gWmmVar + 360.);
-    }
-    else {
-        if((a - m_ocpnUserVar) >360.)
-            return (a - m_ocpnUserVar - 360.);
-        else
-            return ((a - m_ocpnUserVar) >= 0.) ? (a - m_ocpnUserVar) : (a - m_ocpnUserVar + 360.);
-    }
-}
-
 void navdata_pi::OnToolbarToolCallback(int id)
 {
 	if (m_pTable) {
-        SetToolbarItemState(m_leftclick_tool_id, false);
 		CloseDataTable();
 	}
 	else {
 		SetToolbarItemState(m_leftclick_tool_id, true);
 
         LoadocpnConfig();
-		long style = wxCAPTION | wxRESIZE_BORDER;
-        m_pTable = new DataTable(GetNAVCanvas(), wxID_ANY, wxEmptyString, wxDefaultPosition,
+        long style = wxSIMPLE_BORDER | wxCLIP_CHILDREN ;
+        m_pTable = new DataTable(GetOCPNCanvasWindow(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);
-		DimeWindow(m_pTable); //apply colour sheme
-		m_pTable->InitDataTable();
-		m_pTable->UpdateRouteData(m_activePointGuid, m_gLat, m_gLon, m_gCog, m_gSog);
+        m_pTable->DimTripDialog();
         m_pTable->UpdateTripData(m_ptripData);
-		m_pTable->SetTableSizePosition(true);
+        m_pTable->SetTripDialogFont();
+        m_pTable->SetTableSizePosition();
 		m_pTable->Show();
 	}
 }
