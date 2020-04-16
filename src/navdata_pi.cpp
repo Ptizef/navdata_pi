@@ -64,6 +64,7 @@ double         g_Cog;
 double         g_Sog;
 int            g_ocpnDistFormat;
 int            g_ocpnSpeedFormat;
+wxColour       g_consDefTextCol;
 
 
 int NextPow2(int size)
@@ -123,6 +124,8 @@ int navdata_pi::Init(void){
     m_vp[1] = NULL;
     if(GetCanvasCount() > 1)
         m_vp[1] = new PlugIn_ViewPort;
+
+    g_consDefTextCol.Set( 50, 240, 50);
 
     LoadocpnConfig();
 

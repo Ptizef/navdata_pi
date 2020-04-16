@@ -25,7 +25,7 @@
  **************************************************************************/
 
 #pragma once
-#include <tinyxml.h>
+//#include <tinyxml.h>
 
 //#include "ocpn_types.h"
 

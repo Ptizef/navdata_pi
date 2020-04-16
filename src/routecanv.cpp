@@ -55,7 +55,7 @@ extern double         g_Lon;
 extern double         g_Cog;
 extern double         g_Sog;
 extern int            g_ocpnDistFormat;
-extern ocpnStyle::StyleManager* g_StyleManager;
+extern wxColour       g_consDefTextCol;
 //------------------------------------------------------------------------------
 //    RouteCanvas Implementation
 //------------------------------------------------------------------------------
@@ -294,8 +294,11 @@ void RouteCanvas::UpdateRouteData()
                             wxDateTime dtnow, eta;
                             dtnow.SetToCurrent();
                             eta = dtnow.Add( tttg_span );
-                            str_buf = tttg_sec > SECONDS_PER_DAY ?
-                                            eta.Format(_T("(%d) %H:%M")) : eta.Format(_T("%H:%M"));
+                            if( tttg_sec > SECONDS_PER_DAY ){
+                                str_buf = eta.Format(_T("%x")).BeforeLast('/');
+                                str_buf << eta.Format(_T(" %H:%M"));
+                            } else
+                                str_buf = eta.Format(_T("%H:%M"));
                             pETA->SetAValue(str_buf);
                         } else {
                             pTTG->SetAValue(_T("---"));
@@ -452,8 +455,7 @@ void AnnunText::SetColorScheme(PI_ColorScheme cs )
     GetGlobalColor(_T("UBLCK"), &colour);
     m_backBrush = wxBrush( colour, wxBRUSHSTYLE_SOLID );
 
-    ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
-    m_default_text_color = style->consoleFontColor;
+    m_default_text_color = g_consDefTextCol;
 
     RefreshFonts();
 }
@@ -518,9 +520,8 @@ void AnnunText::OnPaint( wxPaintEvent& event )
     mdc.SelectObject( m_bitmap );
     mdc.SetBackground( m_backBrush );
     mdc.Clear();
-    ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
-    if( style->consoleTextBackground.IsOk() ) mdc.DrawBitmap(style->consoleTextBackground, 0, 0 );
-    mdc.SetTextForeground( m_default_text_color );
+
+   // mdc.SetTextForeground( m_default_text_color );
 
     if( m_plabelFont.IsOk() ) {
         mdc.SetFont( m_plabelFont );

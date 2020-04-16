@@ -39,7 +39,7 @@
 
 extern int            g_ocpnDistFormat;
 extern int            g_ocpnSpeedFormat;
-extern ocpnStyle::StyleManager* g_StyleManager;
+extern wxColour       g_consDefTextCol;
 
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
@@ -76,8 +76,6 @@ void DataTable::InitDataTable()
 
 void DataTable::DimTripDialog()
 {
-    ocpnStyle::Style* style = g_StyleManager->GetCurrentStyle();
-
     //Dialog background colour
     wxColour back_color;
     GetGlobalColor(_T("DILG1"), &back_color);
@@ -87,7 +85,7 @@ void DataTable::DimTripDialog()
     GetGlobalColor(_T("UBLCK"), &back_color);
     wxColour val_color = GetFontColour_PlugIn( _("Console Value") );
     wxColour leg_color = GetFontColour_PlugIn( _("Console Legend") );  
-    wxColour def_col = style->consoleFontColor; //default colour from style
+    wxColour def_col = g_consDefTextCol; //default colour from style
     // Make sure that the background color and the text colors are not too close, for contrast
     wxColour legend_color = leg_color;
     if( (abs(legend_color.Red() - back_color.Red()) < 5) &&

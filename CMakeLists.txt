@@ -99,8 +99,34 @@ INCLUDE_DIRECTORIES(
             wxJSON
 )
 
-SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON} ${SRC_ocpn})
+IF(UNIX)
+ INCLUDE("cmake/FindTinyXML.cmake")
+ FIND_PACKAGE(TinyXML QUIET)
+ENDIF(UNIX)
+
+IF(TINYXML_FOUND)
+ message (STATUS "Building with system tinyxml")
+ INCLUDE_DIRECTORIES(${TINYXML_INCLUDE_DIR})
+
+ SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON} ${SRC_ocpn})
+ ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC})
+
+ TARGET_LINK_LIBRARIES(${PACKAGE_NAME} ${TINYXML_LIBRARIES})
+
+ELSE(TINYXML_FOUND)
+ message (STATUS "Building with embedded tinyxml")
+ INCLUDE_DIRECTORIES(src/tinyxml/)
+ SET(SRC_LTINYXML
+            src/TinyXML/tinyxml.cpp
+            src/TinyXML/tinyxmlparser.cpp
+            src/TinyXML/tinyxmlerror.cpp
+ )
+SET(SRC ${SRC_NAVDATA} ${SRC_wxJSON} ${SRC_ocpn} ${SRC_LTINYXML})
 ADD_LIBRARY(${PACKAGE_NAME} SHARED ${SRC})
+
+ENDIF(TINYXML_FOUND)
+
+ADD_DEFINITIONS(-DTIXML_USE_STL)
 
 INCLUDE("cmake/PluginConfigure.cmake")
 INCLUDE("cmake/PluginInstall.cmake")
