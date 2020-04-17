@@ -118,7 +118,7 @@ private:
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       float GetSelectRadius(PlugIn_ViewPort *vp);
-      void SetVP(PlugIn_ViewPort *vp, int canvasIndex);
+      void CheckFontColourChange();
       void CheckRoutePointSelectable();
 
       //toolbar variables

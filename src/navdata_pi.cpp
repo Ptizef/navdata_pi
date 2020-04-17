@@ -38,8 +38,6 @@
 
 #include "jsonreader.h"
 #include "jsonwriter.h"
-#include  "tinyxml.h"
-#include <wx/dir.h>
 
 // the class factories, used to create and destroy instances of the PlugIn
 
@@ -64,7 +62,11 @@ double         g_Cog;
 double         g_Sog;
 int            g_ocpnDistFormat;
 int            g_ocpnSpeedFormat;
-wxColour       g_consDefTextCol;
+wxColour       g_defLabelColor;
+wxColour       g_labelColour;
+wxColour       g_valueColour;
+wxFont         g_labelFont;
+wxFont         g_valueFont;
 
 
 int NextPow2(int size)
@@ -121,11 +123,13 @@ int navdata_pi::Init(void){
     m_blinkTrigger = 0;
     //allow multi-canvas
     m_vp[0] = new PlugIn_ViewPort;
-    m_vp[1] = NULL;
     if(GetCanvasCount() > 1)
         m_vp[1] = new PlugIn_ViewPort;
+    else
+        m_vp[1] = NULL;
 
-    g_consDefTextCol.Set( 50, 240, 50);
+    //to do: get it from style
+    g_defLabelColor.Set( 50, 240, 50);
 
     LoadocpnConfig();
 
@@ -404,6 +408,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
     else if(message_id == _T("OCPN_RTE_DEACTIVATED") || message_id == _T("OCPN_RTE_ENDED") )
     {
         m_selectablePoint = false;
+        g_selectedPointGuid = wxEmptyString;
         g_activePointGuid = wxEmptyString;
         g_activeRouteGuid = wxEmptyString;
         delete m_console;
@@ -421,6 +426,67 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         //get the last created track point to complete trip data
         m_lenghtTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
     }
+}
+
+void navdata_pi::CheckFontColourChange()
+{
+    bool change = false;
+    wxFont  lfont = *OCPNGetFont( _("Console Legend"), 0);
+    if( g_labelFont != lfont ) {
+        change = true;
+        g_labelFont = lfont;
+    }
+    wxFont  vfont = *OCPNGetFont(_("Console Value"), 0);
+    if( g_valueFont != vfont ){
+        change = true;
+        g_valueFont = vfont;
+    }
+    wxColour back_color;
+    GetGlobalColor(_T("UBLCK"), &back_color);
+    wxColour lcol = GetFontColour_PlugIn( _("Console Legend") );
+    if( g_labelColour != lcol ) {
+        wxColor ncol = lcol;
+        if( (abs(ncol.Red() - back_color.Red()) < 5) &&
+                    (abs(ncol.Green() - back_color.Blue()) < 5) &&
+                    (abs(ncol.Blue() - back_color.Blue()) < 5)) {
+            if(g_labelColour != g_defLabelColor) {
+                g_labelColour = g_defLabelColor;
+                change = true;
+            }
+        } else {
+            g_labelColour = lcol;
+            change = true;
+        }
+
+    }
+    wxColour vcol = GetFontColour_PlugIn( _("Console Value") );
+    if( g_valueColour != vcol ) {
+        wxColor mcol = vcol;
+        if( (abs(mcol.Red() - back_color.Red()) < 5) &&
+                (abs(mcol.Green() - back_color.Blue()) < 5) &&
+                (abs(mcol.Blue() - back_color.Blue()) < 5)) {
+            if(g_valueColour != g_defLabelColor) {
+                g_valueColour = g_defLabelColor;
+                change = true;
+            }
+        } else {
+            g_valueColour = vcol;
+            change = true;
+        }
+    }
+
+    if(!change) return;
+
+    if( m_pTable ){
+        m_pTable->DimTripDialog();
+        m_pTable->SetTripDialogFont();
+        m_pTable->SetTableSizePosition();
+    }
+
+    if(m_console)
+        m_console->UpdateFonts();
+
+    return;
 }
 
 void navdata_pi::CheckRoutePointSelectable()
@@ -466,50 +532,24 @@ double navdata_pi::GetDistFromLastTrkPoint(double lat, double lon)
 void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
 {
     static int new_canvas_nbr = GetCanvasCount();
-    static wxFont leg_font = GetOCPNGUIScaledFont_PlugIn( _("Console Legend") );
-    static wxFont label_font, val_font;
-    //update route data
     g_Lat = pfix.Lat;
     g_Lon = pfix.Lon;
     g_Cog = pfix.Cog;
     g_Sog = pfix.Sog;
     m_blinkTrigger++;
-    //ckeck font change
-    bool font_changed = false;
-    if( (m_console && m_console->IsShown()) || m_pTable ){
-        wxFont  lfont = GetOCPNGUIScaledFont_PlugIn( _("Console Legend"));
-        if( label_font != lfont ) {
-            if( label_font.IsOk() )
-                font_changed = true;
-            label_font = lfont;
-        }
-        wxFont  vfont = GetOCPNGUIScaledFont_PlugIn(_("Console Value"));
-        if( val_font != vfont ){
-            if( val_font.IsOk() )
-                font_changed = true;
-            val_font = vfont;
-        }
-    }
-    //check canvas number change. this seems to create crash so do not update data
-    if(GetCanvasCount() == new_canvas_nbr ) {
-        if( m_console && m_console->IsShown()){
-            if( font_changed )
-                m_console->ShowWithFreshFonts();
-            else
-                m_console->UpdateRouteData();
-        }
+    CheckFontColourChange();
+    //when the canvas number has changed, do nothing, this could create a crash
+    if(GetCanvasCount() == new_canvas_nbr ){
+        if( (m_console && m_console->IsShown()))
+            m_console->UpdateRouteData();
     } else {
         new_canvas_nbr = GetCanvasCount();
         delete m_vp[1];
-        m_vp[1] = NULL;
-        if( new_canvas_nbr > 1 )
+        if(new_canvas_nbr > 1){ //initialise view port for right canvas
             m_vp[1] = new PlugIn_ViewPort;
-    }
-
-    if( m_pTable && font_changed ){
-        m_pTable->DimTripDialog();
-        m_pTable->SetTripDialogFont();
-        m_pTable->SetTableSizePosition();
+            RequestRefresh(GetCanvasByIndex(1));
+        } else                  //close vp for right canvas
+            m_vp[1] = NULL;
     }
 }
 
@@ -534,7 +574,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
     wxPoint p = event.GetPosition();
     double plat, plon;
     GetCanvasLLPix( m_vp[GetCanvasIndexUnderMouse()], p, &plat, &plon);
-    float selectRadius = GetSelectRadius(m_vp[GetCanvasIndexUnderMouse()]);
+    float selectRadius = GetSelectRadius( m_vp[GetCanvasIndexUnderMouse()] );
     double dist_from_cursor = IDLE_STATE_NUMBER;
     /*walk along the route to find the selected wpt guid
      * way point visibility parameter unuseful here is use to
@@ -601,9 +641,6 @@ float navdata_pi::GetSelectRadius(PlugIn_ViewPort *vp)
 
 bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    if( g_activeRouteGuid.IsEmpty() )
-        return false;
-    //allow multi-canvas routePoint selection
     if(m_vp[canvasIndex])
         *m_vp[canvasIndex] = *vp;
 
@@ -618,9 +655,6 @@ bool navdata_pi::RenderOverlayMultiCanvas( wxDC &dc, PlugIn_ViewPort *vp, int ca
 
 bool navdata_pi::RenderGLOverlayMultiCanvas( wxGLContext *pcontext, PlugIn_ViewPort *vp, int canvasIndex)
 {
-    if( g_activeRouteGuid.IsEmpty() )
-        return false;
-    //allow multi-canvas routePoint selection
     if(m_vp[canvasIndex])
         *m_vp[canvasIndex] = *vp;
 
@@ -662,7 +696,7 @@ bool navdata_pi::RenderTargetPoint( wxDC *pdc, PlugIn_ViewPort *vp )
             return false;
         //draw
         if( pdc ){                // no GL
-            pdc->DrawBitmap( image, px, py );		//Don't work properly in this mode!
+            pdc->DrawBitmap( image, px, py );		//Don't work properly in this mode! (no blinking)
         }
 #ifdef ocpnUSE_SVG
         else {                    // GL

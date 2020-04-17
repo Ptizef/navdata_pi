@@ -35,11 +35,14 @@
 #include <wx/grid.h>
 #include "navdata_pi.h"
 #include <wx/tokenzr.h>
-#include "styles.h"
 
 extern int            g_ocpnDistFormat;
 extern int            g_ocpnSpeedFormat;
-extern wxColour       g_consDefTextCol;
+extern wxColour       g_defLabelColor;
+extern wxColour       g_labelColour;
+extern wxColour       g_valueColour;
+extern wxFont         g_labelFont;
+extern wxFont         g_valueFont;
 
 //----------------------------------------------------------------------------------------------------------
 //          Data Table Implementation
@@ -83,20 +86,6 @@ void DataTable::DimTripDialog()
 
     //data and label colours
     GetGlobalColor(_T("UBLCK"), &back_color);
-    wxColour val_color = GetFontColour_PlugIn( _("Console Value") );
-    wxColour leg_color = GetFontColour_PlugIn( _("Console Legend") );  
-    wxColour def_col = g_consDefTextCol; //default colour from style
-    // Make sure that the background color and the text colors are not too close, for contrast
-    wxColour legend_color = leg_color;
-    if( (abs(legend_color.Red() - back_color.Red()) < 5) &&
-            (abs(legend_color.Green() - back_color.Blue()) < 5) &&
-            (abs(legend_color.Blue() - back_color.Blue()) < 5))
-        leg_color = def_col;
-    wxColour value_color = val_color;
-    if( (abs(value_color.Red() - back_color.Red()) < 5) &&
-            (abs(value_color.Green() - back_color.Blue()) < 5) &&
-            (abs(value_color.Blue() - back_color.Blue()) < 5))
-        val_color = def_col;
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     int i = 0;
     while( node ) {
@@ -105,9 +94,9 @@ void DataTable::DimTripDialog()
             if( win->IsKindOf(CLASSINFO(wxTextCtrl)) ){
                 win->SetBackgroundColour(back_color);
                 if(i%2 == 0)
-                    win->SetForegroundColour(leg_color);
+                    win->SetForegroundColour(g_labelColour);
                 else
-                    win->SetForegroundColour(val_color);
+                    win->SetForegroundColour(g_valueColour);
                 i++;
             }
         }
@@ -118,10 +107,8 @@ void DataTable::DimTripDialog()
 void DataTable::SetTripDialogFont()
 {
     int w, wt, h;
-    wxFont leg_font = GetOCPNGUIScaledFont_PlugIn( _("Console Legend") );
-    wxFont val_font = GetOCPNGUIScaledFont_PlugIn( _("Console Value") );
-    GetTextExtent(wxString(_T("Abcdefghijkln")), &wt, NULL, 0, 0, &leg_font);
-    GetTextExtent(wxString(_T("ABCDEFG000i")), &w, &h, 0, 0, &val_font);
+    GetTextExtent(wxString(_T("Abcdefghijkln")), &wt, NULL, 0, 0, &g_labelFont);
+    GetTextExtent(wxString(_T("ABCDEFG000i")), &w, &h, 0, 0, &g_valueFont);
     wxWindowListNode *node =  this->GetChildren().GetFirst();
     int i = 0;
     while( node ) {
@@ -129,11 +116,11 @@ void DataTable::SetTripDialogFont()
         if( win ){
             if(win->IsKindOf(CLASSINFO(wxTextCtrl))){
                 if(i%2 == 0){
-                    win->SetFont(leg_font);
+                    win->SetFont(g_labelFont);
                     win->SetMinSize(wxSize(wt, h+4));
                     win->SetMaxSize(wxSize(wt, h+4));
                 } else {
-                    win->SetFont( val_font );
+                    win->SetFont(g_valueFont);
                     win->SetMinSize(wxSize(w, h+4));
                     win->SetMaxSize(wxSize(w, h+4));
                 }

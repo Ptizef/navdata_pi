@@ -69,17 +69,17 @@ private:
       void CalculateMinSize(void);
 
       wxBrush     m_backBrush;
-      wxColour    m_default_text_color;
+      //wxColour    m_default_text_color;
 
       wxString    m_label;
       wxString    m_value;
-      wxFont      m_plabelFont;
-      wxFont      m_pvalueFont;
+      //wxFont      g_labelFont;
+      //wxFont      g_valueFont;
 
       wxString    m_LegendTextElement;
       wxString    m_ValueTextElement;
-      wxColour    m_legend_color;
-      wxColour    m_val_color;
+      //wxColour    m_legend_color;
+      //wxColour    m_val_color;
 
 DECLARE_EVENT_TABLE()
 

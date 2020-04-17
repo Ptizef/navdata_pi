@@ -42,7 +42,6 @@
 #include "ocpn_plugin.h"
 #include "navdata_pi.h"
 #include "vector2D.h"
-#include "styles.h"
 
 #define ACTIVE_POINT_IDX            0
 
@@ -55,7 +54,11 @@ extern double         g_Lon;
 extern double         g_Cog;
 extern double         g_Sog;
 extern int            g_ocpnDistFormat;
-extern wxColour       g_consDefTextCol;
+extern wxColour       g_defLabelColor;
+extern wxColour       g_labelColour;
+extern wxColour       g_valueColour;
+extern wxFont         g_labelFont;
+extern wxFont         g_valueFont;
 //------------------------------------------------------------------------------
 //    RouteCanvas Implementation
 //------------------------------------------------------------------------------
@@ -92,7 +95,7 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
     m_pitemBoxSizerLeg->Add( pThisLegText, 0, wxALIGN_LEFT, 2 );
 
 
-    wxFont *qFont = GetOCPNScaledFont_PlugIn(_("Dialog"));
+    wxFont *qFont = OCPNGetFont(_("Dialog"), 0);
     
     wxFont *pThisLegFont = FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
                                                           qFont->GetStyle(), wxFONTWEIGHT_BOLD, false,
@@ -367,7 +370,7 @@ void RouteCanvas::UpdateFonts( void )
     pRNG->RefreshFonts();
     pETA->RefreshFonts();
 
-    //correct route point name lenght ( it's too long
+    //correct route point name lenght if too long for the allowed space
     int n = pThisLegText->GetSize().GetX();
     int e = pTTG->GetMinSize().GetX();
     if( e < n ){
@@ -398,11 +401,6 @@ AnnunText::AnnunText( wxWindow *parent, wxWindowID id, const wxString& LegendEle
     m_label = _T("Label");
     m_value = _T("-----");
 
-    m_plabelFont = *FindOrCreateFont_PlugIn( 14, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, FALSE,
-            wxString( _T("Arial Bold") ) );
-    m_pvalueFont = *FindOrCreateFont_PlugIn( 24, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD,
-            FALSE, wxString( _T("helvetica") ), wxFONTENCODING_ISO8859_1 );
-
     m_LegendTextElement = LegendElement;
     m_ValueTextElement = ValueElement;
 
@@ -432,9 +430,9 @@ void AnnunText::CalculateMinSize( void )
     int wv = 50;
     int hv = 20;
 
-    if( m_plabelFont.IsOk() ) GetTextExtent( _T("1234"), &wl, &hl, NULL, NULL, &m_plabelFont );
+    if( g_labelFont.IsOk() ) GetTextExtent( _T("1234"), &wl, &hl, NULL, NULL, &g_labelFont );
 
-    if( m_pvalueFont.IsOk() ) GetTextExtent( _T("123.456"), &wv, &hv, NULL, NULL, &m_pvalueFont );
+    if( g_valueFont.IsOk() ) GetTextExtent( _T("123.456"), &wv, &hv, NULL, NULL, &g_valueFont );
 
     wxSize min;
     min.x = wl + wv;
@@ -455,37 +453,12 @@ void AnnunText::SetColorScheme(PI_ColorScheme cs )
     GetGlobalColor(_T("UBLCK"), &colour);
     m_backBrush = wxBrush( colour, wxBRUSHSTYLE_SOLID );
 
-    m_default_text_color = g_consDefTextCol;
-
     RefreshFonts();
 }
 
 void AnnunText::RefreshFonts()
 {
-    m_plabelFont = GetOCPNGUIScaledFont_PlugIn( _("Console Legend") );
-    m_pvalueFont = GetOCPNGUIScaledFont_PlugIn( _("Console Value") );
-
-    m_legend_color = GetFontColour_PlugIn( _("Console Legend") );
-    m_val_color = GetFontColour_PlugIn( _("Console Value") );
-    
     CalculateMinSize();
-    
-    // Make sure that the background color and the text colors are not too close, for contrast
-    if(m_backBrush.IsOk()){
-        wxColour back_color = m_backBrush.GetColour();
-    
-        wxColour legend_color = m_legend_color;
-        if( (abs(legend_color.Red() - back_color.Red()) < 5) &&
-                (abs(legend_color.Green() - back_color.Blue()) < 5) &&
-                (abs(legend_color.Blue() - back_color.Blue()) < 5))
-            m_legend_color = m_default_text_color;
-            
-        wxColour value_color = m_val_color;
-        if( (abs(value_color.Red() - back_color.Red()) < 5) &&
-            (abs(value_color.Green() - back_color.Blue()) < 5) &&
-            (abs(value_color.Blue() - back_color.Blue()) < 5))
-            m_val_color = m_default_text_color;     
-    }
 }
 
 void AnnunText::SetLegendElement( const wxString &element )
@@ -521,17 +494,15 @@ void AnnunText::OnPaint( wxPaintEvent& event )
     mdc.SetBackground( m_backBrush );
     mdc.Clear();
 
-   // mdc.SetTextForeground( m_default_text_color );
-
-    if( m_plabelFont.IsOk() ) {
-        mdc.SetFont( m_plabelFont );
-        mdc.SetTextForeground( m_legend_color );
+    if( g_labelFont.IsOk() ) {
+        mdc.SetFont( g_labelFont );
+        mdc.SetTextForeground( g_labelColour );
         mdc.DrawText( m_label, 5, 2 );
     }
 
-    if( m_pvalueFont.IsOk() ) {
-        mdc.SetFont( m_pvalueFont );
-        mdc.SetTextForeground( m_val_color );
+    if( g_valueFont.IsOk() ) {
+        mdc.SetFont( g_valueFont );
+        mdc.SetTextForeground( g_valueColour );
 
         int w, h;
         mdc.GetTextExtent( m_value, &w, &h );
