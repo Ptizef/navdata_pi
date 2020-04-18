@@ -62,7 +62,7 @@ public:
       void RefreshFonts(void);
       void SetLegendElement(const wxString &element);
       void SetValueElement(const wxString &element);
-      void SetColorScheme(PI_ColorScheme cs);
+      void SetColorScheme();
       void MouseEvent( wxMouseEvent& event );
       
 private:
@@ -99,7 +99,7 @@ public:
       void UpdateRouteData();
       void ShowWithFreshFonts(void);
       void UpdateFonts(void);
-      void SetColorScheme(PI_ColorScheme cs);
+      void SetColorScheme();
       void LegRoute();
       void OnContextMenu( wxContextMenuEvent& event );
       void OnContextMenuSelection( wxCommandEvent& event );

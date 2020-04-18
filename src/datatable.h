@@ -73,7 +73,7 @@ public:
     void UpdateTripData();
     void SetTableSizePosition();
     void CloseDialog();
-    void DimTripDialog();
+    void SetColorScheme();
     void SetTripDialogFont();
 private:
     int  GetDialogHeight(int nVisCols);

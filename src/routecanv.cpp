@@ -188,7 +188,7 @@ void RouteCanvas::OnMouseEvent( wxMouseEvent &event )
     }
 }
 
-void RouteCanvas::SetColorScheme( PI_ColorScheme cs )
+void RouteCanvas::SetColorScheme()
 {
     wxColour colour;
     GetGlobalColor( _T("DILG1"/*UIBDR*/), &colour );
@@ -199,9 +199,11 @@ void RouteCanvas::SetColorScheme( PI_ColorScheme cs )
 
     pThisLegText->SetBackgroundColour( colour );
 
-    pRNG->SetColorScheme( cs );
-    pTTG->SetColorScheme( cs );
-    pETA->SetColorScheme( cs );
+    pRNG->SetColorScheme();
+    pTTG->SetColorScheme();
+    pETA->SetColorScheme();
+
+    Refresh();
 }
 
 void RouteCanvas::ToggleVmgSogDisplay()
@@ -370,15 +372,15 @@ void RouteCanvas::UpdateFonts( void )
     pRNG->RefreshFonts();
     pETA->RefreshFonts();
 
-    //correct route point name lenght if too long for the allowed space
+    //correct route point name lenght regarding the allowed space
     int n = pThisLegText->GetSize().GetX();
     int e = pTTG->GetMinSize().GetX();
     if( e < n ){
-        double len = pThisLegText->GetLabel().Len() / ((double) (n * e));
-        wxString s = pThisLegText->GetLabel().Mid(0, (int)len);
+        int len = pThisLegText->GetLabel().Len() / (n * e);
+        wxString s = pThisLegText->GetLabel().Mid(0, len);
         pThisLegText->SetLabel(s);
-        pThisLegText->Refresh(true);
     }//
+
     m_pitemBoxSizerLeg->SetSizeHints( this );
     Layout();
     Fit();
@@ -447,7 +449,7 @@ void AnnunText::CalculateMinSize( void )
     SetMinSize( min );
 }
 
-void AnnunText::SetColorScheme(PI_ColorScheme cs )
+void AnnunText::SetColorScheme()
 {
     wxColour colour;
     GetGlobalColor(_T("UBLCK"), &colour);

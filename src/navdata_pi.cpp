@@ -262,12 +262,10 @@ void navdata_pi::LoadocpnConfig()
 
 void navdata_pi::SetColorScheme(PI_ColorScheme cs)
 {
-    if(m_pTable){
-        m_pTable->DimTripDialog();
-        RequestRefresh(m_pTable);
-    }
+    if(m_pTable)
+        m_pTable->SetColorScheme();
     if(m_console)
-        m_console->SetColorScheme(cs);
+        m_console->SetColorScheme();
 }
 
 void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
@@ -430,15 +428,15 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 
 void navdata_pi::CheckFontColourChange()
 {
-    bool change = false;
+    bool changeFont = false, changeColor = false;
     wxFont  lfont = *OCPNGetFont( _("Console Legend"), 0);
     if( g_labelFont != lfont ) {
-        change = true;
+        changeFont = true;
         g_labelFont = lfont;
     }
     wxFont  vfont = *OCPNGetFont(_("Console Value"), 0);
     if( g_valueFont != vfont ){
-        change = true;
+        changeFont = true;
         g_valueFont = vfont;
     }
     wxColour back_color;
@@ -451,11 +449,11 @@ void navdata_pi::CheckFontColourChange()
                     (abs(ncol.Blue() - back_color.Blue()) < 5)) {
             if(g_labelColour != g_defLabelColor) {
                 g_labelColour = g_defLabelColor;
-                change = true;
+                changeColor = true;
             }
         } else {
             g_labelColour = lcol;
-            change = true;
+            changeColor = true;
         }
 
     }
@@ -467,24 +465,23 @@ void navdata_pi::CheckFontColourChange()
                 (abs(mcol.Blue() - back_color.Blue()) < 5)) {
             if(g_valueColour != g_defLabelColor) {
                 g_valueColour = g_defLabelColor;
-                change = true;
+                changeColor = true;
             }
         } else {
             g_valueColour = vcol;
-            change = true;
+            changeColor = true;
         }
     }
+    if(changeColor)
+        if( m_pTable ) m_pTable->SetColorScheme();
 
-    if(!change) return;
-
-    if( m_pTable ){
-        m_pTable->DimTripDialog();
-        m_pTable->SetTripDialogFont();
-        m_pTable->SetTableSizePosition();
+    if(changeFont){
+        if( m_pTable ){
+            m_pTable->SetTripDialogFont();
+            m_pTable->SetTableSizePosition();
+        }
+        if(m_console) m_console->UpdateFonts();
     }
-
-    if(m_console)
-        m_console->UpdateFonts();
 
     return;
 }
@@ -547,7 +544,7 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
         delete m_vp[1];
         if(new_canvas_nbr > 1){ //initialise view port for right canvas
             m_vp[1] = new PlugIn_ViewPort;
-            RequestRefresh(GetCanvasByIndex(1));
+            GetCanvasByIndex(1)->Refresh();
         } else                  //close vp for right canvas
             m_vp[1] = NULL;
     }
@@ -612,12 +609,12 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
         if( m_selectablePoint ){
             m_blinkTrigger = 1;
             for( int i = 0; i < GetCanvasCount(); i++ ){
-                RequestRefresh(GetCanvasByIndex(i));
+                GetCanvasByIndex(i)->Refresh();
             }
             if( !m_console )
                 m_console = new RouteCanvas( GetOCPNCanvasWindow(), this);
             m_console->ShowWithFreshFonts();
-            m_console->SetColorScheme( (PI_ColorScheme) 0 );
+            m_console->SetColorScheme();
         } else {
             if( m_console )
                 m_console->Show(false);
@@ -844,7 +841,7 @@ void navdata_pi::OnToolbarToolCallback(int id)
         long style = wxSIMPLE_BORDER | wxCLIP_CHILDREN ;
         m_pTable = new DataTable(GetOCPNCanvasWindow(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);
-        m_pTable->DimTripDialog();
+        m_pTable->SetColorScheme();
         m_pTable->UpdateTripData(m_ptripData);
         m_pTable->SetTripDialogFont();
         m_pTable->SetTableSizePosition();

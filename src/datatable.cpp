@@ -70,14 +70,14 @@ void DataTable::InitDataTable()
     }
     m_numDialCols = numCols > 3? 3: numCols < 1? 1: numCols;
 
-    //connect timers at data table label level
+    //connect timers at data tablelevel
     Bind(wxEVT_PAINT, &DataTable::OnPaintEvent, this);
     Bind(wxEVT_LEFT_UP, &DataTable::OnMouseEvent, this);
     Bind(wxEVT_LEFT_DOWN, &DataTable::OnMouseEvent, this);
     Bind(wxEVT_MOTION, &DataTable::OnMouseEvent, this);
 }
 
-void DataTable::DimTripDialog()
+void DataTable::SetColorScheme()
 {
     //Dialog background colour
     wxColour back_color;
@@ -86,7 +86,7 @@ void DataTable::DimTripDialog()
 
     //data and label colours
     GetGlobalColor(_T("UBLCK"), &back_color);
-    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    wxWindowListNode *node =  GetChildren().GetFirst();
     int i = 0;
     while( node ) {
         wxWindow *win = node->GetData();
@@ -109,7 +109,7 @@ void DataTable::SetTripDialogFont()
     int w, wt, h;
     GetTextExtent(wxString(_T("Abcdefghijkln")), &wt, NULL, 0, 0, &g_labelFont);
     GetTextExtent(wxString(_T("ABCDEFG000i")), &w, &h, 0, 0, &g_valueFont);
-    wxWindowListNode *node =  this->GetChildren().GetFirst();
+    wxWindowListNode *node =  GetChildren().GetFirst();
     int i = 0;
     while( node ) {
         wxWindow *win = node->GetData();
@@ -193,15 +193,15 @@ void DataTable::SetTableSizePosition()
 {
     m_numDialCols = 1;
 
-    this->Fit();
+    Fit();
 
     int hd = GetDialogHeight(m_numDialCols);
-    this->SetClientSize(wxSize(GetDataGridWidth(m_numDialCols), hd));
+    SetClientSize(wxSize(GetDataGridWidth(m_numDialCols), hd));
 
-    this->Layout();
-    RequestRefresh(this);
+    Layout();
+    Refresh();
 
-    this->Move(m_dialPosition);
+    Move(m_dialPosition);
 }
 
 int DataTable::GetDialogHeight( int nVisCols )
@@ -299,9 +299,9 @@ void DataTable::OnMouseEvent( wxMouseEvent &event )
 
 void DataTable::CloseDialog()
 {
-    m_dialPosition = this->GetPosition();
+    m_dialPosition = GetPosition();
 
-    this->Show(false);
+    Show(false);
 
     wxFileConfig *pConf = GetOCPNConfigObject();
     if(pConf) {
