@@ -55,14 +55,12 @@ wxString       g_shareLocn;
 wxString       g_activeRouteGuid;
 wxString       g_activePointGuid;
 wxString       g_selectedPointGuid;
-bool           m_selectablePoint;
 double         g_Lat;
 double         g_Lon;
 double         g_Cog;
 double         g_Sog;
 int            g_ocpnDistFormat;
 int            g_ocpnSpeedFormat;
-wxColour       g_defLabelColor;
 wxColour       g_labelColour;
 wxColour       g_valueColour;
 wxFont         g_labelFont;
@@ -130,8 +128,6 @@ int navdata_pi::Init(void){
 
     //to do: get it from style
     g_defLabelColor.Set( 50, 240, 50);
-
-    LoadocpnConfig();
 
     //find and store share path
     g_shareLocn = *GetpSharedDataLocation() +
@@ -242,22 +238,6 @@ wxString navdata_pi::GetLongDescription()
 int navdata_pi::GetToolbarToolCount(void)
 {
       return 1;
-}
-
-void navdata_pi::LoadocpnConfig()
-{
-      wxFileConfig *pConf = GetOCPNConfigObject();
-      if(pConf)
-      {
-          pConf->SetPath(_T("/Settings"));
-          pConf->Read(_T("DistanceFormat"), &g_ocpnDistFormat, 0);
-          pConf->Read(_T("SpeedFormat"), &g_ocpnSpeedFormat, 0);
-          pConf->Read( _T ( "SelectionRadiusTouchMM" ), &m_ocpnSelRadiusTouchMM);
-          pConf->Read( _T ( "SelectionRadiusMM" ), &m_ocpnSelRadiusMM);
-
-          m_ocpnSelRadiusTouchMM = wxMax(m_ocpnSelRadiusTouchMM, 1.0);
-          m_ocpnSelRadiusMM = wxMax(m_ocpnSelRadiusMM, 0.5);
-	  }
 }
 
 void navdata_pi::SetColorScheme(PI_ColorScheme cs)
@@ -424,10 +404,31 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         //get the last created track point to complete trip data
         m_lenghtTimer.Start(TIMER_INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
     }
+
+    else if(message_id == _T("OpenCPN Config"))
+    {
+        LoadocpnConfig();
+    }
 }
 
-void navdata_pi::CheckFontColourChange()
+void navdata_pi::LoadocpnConfig()
 {
+    wxFileConfig *pConf = GetOCPNConfigObject();
+    if(pConf)
+    {
+        float radiusPixel;
+        pConf->SetPath(_T("/Settings"));
+        pConf->Read(_T("DistanceFormat"), &g_ocpnDistFormat, 0);
+        pConf->Read(_T("SpeedFormat"), &g_ocpnSpeedFormat, 0);
+        if(IsTouchInterface_PlugIn()){
+            pConf->Read( _T ("SelectionRadiusTouchMM"), &radiusPixel);
+            m_ocpnSelRadiusMM = wxMax(radiusPixel, 1.0);
+        } else {
+            pConf->Read( _T ("SelectionRadiusMM"), &radiusPixel);
+            m_ocpnSelRadiusMM = wxMax(radiusPixel, 0.5);
+        }
+    }
+
     bool changeFont = false, changeColor = false;
     wxFont  lfont = *OCPNGetFont( _("Console Legend"), 0);
     if( g_labelFont != lfont ) {
@@ -534,7 +535,7 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     g_Cog = pfix.Cog;
     g_Sog = pfix.Sog;
     m_blinkTrigger++;
-    CheckFontColourChange();
+    //CheckFontColourChange();
     //when the canvas number has changed, do nothing, this could create a crash
     if(GetCanvasCount() == new_canvas_nbr ){
         if( (m_console && m_console->IsShown()))
@@ -628,8 +629,7 @@ float navdata_pi::GetSelectRadius(PlugIn_ViewPort *vp)
 {
     int w, h;
     ::wxDisplaySize(&w, &h);
-    float radiusMM = IsTouchInterface_PlugIn()? m_ocpnSelRadiusTouchMM: m_ocpnSelRadiusMM;
-    unsigned int radiusPixel = (w / PlugInGetDisplaySizeMM()) * radiusMM;
+    unsigned int radiusPixel = (w / PlugInGetDisplaySizeMM()) * m_ocpnSelRadiusMM;
     double  canvasScaleFactor = wxMax( w, h) / (PlugInGetDisplaySizeMM() / 1000.);
     double trueScalePPM = canvasScaleFactor / vp->chart_scale;
     float selectRadius =  radiusPixel / (trueScalePPM * 1852 * 60);
@@ -837,7 +837,6 @@ void navdata_pi::OnToolbarToolCallback(int id)
 	else {
 		SetToolbarItemState(m_leftclick_tool_id, true);
 
-        LoadocpnConfig();
         long style = wxSIMPLE_BORDER | wxCLIP_CHILDREN ;
         m_pTable = new DataTable(GetOCPNCanvasWindow(), wxID_ANY, wxEmptyString, wxDefaultPosition,
 			wxDefaultSize, style, this);

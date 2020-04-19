@@ -48,13 +48,11 @@
 extern wxString       g_activeRouteGuid;
 extern wxString       g_activePointGuid;
 extern wxString       g_selectedPointGuid;
-extern bool           m_selectablePoint;
 extern double         g_Lat;
 extern double         g_Lon;
 extern double         g_Cog;
 extern double         g_Sog;
 extern int            g_ocpnDistFormat;
-extern wxColour       g_defLabelColor;
 extern wxColour       g_labelColour;
 extern wxColour       g_valueColour;
 extern wxFont         g_labelFont;
@@ -223,10 +221,9 @@ void RouteCanvas::ToggleVmgSogDisplay()
 
 void RouteCanvas::UpdateRouteData()
 {
-    wxString str_buf;
-
-    if( m_selectablePoint && !g_activeRouteGuid.IsEmpty())
+    if( this->IsShown() )
     {
+        wxString str_buf;
         //find active route and wpts
         std::unique_ptr<PlugIn_Route> r;
         r = GetRoute_Plugin( g_activeRouteGuid );

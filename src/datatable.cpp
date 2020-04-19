@@ -38,7 +38,6 @@
 
 extern int            g_ocpnDistFormat;
 extern int            g_ocpnSpeedFormat;
-extern wxColour       g_defLabelColor;
 extern wxColour       g_labelColour;
 extern wxColour       g_valueColour;
 extern wxFont         g_labelFont;

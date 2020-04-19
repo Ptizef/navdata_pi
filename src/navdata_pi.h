@@ -118,20 +118,19 @@ private:
       bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       float GetSelectRadius(PlugIn_ViewPort *vp);
-      void CheckFontColourChange();
       void CheckRoutePointSelectable();
 
       //toolbar variables
       int          m_leftclick_tool_id;
       unsigned int m_ToolIconType;
-      //Trip data variables
+      //Trip & route data variables
       DataTable   *m_pTable;
-      //Routepoint console variables
-      int               m_blinkTrigger;
+      bool         m_selectablePoint;
+      wxColour     g_defLabelColor;
+      int          m_blinkTrigger;
       PlugIn_ViewPort   *m_vp[2];       //allow multi-canvas
       RouteCanvas       *m_console;
       //ocpn options variables
-      float       m_ocpnSelRadiusTouchMM;
       float       m_ocpnSelRadiusMM;
       //Trip calc variables
       wxTimer     m_lenghtTimer;
