@@ -102,15 +102,15 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
                                                           qFont->GetFaceName() );
     pThisLegText->SetFont( *pThisLegFont );
 
-    pRNG = new AnnunText( this, -1, _("Console Legend"), _("Console Value") );
+    pRNG = new AnnunText( this, -1 );
     pRNG->SetALabel( _T("RNG") );
     m_pitemBoxSizerLeg->Add( pRNG, 1, wxALIGN_LEFT | wxALL, 2 );
 
-    pTTG = new AnnunText( this, -1, _("Console Legend"), _("Console Value") );
+    pTTG = new AnnunText( this, -1 );
     pTTG->SetALabel( _T("TTG  @VMG") );
     m_pitemBoxSizerLeg->Add( pTTG, 1, wxALIGN_LEFT | wxALL, 2 );
 
-    pETA = new AnnunText( this, -1, _("Console Legend"), _("Console Value") );
+    pETA = new AnnunText( this, -1 );
     pETA->SetALabel( _T("ETA  @VMG") );
     m_pitemBoxSizerLeg->Add( pETA, 1, wxALIGN_LEFT | wxALL, 2 );
 
@@ -281,8 +281,17 @@ void RouteCanvas::UpdateRouteData()
                         tttg_sec += ( rng / g_Sog ) * 3600.;
                     }
                     if( wpt->m_GUID == g_selectedPointGuid ){
+                        //correct route point name lenght regarding the allowed space
                         pThisLegText->SetLabel( _(" -> ") + wpt->m_MarkName );
-                        pThisLegText->Refresh(true);
+                        //pThisLegText->Refresh(false);
+                            int n = pThisLegText->GetSize().GetX();
+                            int e = pTTG->GetMinSize().GetX();
+                            if( e < n ){
+                                int len = pThisLegText->GetLabel().Len() * e / n;
+                                wxString s = pThisLegText->GetLabel().Mid(0, len);
+                                pThisLegText->SetLabel(s);
+                            }
+                        pThisLegText->Refresh();
 
                         int c = trng < 10.0 ? 2: 1;
                         str_buf = wxString::Format( _T("%5.*f"), c, toUsrDistance_Plugin( trng, g_ocpnDistFormat ) );
@@ -359,8 +368,8 @@ void RouteCanvas::ShowWithFreshFonts( void )
     Hide();
     Move( 0, 0 );
 
-    UpdateRouteData();
     UpdateFonts();
+    UpdateRouteData();
     pPlugin->PositionConsole();
     Show();
 
@@ -368,18 +377,9 @@ void RouteCanvas::ShowWithFreshFonts( void )
 
 void RouteCanvas::UpdateFonts( void )
 {
-    pTTG->RefreshFonts();
-    pRNG->RefreshFonts();
-    pETA->RefreshFonts();
-
-    //correct route point name lenght regarding the allowed space
-    int n = pThisLegText->GetSize().GetX();
-    int e = pTTG->GetMinSize().GetX();
-    if( e < n ){
-        int len = pThisLegText->GetLabel().Len() / (n * e);
-        wxString s = pThisLegText->GetLabel().Mid(0, len);
-        pThisLegText->SetLabel(s);
-    }//
+    pTTG->CalculateMinSize();
+    pRNG->CalculateMinSize();
+    pETA->CalculateMinSize();
 
     m_pitemBoxSizerLeg->SetSizeHints( this );
     Layout();
@@ -396,17 +396,13 @@ EVT_PAINT(AnnunText::OnPaint)
 EVT_MOUSE_EVENTS ( AnnunText::MouseEvent )
 END_EVENT_TABLE()
 
-AnnunText::AnnunText( wxWindow *parent, wxWindowID id, const wxString& LegendElement,
-        const wxString& ValueElement ) :
+AnnunText::AnnunText( wxWindow *parent, wxWindowID id ) :
         wxWindow( parent, id, wxDefaultPosition, wxDefaultSize, wxNO_BORDER )
 {
     m_label = _T("Label");
     m_value = _T("-----");
 
-    m_LegendTextElement = LegendElement;
-    m_ValueTextElement = ValueElement;
-
-    RefreshFonts();
+    CalculateMinSize();
 }
 
 AnnunText::~AnnunText()
@@ -455,22 +451,9 @@ void AnnunText::SetColorScheme()
     GetGlobalColor(_T("UBLCK"), &colour);
     m_backBrush = wxBrush( colour, wxBRUSHSTYLE_SOLID );
 
-    RefreshFonts();
-}
+    Refresh();
 
-void AnnunText::RefreshFonts()
-{
-    CalculateMinSize();
-}
-
-void AnnunText::SetLegendElement( const wxString &element )
-{
-    m_LegendTextElement = element;
-}
-
-void AnnunText::SetValueElement( const wxString &element )
-{
-    m_ValueTextElement = element;
+   // CalculateMinSize();
 }
 
 void AnnunText::SetALabel( const wxString &l )

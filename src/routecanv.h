@@ -52,34 +52,27 @@ class navdata_pi;
 class AnnunText : public wxWindow
 {
 public:
-      AnnunText(wxWindow *parent, wxWindowID id, const wxString& LegendElement, const wxString& ValueElement);
+      AnnunText(wxWindow *parent, wxWindowID id/*, const wxString& LegendElement, const wxString& ValueElement*/);
 
       ~AnnunText();
 
       void SetALabel(const wxString &l);
       void SetAValue(const wxString &v);
       void OnPaint(wxPaintEvent& event);
-      void RefreshFonts(void);
-      void SetLegendElement(const wxString &element);
-      void SetValueElement(const wxString &element);
       void SetColorScheme();
-      void MouseEvent( wxMouseEvent& event );
+      void CalculateMinSize(void);
       
 private:
-      void CalculateMinSize(void);
+      void MouseEvent( wxMouseEvent& event );
 
       wxBrush     m_backBrush;
-      //wxColour    m_default_text_color;
 
       wxString    m_label;
       wxString    m_value;
-      //wxFont      g_labelFont;
-      //wxFont      g_valueFont;
 
       wxString    m_LegendTextElement;
       wxString    m_ValueTextElement;
-      //wxColour    m_legend_color;
-      //wxColour    m_val_color;
+
 
 DECLARE_EVENT_TABLE()
 
