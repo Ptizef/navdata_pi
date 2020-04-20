@@ -278,18 +278,6 @@ void RouteCanvas::UpdateRouteData()
                         tttg_sec += ( rng / g_Sog ) * 3600.;
                     }
                     if( wpt->m_GUID == g_selectedPointGuid ){
-                        //correct route point name lenght regarding the allowed space
-                        pThisLegText->SetLabel( _(" -> ") + wpt->m_MarkName );
-                        //pThisLegText->Refresh(false);
-                            int n = pThisLegText->GetSize().GetX();
-                            int e = pTTG->GetMinSize().GetX();
-                            if( e < n ){
-                                int len = pThisLegText->GetLabel().Len() * e / n;
-                                wxString s = pThisLegText->GetLabel().Mid(0, len);
-                                pThisLegText->SetLabel(s);
-                            }
-                        pThisLegText->Refresh();
-
                         int c = trng < 10.0 ? 2: 1;
                         str_buf = wxString::Format( _T("%5.*f"), c, toUsrDistance_Plugin( trng, g_ocpnDistFormat ) );
                         if( nwpts == ACTIVE_POINT_IDX && delta )
@@ -377,6 +365,14 @@ void RouteCanvas::UpdateFonts( void )
     pTTG->CalculateMinSize();
     pRNG->CalculateMinSize();
     pETA->CalculateMinSize();
+
+    //correct route point name lenght regarding the allowed space
+    int w;
+    wxFont font = pThisLegText->GetFont();
+    GetTextExtent( m_pointName, &w, NULL, NULL, NULL, &font );
+    int len = m_pointName.Len() * pTTG->GetMinSize().GetX() / w;
+    wxString s = m_pointName.Mid(0, wxMin(len, m_pointName.Len()));
+    pThisLegText->SetLabel(s);
 
     m_pitemBoxSizerLeg->SetSizeHints( this );
     Layout();

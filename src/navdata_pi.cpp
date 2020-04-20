@@ -578,6 +578,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
      * way point visibility parameter unuseful here is use to
      * store if the selected is before or after the active point*/
     wxString SelGuid = wxEmptyString;
+    wxString pointLabel;
     bool past = false;
     std::unique_ptr<PlugIn_Route> r;
     r = GetRoute_Plugin( g_activeRouteGuid );
@@ -595,6 +596,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
                 double dis = sqrt( pow(of_lat,2) + pow(of_lon,2) ) ;
                 if( dis < dist_from_cursor ) {
                     SelGuid = wpt->m_GUID;
+                    pointLabel = wpt->m_MarkName;
                     m_selectablePoint = wpt->m_IsVisible;
                     dist_from_cursor = dis;
                 }
@@ -614,8 +616,10 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
             }
             if( !m_console )
                 m_console = new RouteCanvas( GetOCPNCanvasWindow(), this);
+            m_console->m_pointName = _T(" ->") + pointLabel;
             m_console->ShowWithFreshFonts();
             m_console->SetColorScheme();
+
         } else {
             if( m_console )
                 m_console->Show(false);

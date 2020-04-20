@@ -52,7 +52,7 @@ class navdata_pi;
 class AnnunText : public wxWindow
 {
 public:
-      AnnunText(wxWindow *parent, wxWindowID id/*, const wxString& LegendElement, const wxString& ValueElement*/);
+      AnnunText(wxWindow *parent, wxWindowID id);
 
       ~AnnunText();
 
@@ -69,10 +69,6 @@ private:
 
       wxString    m_label;
       wxString    m_value;
-
-      wxString    m_LegendTextElement;
-      wxString    m_ValueTextElement;
-
 
 DECLARE_EVENT_TABLE()
 
@@ -103,6 +99,7 @@ public:
 
       wxStaticText      *pThisLegText;
       wxBoxSizer        *m_pitemBoxSizerLeg;
+      wxString          m_pointName;
 
       AnnunText         *pRNG;
       AnnunText         *pTTG;
