@@ -88,7 +88,7 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
 
     m_pitemBoxSizerLeg = new wxBoxSizer( wxVERTICAL );
 
-    pThisLegText = new wxStaticText( this, -1, _("This Point"), wxDefaultPosition, wxDefaultSize,wxALIGN_LEFT );
+    pThisLegText = new wxStaticText( this, -1, _T("This Point"), wxDefaultPosition, wxDefaultSize,wxALIGN_LEFT );
     pThisLegText->Fit();
     m_pitemBoxSizerLeg->Add( pThisLegText, 0, wxALIGN_LEFT, 2 );
 
@@ -101,15 +101,15 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
     pThisLegText->SetFont( *pThisLegFont );
 
     pRNG = new AnnunText( this, -1 );
-    pRNG->SetALabel( _T("RNG") );
+    pRNG->SetALabel( _("RNG") );
     m_pitemBoxSizerLeg->Add( pRNG, 1, wxALIGN_LEFT | wxALL, 2 );
 
     pTTG = new AnnunText( this, -1 );
-    pTTG->SetALabel( _T("TTG  @VMG") );
+    pTTG->SetALabel( _("TTG  @VMG") );
     m_pitemBoxSizerLeg->Add( pTTG, 1, wxALIGN_LEFT | wxALL, 2 );
 
     pETA = new AnnunText( this, -1 );
-    pETA->SetALabel( _T("ETA  @VMG") );
+    pETA->SetALabel( _("ETA  @VMG") );
     m_pitemBoxSizerLeg->Add( pETA, 1, wxALIGN_LEFT | wxALL, 2 );
 
 

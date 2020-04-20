@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
  *
  * Project:  OpenCPN - plugin navdata_pi
  * Purpose:  ROUTE Plugin
@@ -232,7 +232,7 @@ wxString navdata_pi::GetShortDescription()
 
 wxString navdata_pi::GetLongDescription()
 {
-      return _("Navigation data plugin for OpenCPN\nShows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\nfor all active route points.\nAlso shows current trip summary:\nstart time, time spent, distance, mean speed since departure...");
+      return _("Navigation data plugin for OpenCPN\nShows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\nto a selected route point of the active route.\nAlso shows current trip summary:\nstart time, time spent, distance, mean speed since departure...");
 }
 
 int navdata_pi::GetToolbarToolCount(void)
