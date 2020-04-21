@@ -333,6 +333,11 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 
     else if(message_id == _T("OCPN_TRK_ACTIVATED"))
     {
+        /*when closing the track properties dialog, ocpn send an "OCPN_TRK_ACTIVATED"
+         * message. In this case we must ignore it. Nevertheless I think it's a bug
+         *  and must be corrected*/
+        if( m_ptripData && !m_ptripData->m_isEnded && !m_gMustRotate )
+            return;
         wxJSONValue  root;
         wxJSONReader reader;
         int rnumErrors = reader.Parse( message_body, &root );
