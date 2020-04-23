@@ -64,17 +64,12 @@
 #define     TRACKPOINT_FIRST            1
 #define     OFFSET_LAT     1e-6
 
-//#define     DIALOG_CAPTION_HEIGHT 18
-#define     TIMER_INTERVAL_HOUR   3600000  //3600 s 1 hour
-#define     TIMER_INTERVAL_10SECOND 10000  //10 s
-#define     TIMER_INTERVAL_SECOND    1000  //1 s
-#define     TIMER_INTERVAL_75MSECOND   75  //75 ms
-#define     TIMER_INTERVAL_10MSECOND   10  //10 ms
-#define     TIMER_INTERVAL_MSECOND      1  //1 ms
+#define     INTERVAL_90MN   5400000  //5400 s 1,5 hour
+#define     INTERVAL_HOUR   3600000  //3600 s 1 hour
+#define     INTERVAL_10SECOND 10000  //10 s
+#define     INTERVAL_2SECOND    2000  //2 s
+#define     INTERVAL_10MSECOND   10  //10 ms
 #define     IDLE_STATE_NUMBER    99999999
-#define     NAME_LOOP_READY            -2
-#define     NAME_LOOP_STARTED          -1
-#define     NAME_NEW_LOOP               0
 
 class navdata_pi : public opencpn_plugin_116, wxTimer
 {
@@ -115,7 +110,6 @@ private:
       //
       void OnTripLenghtTimer(wxTimerEvent & event);
       void OnRotateTimer(wxTimerEvent & event);
-      bool GetOcpnDailyTrack(int *roTime, int *rotimeType);
       void LoadocpnConfig();
       float GetSelectRadius(PlugIn_ViewPort *vp);
       void CheckRoutePointSelectable();
@@ -123,10 +117,10 @@ private:
       //toolbar variables
       int          m_leftclick_tool_id;
       unsigned int m_ToolIconType;
-      //Trip & route data variables
+      //Route data variables
       DataTable   *m_pTable;
       bool         m_selectablePoint;
-      wxColour     g_defLabelColor;
+      wxColour     m_defLabelColor;
       int          m_blinkTrigger;
       PlugIn_ViewPort   *m_vp[2];       //allow multi-canvas
       RouteCanvas       *m_console;
@@ -135,14 +129,14 @@ private:
       //Trip calc variables
       wxTimer     m_lenghtTimer;
       wxTimer     m_rotateTimer;
-      wxString    m_gTrkGuid;
+      wxString    m_activeTrkGuid;
       int         m_gNodeNbr;
-      bool        m_gHasRotated;
-      bool        m_gMustRotate;
+      bool        m_nearRotate;
       double      m_oldtpLat;
       double      m_oldtpLon;
-      double      m_end_gLat;
-      double      m_end_gLon;
+      bool        m_isDailyTrack;
+      int         m_trackRotateAt;
+      int         m_trackRotateTimeType;
 };
 
 //-------------------------------------------------------------------------------------------
@@ -155,6 +149,7 @@ public:
       ~TripData();
 
       wxDateTime  m_startDate;
+      bool        m_isStarted;
       double      m_totalDist;
       double      m_tempDist;
       wxDateTime  m_endTime;

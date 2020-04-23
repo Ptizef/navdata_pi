@@ -43,8 +43,6 @@
 #include "navdata_pi.h"
 #include "vector2D.h"
 
-#define ACTIVE_POINT_IDX            0
-
 extern wxString       g_activeRouteGuid;
 extern wxString       g_activePointGuid;
 extern wxString       g_selectedPointGuid;

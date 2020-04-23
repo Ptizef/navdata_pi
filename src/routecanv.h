@@ -41,8 +41,9 @@
 #define SPEED_VMG 0
 #define SPEED_SOG 1
 
-#define ID_LEGROUTE 1000
-#define SECONDS_PER_DAY 86400
+#define SECONDS_PER_DAY     86400
+
+#define ACTIVE_POINT_IDX    0
 
 // Class declarations
 class navdata_pi;

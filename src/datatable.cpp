@@ -139,22 +139,31 @@ void DataTable::UpdateTripData(TripData *ptripData)
         //start time
         m_pStartDate->SetValue( ptripData->m_startDate.Format(_T("%x")) );
         m_pStartTime->SetValue( ptripData->m_startDate.Format(_T("%H:%M:%S")) );
-        // total time
-        wxTimeSpan span =  ptripData->m_endTime - ptripData->m_startDate;
-        double th = span.GetSeconds().ToDouble() / 3600; //total time in hours
-        if( th < 23 )
-            m_pTimeValue->SetValue( span.Format(_T("%H:%M:%S")) );
-        else
-            m_pTimeValue->SetValue( span.Format(_T("%Dd %H:%M")) );
 
-        //end time
+        // end time
+        wxTimeSpan span;
         if(ptripData->m_isEnded){
+            span =  ptripData->m_endTime - ptripData->m_startDate;
             wxString send = ptripData->m_endTime.Format(_T("%x")).BeforeLast('/');
-            send << ptripData->m_startDate.Format(_T(" %H:%M"));
+            send << ptripData->m_endTime.Format(_T(" %H:%M"));
             m_pEndDate->SetValue(send);
         } else {
             m_pEndDate->SetValue( _T("---") );
+            span =  wxDateTime::Now() - ptripData->m_startDate;
         }
+        //time
+        double th;
+        if(ptripData->m_isStarted) {
+            th = span.GetSeconds().ToDouble() / 3600; //time spent in hours
+            if( th < 24 )
+                m_pTimeValue->SetValue( span.Format(_T("%H:%M:%S")) );
+            else
+                m_pTimeValue->SetValue( span.Format(_T("%Dd %H:%M")) );
+        } else {
+            th = 0;
+            m_pTimeValue->SetValue( _T("---") );
+        }
+
         //dist
         double tdist = ptripData->m_totalDist + ptripData->m_tempDist;
         if( tdist > 0.1 ){
@@ -162,20 +171,18 @@ void DataTable::UpdateTripData(TripData *ptripData)
             int c = tdist > 999.99 ? 0: tdist > 9.99 ? 1: 2;
             m_pDistValue->SetValue( wxString::Format( wxString(_T("%1.*f")), c, tdist )
                                 + getUsrDistanceUnit_Plugin( g_ocpnDistFormat ) );
-        } else
-            m_pDistValue->SetValue( _T("---") );
         //speed
-        double sp = tdist / ( th );
-        if( std::isnan(sp) ){
-            m_pSpeedValue->SetValue( _T("---") );
-            return;
-        }
-        if( tdist > 0.1 ){
-            m_pSpeedValue->SetValue( wxString::Format( wxString("%2.2f", wxConvUTF8 ),
+            if( th > 0 ){
+                double sp = tdist / ( th );
+                m_pSpeedValue->SetValue( wxString::Format( wxString("%2.2f", wxConvUTF8 ),
                         toUsrSpeed_Plugin( sp, g_ocpnSpeedFormat ) )
                                + getUsrSpeedUnit_Plugin( g_ocpnSpeedFormat ) );
-        } else
+            } else
+                m_pSpeedValue->SetValue( _T("---") );
+        } else {
+            m_pDistValue->SetValue( _T("---") );
             m_pSpeedValue->SetValue( _T("---") );
+        }
 }
 
 void DataTable::UpdateTripData()

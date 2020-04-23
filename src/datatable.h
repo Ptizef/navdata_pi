@@ -40,14 +40,6 @@
 #ifndef PI
 #define PI        3.1415926535897931160E0      /* pi */
 #endif
-#define SECONDS_PER_DAY             86400
-#define ACTIVE_POINT_IDX            0
-#ifdef __WXMSW__
-    #define SCROLL_BAR_THICKNESS    20
-#else
-    #define SCROLL_BAR_THICKNESS    15
-#endif
-
 
 class navdata_pi;
 class TripData;
