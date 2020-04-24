@@ -300,9 +300,10 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         }
 
         m_ptripData->m_tempDist = dist;
-        if( !m_ptripData->m_isEnded ) //re-start lenght calc
-            m_lenghtTimer.Start(INTERVAL_2SECOND, wxTIMER_ONE_SHOT);
-        else //end of Trip
+        if( !m_ptripData->m_isEnded ){ //re-start lenght calc
+            int timerInterval = TotalNodes > 1500? INTERVAL_3SECOND: TotalNodes > 1000? INTERVAL_2SECOND: INTERVAL_1SECOND;
+            m_lenghtTimer.Start(timerInterval, wxTIMER_ONE_SHOT);
+        } else //end of Trip
             m_activeTrkGuid = wxEmptyString;
     }
 
@@ -326,6 +327,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         /*when closing the track properties dialog, ocpn send an "OCPN_TRK_ACTIVATED"
          * message. In this case we must ignore it. Nevertheless I think it's a logic error
          *  and must be corrected*/
+        wxString guid = m_activeTrkGuid;
         if( m_ptripData && !m_ptripData->m_isEnded && !m_nearRotate )
             return;
         wxJSONValue  root;
@@ -342,6 +344,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
                 m_ptripData = new TripData();
                 if( m_pTable )
                     m_pTable->UpdateTripData();
+            } else {    //this is not a "real" trackOn
+                if( guid != m_activeTrkGuid ) //this is a new track so start lenght calc at the first point
+                    m_gNodeNbr = 0;
             }
             m_lenghtTimer.Start( INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
             if(m_isDailyTrack)
@@ -395,14 +400,17 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             * we have to get the distance from the last created point to the current boat position*/
             m_ptripData->m_tempDist = 0;
             m_ptripData->m_totalDist += GetDistFromLastTrkPoint( g_Lat, g_Lon );
-            m_activeTrkGuid = wxEmptyString;
+            if(m_nearRotate)//this is not a "real" trackOff
+                return;
+            else { //this is real trackOff so close the current Trip
+                m_activeTrkGuid = wxEmptyString;
+                m_rotateTimer.Stop();
+            }
         }
-        if(!m_nearRotate || !m_isDailyTrack) {
-            m_rotateTimer.Stop();
-            m_ptripData->m_isEnded = true;
-            m_ptripData->m_endTime = wxDateTime::Now();
-        }
-        if(!m_isDailyTrack)//get the last created track point to complete trip lenght
+        m_ptripData->m_isEnded = true;
+        m_ptripData->m_endTime = wxDateTime::Now();
+        //get the last created track point to complete trip lenght
+        if(!m_isDailyTrack)//
             m_lenghtTimer.Start(INTERVAL_10MSECOND, wxTIMER_ONE_SHOT);
     }
 
@@ -550,7 +558,7 @@ void navdata_pi::SetPositionFix(PlugIn_Position_Fix &pfix)
     if(GetCanvasCount() == new_canvas_nbr ){
         if( (m_console && m_console->IsShown()))
             m_console->UpdateRouteData();
-        if ( m_pTable && (m_blinkTrigger & 1) )
+        if ( m_pTable )
             m_pTable->UpdateTripData(m_ptripData);
     } else {
         new_canvas_nbr = GetCanvasCount();
@@ -834,8 +842,8 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
     else
         nexRotate = (today + rotate_at) - now;
 
-    nexRotate *= 1000; // in ms
-    nexRotate -= INTERVAL_10SECOND;//10s before rotate time( in  ms )
+    nexRotate *= 1000; // convert in ms
+    nexRotate -= INTERVAL_20SECOND;//20s before rotate time( in  ms )
 
     if(nexRotate > INTERVAL_90MN || nextDay )
         m_rotateTimer.Start( INTERVAL_HOUR, wxTIMER_ONE_SHOT );
@@ -843,8 +851,10 @@ void navdata_pi::OnRotateTimer( wxTimerEvent & event)
         m_rotateTimer.Start( nexRotate, wxTIMER_ONE_SHOT );
     else {
         m_nearRotate = true;
+        //start timer to get the last track point created before rotation
         m_lenghtTimer.Start( INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
-        m_rotateTimer.Start( INTERVAL_HOUR, wxTIMER_ONE_SHOT ); //for the next day
+        //start timer to get the next day ratation date
+        m_rotateTimer.Start( INTERVAL_HOUR, wxTIMER_ONE_SHOT );
     }
 }
 
