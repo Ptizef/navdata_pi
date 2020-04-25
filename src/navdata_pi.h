@@ -68,6 +68,7 @@
 #define     INTERVAL_HOUR   3600000  //3600 s 1 hour
 #define     INTERVAL_20SECOND 20000  //20 s
 #define     INTERVAL_10SECOND 10000  //10 s
+#define     INTERVAL_4SECOND    4000  //4 s
 #define     INTERVAL_3SECOND    3000  //3 s
 #define     INTERVAL_2SECOND    2000  //2 s
 #define     INTERVAL_1SECOND    1000  //1 s

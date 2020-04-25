@@ -262,7 +262,6 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             return;
 
         int NodeNr = root[_T("NodeNr")].AsInt();
-        int TotalNodes = root[_T("TotalNodes")].AsInt();
         if( NodeNr >= m_gNodeNbr ) {//skip track point already treated
             double lat = root[_T("lat")].AsDouble();
             double lon = root[_T("lon")].AsDouble();
@@ -272,6 +271,8 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             m_oldtpLon = lon;
             m_gNodeNbr = NodeNr + 1;
         }// NodeNr >= m_gNodeNbr
+
+        int TotalNodes = root[_T("TotalNodes")].AsInt();
         if( NodeNr != TotalNodes )
             return;
         //the last track point
@@ -301,8 +302,9 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
 
         m_ptripData->m_tempDist = dist;
         if( !m_ptripData->m_isEnded ){ //re-start lenght calc
-            int timerInterval = TotalNodes > 1500? INTERVAL_3SECOND: TotalNodes > 1000? INTERVAL_2SECOND: INTERVAL_1SECOND;
-            m_lenghtTimer.Start(timerInterval, wxTIMER_ONE_SHOT);
+            //try to keep performance by reducing calc frequency
+            int timerInterval = (TotalNodes / 750) + 1;
+            m_lenghtTimer.Start(wxMax(timerInterval, 5), wxTIMER_ONE_SHOT);
         } else //end of Trip
             m_activeTrkGuid = wxEmptyString;
     }
@@ -335,22 +337,31 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         int rnumErrors = reader.Parse( message_body, &root );
         if ( rnumErrors == 0 )  {
             m_activeTrkGuid = root[_T("GUID")].AsString();
-            m_gNodeNbr = 0;
-            if( !m_nearRotate ){
-                if( m_ptripData ){
+
+            bool newtrip = false;
+            if(m_isDailyTrack){
+                if(m_nearRotate){ //this is not a "real" trackOn but a rotation
+                    if( guid != m_activeTrkGuid ) //if a new track start lenght calc at the first point
+                        m_gNodeNbr = 0;
+                } else {
+                    newtrip = true;
+                     m_rotateTimer.Start( INTERVAL_10SECOND, wxTIMER_ONE_SHOT);
+                }
+            } else
+                newtrip = true;
+
+            if(newtrip) {   //this is not a "real" trackOn
+                m_gNodeNbr = 0;
+                m_nearRotate = false;
+                if( m_ptripData ) {
                     delete m_ptripData;
                     m_ptripData = NULL;
                 }
                 m_ptripData = new TripData();
                 if( m_pTable )
                     m_pTable->UpdateTripData();
-            } else {    //this is not a "real" trackOn
-                if( guid != m_activeTrkGuid ) //this is a new track so start lenght calc at the first point
-                    m_gNodeNbr = 0;
             }
             m_lenghtTimer.Start( INTERVAL_10MSECOND, wxTIMER_ONE_SHOT );
-            if(m_isDailyTrack)
-                m_rotateTimer.Start( INTERVAL_10SECOND, wxTIMER_ONE_SHOT);
         }
     }
 
@@ -400,7 +411,7 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             * we have to get the distance from the last created point to the current boat position*/
             m_ptripData->m_tempDist = 0;
             m_ptripData->m_totalDist += GetDistFromLastTrkPoint( g_Lat, g_Lon );
-            if(m_nearRotate)//this is not a "real" trackOff
+            if(m_nearRotate)//this is not a "real" trackOff but a rotation
                 return;
             else { //this is real trackOff so close the current Trip
                 m_activeTrkGuid = wxEmptyString;
