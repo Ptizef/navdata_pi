@@ -303,8 +303,8 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
         m_ptripData->m_tempDist = dist;
         if( !m_ptripData->m_isEnded ){ //re-start lenght calc
             //try to keep performance by reducing calc frequency
-            int timerInterval = (TotalNodes / 750) + 1;
-            m_lenghtTimer.Start(wxMax(timerInterval, 5), wxTIMER_ONE_SHOT);
+            double timerInterval = TotalNodes < 500? INTERVAL_1SECOND: wxMin((TotalNodes / 0.5), 6000);
+            m_lenghtTimer.Start(timerInterval, wxTIMER_ONE_SHOT);
         } else //end of Trip
             m_activeTrkGuid = wxEmptyString;
     }
