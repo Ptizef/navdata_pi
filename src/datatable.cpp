@@ -238,7 +238,7 @@ void DataTable::OnPaintEvent( wxPaintEvent &event )
     //draw caption background
     wxColour bcolour, fcolour;
     GetGlobalColor(_T("DILG0"), &bcolour);
-    mdc.SetPen(*wxTRANSPARENT_PEN);
+    //mdc.SetPen(*wxTRANSPARENT_PEN);
     mdc.SetBrush(wxBrush(bcolour, wxBRUSHSTYLE_SOLID));
     mdc.DrawRectangle(wxRect(0 , 0, sx, DIALOG_CAPTION_HEIGHT));
     //draw caption label
