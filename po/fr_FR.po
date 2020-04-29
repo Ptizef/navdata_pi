@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-20 16:45+0200\n"
-"PO-Revision-Date: 2020-04-20 17:14+0200\n"
+"POT-Creation-Date: 2020-04-29 17:08+0200\n"
+"PO-Revision-Date: 2020-04-29 17:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr_FR\n"
@@ -19,8 +19,8 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #
-msgid "Avg.speed"
-msgstr "Vit. Moy."
+msgid "Activate/Deactivate Navdata"
+msgstr "Activer/Désactiver Navdata"
 
 #
 msgid "Console Legend"
@@ -35,10 +35,6 @@ msgid "Dialog"
 msgstr "Boite de dialogue"
 
 #
-msgid "Distance"
-msgstr "Distance"
-
-#
 msgid "ETA  @SOG"
 msgstr "ETA à SOG"
 
@@ -47,58 +43,25 @@ msgid "ETA  @VMG"
 msgstr "ETA à VMG"
 
 #
-msgid "Ended"
-msgstr "Arrivée"
-
-#
-msgid "Horizontaly (6columns)"
-msgstr "Horizontalement (6 colonnes)"
-
-#
-msgid "Intermediate (4 columns)"
-msgstr "Intermédiaire (4 colonnes)"
-
-#
-msgid "Navigation data"
-msgstr "Données de navigation"
-
-#
 msgid "Navigation data plugin for OpenCPN"
 msgstr "Complément  \"Données de navigation\" pour OpenCPN"
 
 #
 msgid ""
 "Navigation data plugin for OpenCPN\n"
-"Shows RNG (range),TTG (time to go) and ETA (estimated time of "
-"arrival)\n"
-"to a selected route point of the active route.\n"
-"Also shows current trip summary:\n"
-"start time, time spent, distance, mean speed since departure..."
+"Shows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\n"
+"to an intermediate route point of the active route."
 msgstr ""
 "Complément \"Données de navigation\" pour OpenCPN\n"
-"Affiche RNG (distance),  TTG ( temps pour arriver) et ETA (Heure "
-"estimée d'arrivée)\n"
-"à un point sélectionné de la route active.\n"
-"Montre également un résumé du parcours:\n"
-"départ, temps passé, distance, vitesse moyenne depuis le départ..."
-
-#
-msgid "OK"
-msgstr "OK"
-
-#
-msgid "Preferences"
-msgstr "Preferences"
+"Affiche RNG (distance),  TTG ( temps pour arriver) et ETA (Heure estimée "
+"d'arrivée)\n"
+"à un point intermédiaire de la route active."
 
 #
 #
 #
 msgid "RNG"
 msgstr "RNG"
-
-#
-msgid "Started"
-msgstr "Départ"
 
 #
 msgid "TTG  @SOG"
@@ -109,21 +72,113 @@ msgid "TTG  @VMG"
 msgstr "ETA à VMG"
 
 #
-msgid "The Trip Data Dialog will be displayed"
-msgstr "La fenêtre des données trajet sera affichée"
+#
+#
+#
+#
+#~ msgid "Avg.speed"
+#~ msgstr "Vit. Moy."
 
 #
-msgid "TimeSpent"
-msgstr "Durée"
+#
+#
+#
+#
+#~ msgid "Distance"
+#~ msgstr "Distance"
 
 #
-msgid "Trip Data"
-msgstr "Données de Trajet"
+#
+#
+#
+#
+#~ msgid "Ended"
+#~ msgstr "Arrivée"
 
 #
-msgid "Verticaly (2 columns)"
-msgstr "Verticalement (2 colonnes)"
+#
+#
+#
+#
+#~ msgid "Horizontaly (6columns)"
+#~ msgstr "Horizontalement (6 colonnes)"
 
 #
-msgid "at"
-msgstr "à"
+#
+#
+#
+#
+#~ msgid "Intermediate (4 columns)"
+#~ msgstr "Intermédiaire (4 colonnes)"
+
+#
+#
+#
+#
+#
+#~ msgid "Navigation data"
+#~ msgstr "Données de navigation"
+
+#
+#
+#
+#
+#
+#~ msgid "OK"
+#~ msgstr "OK"
+
+#
+#
+#
+#
+#
+#~ msgid "Preferences"
+#~ msgstr "Preferences"
+
+#
+#
+#
+#
+#
+#~ msgid "Started"
+#~ msgstr "Départ"
+
+#
+#
+#
+#
+#
+#~ msgid "The Trip Data Dialog will be displayed"
+#~ msgstr "La fenêtre des données trajet sera affichée"
+
+#
+#
+#
+#
+#
+#~ msgid "TimeSpent"
+#~ msgstr "Durée"
+
+#
+#
+#
+#
+#
+#~ msgid "Trip Data"
+#~ msgstr "Données de Trajet"
+
+#
+#
+#
+#
+#
+#~ msgid "Verticaly (2 columns)"
+#~ msgstr "Verticalement (2 colonnes)"
+
+#
+#
+#
+#
+#
+#~ msgid "at"
+#~ msgstr "à"

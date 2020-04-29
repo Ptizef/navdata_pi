@@ -69,16 +69,12 @@ FIND_PACKAGE(Gettext REQUIRED)
 SET(SRC_NAVDATA
             src/navdata_pi.h
             src/navdata_pi.cpp
-            src/datatable.h
-            src/datatable.cpp
-            src/datadialogbase.h
-            src/datadialogbase.cpp
             src/routecanv.h
             src/routecanv.cpp
             src/icons.h
             src/icons.cpp
+            src/vector2D.cpp
             ocpn/vector2D.h
-            ocpn/vector2D.cpp
             ocpn/ocpn_plugin.h
 	)
 

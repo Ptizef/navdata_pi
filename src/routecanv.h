@@ -115,7 +115,8 @@ private:
                                     double wptprevlat, double wptprevlon,
                                     double glat, double glon,
                                     double *brg, double *nrng);
-      char m_speedUsed;
+      char       m_speedUsed;
+      wxPoint    m_consPosition;
 
 DECLARE_EVENT_TABLE()
 };

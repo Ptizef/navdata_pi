@@ -40,7 +40,6 @@
 #include "ocpn_plugin.h"
 
 #include "version.h"
-#include "datatable.h"
 #include "routecanv.h"
 
 //----------------------------------------------------------------------------------------------------------
@@ -49,6 +48,10 @@
 
 #ifndef ocpnUSE_SVG
     #define ocpnUSE_SVG 0
+#endif
+
+#ifndef PI
+#define PI        3.1415926535897931160E0      /* pi */
 #endif
 
 #define     MY_API_VERSION_MAJOR    1
@@ -92,13 +95,7 @@ public:
       wxString GetCommonName();
       wxString GetShortDescription();
       wxString GetLongDescription();
-      void PositionConsole();
-      void CloseDataTable();
 
-      //Route point console variables
-      wxPoint    m_consPosition;
-      //Trip data variables
-      TripData    *m_ptripData;
 private:
       //    The override PlugIn Methods
       bool RenderOverlayMultiCanvas(wxDC &dc, PlugIn_ViewPort *vp, int canvasIndex);
@@ -110,55 +107,23 @@ private:
       void OnToolbarToolCallback(int id);
       void SetPositionFix(PlugIn_Position_Fix &pfix);
       bool MouseEventHook( wxMouseEvent &event );
-      double GetDistFromLastTrkPoint(double lat, double lon);
       //
-      void OnTripLenghtTimer(wxTimerEvent & event);
-      void OnRotateTimer(wxTimerEvent & event);
       void LoadocpnConfig();
       float GetSelectRadius(PlugIn_ViewPort *vp);
       void CheckRoutePointSelectable();
 
       //toolbar variables
       int          m_leftclick_tool_id;
-      unsigned int m_ToolIconType;
+      wxString     m_shareLocn;
       //Route data variables
-      DataTable   *m_pTable;
       bool         m_selectablePoint;
       wxColour     m_defLabelColor;
       int          m_blinkTrigger;
       PlugIn_ViewPort   *m_vp[2];       //allow multi-canvas
       RouteCanvas       *m_console;
+      bool         m_isPluginActive;
       //ocpn options variables
       float       m_ocpnSelRadiusMM;
-      //Trip calc variables
-      wxTimer     m_lenghtTimer;
-      wxTimer     m_rotateTimer;
-      wxString    m_activeTrkGuid;
-      int         m_gNodeNbr;
-      bool        m_nearRotate;
-      bool        m_hasRotated;
-      double      m_oldtpLat;
-      double      m_oldtpLon;
-      bool        m_isDailyTrack;
-      int         m_trackRotateAt;
-      int         m_trackRotateTimeType;
-};
-
-//-------------------------------------------------------------------------------------------
-//                  Trip Data Definition
-//-------------------------------------------------------------------------------------------
-class TripData : public wxObject
-{
-public:
-      TripData();
-      ~TripData();
-
-      wxDateTime  m_startDate;
-      bool        m_isStarted;
-      double      m_totalDist;
-      double      m_tempDist;
-      wxDateTime  m_endTime;
-      bool        m_isEnded;
 };
 
 #endif //_NAVDATA_PI_H_

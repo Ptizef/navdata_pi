@@ -75,9 +75,9 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
         pConf->SetPath ( _T ( "/Settings/NAVDATA" ) );
         int val;
         pConf->Read(_T("NavDataConsolePosition_x"), &val, 60);
-        pPlugin->m_consPosition.x = val;
+        m_consPosition.x = val;
         pConf->Read(_T("NavDataConsolePosition_Y"), &val, 250);
-        pPlugin->m_consPosition.y = val;
+        m_consPosition.y = val;
     }
 
     long style = wxSIMPLE_BORDER | wxCLIP_CHILDREN | wxFRAME_FLOAT_ON_PARENT;
@@ -118,14 +118,22 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
     
     Hide();
 
-     //connect timers at console label level
+     //connect events at console label level
      pThisLegText->Bind(wxEVT_LEFT_UP, &RouteCanvas::OnTextMouseEvent, this);
      pThisLegText->Bind(wxEVT_LEFT_DOWN, &RouteCanvas::OnTextMouseEvent, this);
      pThisLegText->Bind(wxEVT_MOTION, &RouteCanvas::OnTextMouseEvent, this);
 }
 
 RouteCanvas::~RouteCanvas()
-{}
+{
+    //save RoutePointconsole position
+    wxFileConfig *pConf = GetOCPNConfigObject();
+    if(pConf) {
+        pConf->SetPath ( _T ( "/Settings/NAVDATA" ) );
+        pConf->Write(_T("NavDataConsolePosition_x"), m_consPosition.x);
+        pConf->Write(_T("NavDataConsolePosition_Y"), m_consPosition.y);
+    }
+}
 
 void RouteCanvas::OnTextMouseEvent( wxMouseEvent &event )
 {
@@ -178,7 +186,7 @@ void RouteCanvas::OnMouseEvent( wxMouseEvent &event )
 
         if( cons_pos != cons_pos_old ) {
             Move( cons_pos );
-            pPlugin->m_consPosition = cons_pos;
+            m_consPosition = cons_pos;
         }
         s_gspt = spt;
     }
@@ -353,7 +361,7 @@ void RouteCanvas::ShowWithFreshFonts( void )
 
     UpdateFonts();
     UpdateRouteData();
-    pPlugin->PositionConsole();
+    Move(m_consPosition);
     Show();
 
 }

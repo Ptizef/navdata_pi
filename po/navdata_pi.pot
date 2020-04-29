@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-20 16:45+0200\n"
+"POT-Creation-Date: 2020-04-29 17:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,103 +17,49 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/navdata_pi.cpp:143 src/navdata_pi.cpp:146
-msgid "Navigation data"
+#: src/navdata_pi.cpp:135 src/navdata_pi.cpp:138
+msgid "Activate/Deactivate Navdata"
 msgstr ""
 
-#: src/navdata_pi.cpp:230
+#: src/navdata_pi.cpp:195
 msgid "Navigation data plugin for OpenCPN"
 msgstr ""
 
-#: src/navdata_pi.cpp:235
+#: src/navdata_pi.cpp:200
 msgid ""
 "Navigation data plugin for OpenCPN\n"
 "Shows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\n"
-"to a selected route point of the active route.\n"
-"Also shows current trip summary:\n"
-"start time, time spent, distance, mean speed since departure..."
+"to an intermediate route point of the active route."
 msgstr ""
 
-#: src/navdata_pi.cpp:433 src/navdata_pi.cpp:445
+#: src/navdata_pi.cpp:293 src/navdata_pi.cpp:305
 msgid "Console Legend"
 msgstr ""
 
-#: src/navdata_pi.cpp:438 src/navdata_pi.cpp:461
+#: src/navdata_pi.cpp:298 src/navdata_pi.cpp:317
 msgid "Console Value"
 msgstr ""
 
-#: src/datatable.cpp:224 src/routecanv.cpp:96
+#: src/routecanv.cpp:94
 msgid "Dialog"
 msgstr ""
 
-#: src/datatable.cpp:241
-msgid "Trip Data"
-msgstr ""
-
-#: src/datadialogbase.h:82
-msgid "Preferences"
-msgstr ""
-
-#: src/datadialogbase.cpp:47
-msgid "Started"
-msgstr ""
-
-#: src/datadialogbase.cpp:53
-msgid "at"
-msgstr ""
-
-#: src/datadialogbase.cpp:59
-msgid "TimeSpent"
-msgstr ""
-
-#: src/datadialogbase.cpp:65
-msgid "Distance"
-msgstr ""
-
-#: src/datadialogbase.cpp:71
-msgid "Avg.speed"
-msgstr ""
-
-#: src/datadialogbase.cpp:77
-msgid "Ended"
-msgstr ""
-
-#: src/datadialogbase.cpp:110
-msgid "Verticaly (2 columns)"
-msgstr ""
-
-#: src/datadialogbase.cpp:110
-msgid "Intermediate (4 columns)"
-msgstr ""
-
-#: src/datadialogbase.cpp:110
-msgid "Horizontaly (6columns)"
-msgstr ""
-
-#: src/datadialogbase.cpp:111
-msgid "The Trip Data Dialog will be displayed"
-msgstr ""
-
-#: src/datadialogbase.cpp:117
-msgid "OK"
-msgstr ""
-
-#: src/routecanv.cpp:104
+#: src/routecanv.cpp:102
 msgid "RNG"
 msgstr ""
 
-#: src/routecanv.cpp:108 src/routecanv.cpp:215
+#: src/routecanv.cpp:106 src/routecanv.cpp:221
 msgid "TTG  @VMG"
 msgstr ""
 
-#: src/routecanv.cpp:112 src/routecanv.cpp:216
+#: src/routecanv.cpp:110 src/routecanv.cpp:222
 msgid "ETA  @VMG"
 msgstr ""
 
-#: src/routecanv.cpp:211
+#: src/routecanv.cpp:217
 msgid "TTG  @SOG"
 msgstr ""
 
-#: src/routecanv.cpp:212
+#: src/routecanv.cpp:218
 msgid "ETA  @SOG"
 msgstr ""

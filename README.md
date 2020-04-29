@@ -1,41 +1,38 @@
-# navdata_pi
+﻿# navdata_pi
 
 Is compatible with OpenCPN 5.0.0 (and the current master)
 
-The purpose is to show more informations about the active route that can be seen in the console and also 
-a global view of the trip.
+This new version has a completely new designed.
 
-There are two parts in the main window:
-*    The first part shows BRG, RNG, Total RNG, TTG, ETA at VMG or SOG for all route points of the current active route.
-        The plugin can't be opened without an active route.
-        At the start, the active point is always the first in the left grid column  and is marked by a small blinking
-        red flag near its name.
-        The number of route points visible (thus the size of the window) can be choosen by dragging the right side.
-        If a point in particularity has to be followed, a left click (or touch) on this point in the canvas will mark
-        it by a blinking green circle (only in openGL mode ) and in the grid near its name by a small blinking green flag 
-        and make it always visible.
-        The grid shows route points in fixed width columns and if a point name is too large, it is only partially displayed.
-        In this case, cursor rolled over, or click or touch the name zone will allow to see the entire name.
+The purpose is to show navigation information about a selected intermediate route point in the current active route. This can be useful
+if you want to keep an eye on a point, for example marking a difficult cap passage, or an entry in a channel with strong current.
 
-*    The second part shows a summary of the current trip. 
-        start date-time, time spend, distance since departure and averaged spead since depature, based on the current
-        active track. 
-        If a track is activated and the plugin closed, data will be kept internally to be displayed when the plugin will 
-        be opened. 
-        Off course if there is no active track, there is no data, and the accuracy will depend on the activation time.
-        (ideally at the same time of the real departure).     
-*    *** Special case where "Automatic daily track" is set.
-          It could append that the navigation start on day one and end on day two , three...
-          In consequence of this option, the current track will be closed at the time set for the daily track 
-          change and a new track opened. The pluging will add the daily tracks in the objective of displaying 
-          the entire trip data.
-        
- *    There are very few settings:
-        Clicking on the settings button (upper left) will open a small dialog where it is possible to hide or show 
-        the trip part of the plugin and to choose to use SOG or VMG as base for TTG and ETA calculation.
-       
- *    The plugin uses OpenCPN global options. If these options are changed, Navdata_pi needs to be closed and re-opened to
-      apply the new options.
+Select able point : Any point after the current active point in the route.
+This means that all points already "passed" and the current active point (which is visible in the ocpn console) are not select able.
+
+At start the plugin toolbar icon is in inactive state. The plugin itself is deactivated.
+
+To use the plugin, you have to click on the icon to activate the plugin. The icon will be then in active state.
+Off course it is needed to have a route activated.
+
+Now, you can left click on any select able point of this route.
+As a result, you will see a green circle blinking around it and a window looking like the ocpn console will be opened.
+This window  shows RNG  (distance), TTG (time to go) and ETA (estimated time of arrival) to this selected point.
+As the ocpn console, you can toggle TTG and ETA computed with SOG or VMG by left click on it.
+This window can be moved and it position is memorized.
+
+At any moment, you can select another select able point.
+
+To suppress selection (thus hide the window and stop the green circle blinking), there are two possibilities.
+
+- Left click on any no select able point. The plugin will be still activated and you will be allowed to select again.
+
+- Click on the plugin toolbar icon. The plugin will be deactivated and if you want to select again, you will have to left click
+the icon again to activate the plugin.
+
+There is no setting.
+
+For those who had a look at the previous version, there no longer the grid window and no "Trip" data.
 
 installation
 ============
@@ -45,7 +42,7 @@ installation
  
  then click on the more recent version
 
- Remark : It is recommended to have OpenCPN comming from a standard official install
+ Remark : It is recommended to have OpenCPN coming from a standard official install
             (see opencpn.org/ downloads).
             
 *    Windows
@@ -71,17 +68,17 @@ Compiling
 Get the sources
 * $ git clone https://github.com/Ptizef/navdata_pi.git
 
-The pugin is compiled as standalone
+The plugin is compiled as a standalone
 
 * Windows
 
-     perequisites (Visual studio 2017 only)
+     prerequisites (Visual studio 2017 only)
 
-     Be sure you are able to compile OpenCPN including building package.       
-     Eventually read and follow instructions at:    
-     opencpn.org manual/Developer manual/Developer guide/Compliling on Windows
+     Be sure you are able to compile OpenCPN including building package.
+     Eventually read and follow instructions at:
+     opencpn.org manual/Developer manual/Developer guide/Compiling on Windows
      
-     compile OpenCPN     
+     compile OpenCPN
         
      ** do not forget to copy opecpn.lib from OpenCPN\build\release\opencpn.lib to  navdata_pi\build
         
@@ -89,11 +86,11 @@ The pugin is compiled as standalone
 
 * Linux(Ubuntu and derived)
 
-     perequisites
+     prerequisites
     
      the same as to compile OpenCPN.
      Eventually read and follow instructions at:
-     opencpn.org manual/ Developer manual/ Developer guide/ Compliling on Linux
+     opencpn.org manual/ Developer manual/ Developer guide/ Compiling on Linux
 
 *    $ cd sources directory
 *    $ mkdir build
