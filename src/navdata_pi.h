@@ -136,6 +136,7 @@ private:
       wxString    m_activeTrkGuid;
       int         m_gNodeNbr;
       bool        m_nearRotate;
+      bool        m_hasRotated;
       double      m_oldtpLat;
       double      m_oldtpLon;
       bool        m_isDailyTrack;

@@ -117,6 +117,7 @@ int navdata_pi::Init(void){
     m_activeTrkGuid = wxEmptyString;
     g_activeRouteGuid = wxEmptyString;
     m_nearRotate = false;
+    m_hasRotated = false;
     m_blinkTrigger = 0;
     //allow multi-canvas
     m_vp[0] = new PlugIn_ViewPort;
@@ -262,51 +263,53 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             return;
 
         int NodeNr = root[_T("NodeNr")].AsInt();
-        if( NodeNr >= m_gNodeNbr ) {//skip track point already treated
+        if( NodeNr > m_gNodeNbr ) {//skip track point already treated
             double lat = root[_T("lat")].AsDouble();
             double lon = root[_T("lon")].AsDouble();
-            if( NodeNr > TRACKPOINT_FIRST ) //more than one track point
+            if( NodeNr > TRACKPOINT_FIRST ) {//more than one track point
+                m_ptripData->m_tempDist = 0;
                 m_ptripData->m_totalDist += GetDistFromLastTrkPoint(lat, lon);
+            }
             m_oldtpLat = lat;
             m_oldtpLon = lon;
-            m_gNodeNbr = NodeNr + 1;
+            m_gNodeNbr = NodeNr;
         }// NodeNr >= m_gNodeNbr
 
         int TotalNodes = root[_T("TotalNodes")].AsInt();
         if( NodeNr != TotalNodes )
             return;
+
+        if( m_ptripData->m_isEnded ){ //end of Trip
+            m_activeTrkGuid = wxEmptyString;
+            return;
+        }
+
         //the last track point
         /* 1)if the boat has moved compute and add distance from the last created point
         * 2) if we are still on first track point and no movement has been made,
         *  change continuously the starting time except if we are in rotation situation
-        * 3)if the trip is ended, get the last created point then stop calc
-        * 4)then update the trip data and eventually re-start the lenght timer for
-        *  the next lap;*/
+        * 3)then re-start the lenght timer for the next lap;*/
         double dist = 0.;
         if(m_oldtpLat != g_Lat || m_oldtpLon != g_Lon){ //the boat has moved
-            if(!m_ptripData->m_isEnded){
-                dist = GetDistFromLastTrkPoint(g_Lat, g_Lon);
-                if( dist < .001 ) //no significant movement
-                    dist = 0.;
-            }
+            dist = GetDistFromLastTrkPoint(g_Lat, g_Lon);
+            if( dist < .001 ) //no significant movement
+                dist = 0.;
         } //
         if( TotalNodes == TRACKPOINT_FIRST ){ //only one point created
-            if (!m_nearRotate) {
+            if (!m_hasRotated) {
                 if (dist == 0.) //no movement
                     m_ptripData->m_startDate = wxDateTime::Now();
                 else
                     m_ptripData->m_isStarted = true;
             } else
-                m_nearRotate = false;
+                m_hasRotated = false;
         }
 
         m_ptripData->m_tempDist = dist;
-        if( !m_ptripData->m_isEnded ){ //re-start lenght calc
-            //try to keep performance by reducing calc frequency
-            double timerInterval = TotalNodes < 500? INTERVAL_1SECOND: wxMin((TotalNodes / 0.5), 6000);
-            m_lenghtTimer.Start(timerInterval, wxTIMER_ONE_SHOT);
-        } else //end of Trip
-            m_activeTrkGuid = wxEmptyString;
+
+        //try to keep performance by reducing calc frequency
+        double timerInterval = TotalNodes < 500? INTERVAL_1SECOND: wxMin((TotalNodes / 0.5), 6000);
+        m_lenghtTimer.Start(timerInterval, wxTIMER_ONE_SHOT);
     }
 
     else if(message_id == _T("OCPN_RTE_ACTIVATED"))
@@ -341,16 +344,18 @@ void navdata_pi::SetPluginMessage(wxString &message_id, wxString &message_body)
             bool newtrip = false;
             if(m_isDailyTrack){
                 if(m_nearRotate){ //this is not a "real" trackOn but a rotation
-                    if( guid != m_activeTrkGuid ) //if a new track start lenght calc at the first point
+                    if( guid != m_activeTrkGuid ) //it should never happens but...
                         m_gNodeNbr = 0;
-                } else {
+                    m_hasRotated = true;
+                    m_nearRotate = false;
+                } else { //this is a "real" trackOn
                     newtrip = true;
                      m_rotateTimer.Start( INTERVAL_10SECOND, wxTIMER_ONE_SHOT);
                 }
-            } else
+            } else //this is a "real" trackOn
                 newtrip = true;
 
-            if(newtrip) {   //this is not a "real" trackOn
+            if(newtrip) {
                 m_gNodeNbr = 0;
                 m_nearRotate = false;
                 if( m_ptripData ) {
