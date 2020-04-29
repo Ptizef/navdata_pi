@@ -88,7 +88,7 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
 
     pThisLegText = new wxStaticText( this, -1, _T("This Point"), wxDefaultPosition, wxDefaultSize,wxALIGN_LEFT );
     pThisLegText->Fit();
-    m_pitemBoxSizerLeg->Add( pThisLegText, 0, wxALIGN_LEFT, 2 );
+    m_pitemBoxSizerLeg->Add( pThisLegText, 0, wxALIGN_CENTER, 2 );
 
 
     wxFont *qFont = OCPNGetFont(_("Dialog"), 0);
@@ -431,7 +431,7 @@ void AnnunText::CalculateMinSize( void )
     min.x = wv * 1.2; 
 #endif    
     
-    min.y = (int) ( ( hl + hv ) * 1.2 );
+    min.y = (int) ( ( hl + hv ) * 1.05 );
 
     SetMinSize( min );
 }

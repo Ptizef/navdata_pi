@@ -651,7 +651,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
             }
             if( !m_console )
                 m_console = new RouteCanvas( GetOCPNCanvasWindow(), this);
-            m_console->m_pointName = _T(" ->") + pointLabel;
+            m_console->m_pointName = _T("-->") + pointLabel;
             m_console->ShowWithFreshFonts();
             m_console->SetColorScheme();
 
