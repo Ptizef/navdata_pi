@@ -128,10 +128,10 @@ int navdata_pi::Init(void){
     wxString toggled = m_shareLocn + _T("toggled.svg");
     if( wxFile::Exists( active) && wxFile::Exists( toggled) )
         m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), active, active, toggled,
-                    wxITEM_CHECK, _("Navdata: Lock/Unlock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+                    wxITEM_CHECK, _("Navdata: Unlock/Lock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
     else
         m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_active, _img_toggled,
-                    wxITEM_CHECK, _("Navdata: Lock/Unlock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+                    wxITEM_CHECK, _("Navdata: Unlock/Lock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
     return (WANTS_OVERLAY_CALLBACK          |
             WANTS_ONPAINT_VIEWPORT          |

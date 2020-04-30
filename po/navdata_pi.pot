@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-30 12:32+0200\n"
+"POT-Creation-Date: 2020-04-30 15:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,26 +17,26 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/navdata_pi.cpp:135 src/navdata_pi.cpp:138
-msgid "Navdata: Lock/Unlock Point Selection"
+#: src/navdata_pi.cpp:131 src/navdata_pi.cpp:134
+msgid "Navdata: Unlock/Lock Point Selection"
 msgstr ""
 
-#: src/navdata_pi.cpp:195
+#: src/navdata_pi.cpp:191
 msgid "Navigation data plugin for OpenCPN"
 msgstr ""
 
-#: src/navdata_pi.cpp:200
+#: src/navdata_pi.cpp:196
 msgid ""
 "Navigation data plugin for OpenCPN\n"
 "Shows RNG (range),TTG (time to go) and ETA (estimated time of arrival)\n"
 "to an intermediate route point of the active route."
 msgstr ""
 
-#: src/navdata_pi.cpp:293 src/navdata_pi.cpp:305
+#: src/navdata_pi.cpp:289 src/navdata_pi.cpp:301
 msgid "Console Legend"
 msgstr ""
 
-#: src/navdata_pi.cpp:298 src/navdata_pi.cpp:317
+#: src/navdata_pi.cpp:294 src/navdata_pi.cpp:313
 msgid "Console Value"
 msgstr ""
 

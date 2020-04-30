@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-29 17:08+0200\n"
-"PO-Revision-Date: 2020-04-29 17:11+0200\n"
+"POT-Creation-Date: 2020-04-30 15:09+0200\n"
+"PO-Revision-Date: 2020-04-30 15:10+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr_FR\n"
@@ -17,10 +17,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.0.6\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
-#
-msgid "Activate/Deactivate Navdata"
-msgstr "Activer/Désactiver Navdata"
 
 #
 msgid "Console Legend"
@@ -41,6 +37,10 @@ msgstr "ETA à SOG"
 #
 msgid "ETA  @VMG"
 msgstr "ETA à VMG"
+
+#
+msgid "Navdata: Unlock/Lock Point Selection"
+msgstr "Navdata:  Débloquer/Bloquer la Sélection de Point"
 
 #
 msgid "Navigation data plugin for OpenCPN"
@@ -74,11 +74,21 @@ msgstr "ETA à VMG"
 #
 #
 #
+#~ msgid "Activate/Deactivate Navdata"
+#~ msgstr "Activer/Désactiver Navdata"
+
+#
+#
+#
+#
+#
 #
 #
 #~ msgid "Avg.speed"
 #~ msgstr "Vit. Moy."
 
+#
+#
 #
 #
 #
@@ -92,9 +102,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "Ended"
 #~ msgstr "Arrivée"
 
+#
+#
 #
 #
 #
@@ -108,9 +122,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "Intermediate (4 columns)"
 #~ msgstr "Intermédiaire (4 colonnes)"
 
+#
+#
 #
 #
 #
@@ -124,9 +142,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "OK"
 #~ msgstr "OK"
 
+#
+#
 #
 #
 #
@@ -140,9 +162,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "Started"
 #~ msgstr "Départ"
 
+#
+#
 #
 #
 #
@@ -156,9 +182,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "TimeSpent"
 #~ msgstr "Durée"
 
+#
+#
 #
 #
 #
@@ -172,9 +202,13 @@ msgstr "ETA à VMG"
 #
 #
 #
+#
+#
 #~ msgid "Verticaly (2 columns)"
 #~ msgstr "Verticalement (2 colonnes)"
 
+#
+#
 #
 #
 #
