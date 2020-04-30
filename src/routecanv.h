@@ -98,9 +98,9 @@ public:
 
       navdata_pi *pPlugin;
 
-      wxStaticText      *pThisLegText;
       wxBoxSizer        *m_pitemBoxSizerLeg;
       wxString          m_pointName;
+      wxBrush           m_backBrush;
 
       AnnunText         *pRNG;
       AnnunText         *pTTG;
@@ -109,14 +109,16 @@ public:
       bool              m_bNeedClear;
 
 private:
-      void OnTextMouseEvent( wxMouseEvent &event );
+      void OnPaintEvent( wxPaintEvent &event );
       void OnMouseEvent( wxMouseEvent &event );
       void BrgRngMercatorToActiveNormalArrival(double wptlat, double wptlon,
                                     double wptprevlat, double wptprevlon,
                                     double glat, double glon,
                                     double *brg, double *nrng);
+      wxFont     *m_pThisLegFont;
       char       m_speedUsed;
       wxPoint    m_consPosition;
+
 
 DECLARE_EVENT_TABLE()
 };

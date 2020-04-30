@@ -59,6 +59,7 @@ extern wxFont         g_valueFont;
 //    RouteCanvas Implementation
 //------------------------------------------------------------------------------
 BEGIN_EVENT_TABLE(RouteCanvas, wxWindow)
+EVT_PAINT ( RouteCanvas::OnPaintEvent )
 EVT_MOUSE_EVENTS ( RouteCanvas::OnMouseEvent )
 END_EVENT_TABLE()
 // Define a constructor for my canvas
@@ -86,30 +87,31 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
 
     m_pitemBoxSizerLeg = new wxBoxSizer( wxVERTICAL );
 
-    pThisLegText = new wxStaticText( this, -1, _T("This Point"), wxDefaultPosition, wxDefaultSize,wxALIGN_LEFT );
-    pThisLegText->Fit();
-    m_pitemBoxSizerLeg->Add( pThisLegText, 0, wxALIGN_CENTER, 2 );
-
-
     wxFont *qFont = OCPNGetFont(_("Dialog"), 0);
     
-    wxFont *pThisLegFont = FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
+    m_pThisLegFont = FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
                                                           qFont->GetStyle(), wxFONTWEIGHT_BOLD, false,
                                                           qFont->GetFaceName() );
-    pThisLegText->SetFont( *pThisLegFont );
+    int h;
+    GetTextExtent( _T("THIS POINT"), NULL, &h, NULL, NULL, m_pThisLegFont );
+
+    wxFlexGridSizer *pitemFlexSizerLeg;
+    pitemFlexSizerLeg = new wxFlexGridSizer( 0, 1, 0, 0 );
+    pitemFlexSizerLeg->AddSpacer(h + 2);
 
     pRNG = new AnnunText( this, -1 );
     pRNG->SetALabel( _("RNG") );
-    m_pitemBoxSizerLeg->Add( pRNG, 1, wxALIGN_LEFT | wxALL, 2 );
+    pitemFlexSizerLeg->Add( pRNG, 1, wxALIGN_LEFT | wxALL, 2 );
 
     pTTG = new AnnunText( this, -1 );
     pTTG->SetALabel( _("TTG  @VMG") );
-    m_pitemBoxSizerLeg->Add( pTTG, 1, wxALIGN_LEFT | wxALL, 2 );
+    pitemFlexSizerLeg->Add( pTTG, 1, wxALIGN_LEFT | wxALL, 2 );
 
     pETA = new AnnunText( this, -1 );
     pETA->SetALabel( _("ETA  @VMG") );
-    m_pitemBoxSizerLeg->Add( pETA, 1, wxALIGN_LEFT | wxALL, 2 );
+    pitemFlexSizerLeg->Add( pETA, 1, wxALIGN_LEFT | wxALL, 2 );
 
+    m_pitemBoxSizerLeg->Add( pitemFlexSizerLeg, 1, wxALL, 0 );
 
     SetSizer( m_pitemBoxSizerLeg );      // use the sizer for layout
     m_pitemBoxSizerLeg->SetSizeHints( this );
@@ -117,11 +119,6 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
     Fit();
     
     Hide();
-
-     //connect events at console label level
-     pThisLegText->Bind(wxEVT_LEFT_UP, &RouteCanvas::OnTextMouseEvent, this);
-     pThisLegText->Bind(wxEVT_LEFT_DOWN, &RouteCanvas::OnTextMouseEvent, this);
-     pThisLegText->Bind(wxEVT_MOTION, &RouteCanvas::OnTextMouseEvent, this);
 }
 
 RouteCanvas::~RouteCanvas()
@@ -135,18 +132,34 @@ RouteCanvas::~RouteCanvas()
     }
 }
 
-void RouteCanvas::OnTextMouseEvent( wxMouseEvent &event )
+void RouteCanvas::OnPaintEvent( wxPaintEvent &event )
 {
-    wxMouseEvent evt = event;
-    evt.SetPosition( GetParent()->ClientToScreen(event.GetPosition()) );
-    OnMouseEvent(event);
+    int sx = GetSize().GetX();
+    int sy = GetSize().GetY();
+
+    wxMemoryDC mdc;
+
+    wxBitmap m_bitmap( sx, sy, -1 );
+    mdc.SelectObject( m_bitmap );
+    mdc.SetBackground( m_backBrush );
+    mdc.Clear();
+
+   // mdc.SetTextForeground( GetDefaultAttributes().colFg );
+    mdc.SetFont( *m_pThisLegFont );
+
+    int w;
+    mdc.GetTextExtent( m_pointName, &w, NULL );
+    mdc.DrawText( m_pointName, (sx - w) / 2, 1 );
+
+    wxPaintDC dc( this );
+    dc.Blit( 0, 0, sx, sy, &mdc, 0, 0 );
+
 }
 
 void RouteCanvas::OnMouseEvent( wxMouseEvent &event )
 {
     static wxPoint s_gspt;
     int x, y;
-
     event.GetPosition( &x, &y );
     wxPoint spt = wxPoint( x, y );
     spt = ClientToScreen( spt );
@@ -197,11 +210,7 @@ void RouteCanvas::SetColorScheme()
     wxColour colour;
     GetGlobalColor( _T("DILG1"/*UIBDR*/), &colour );
 
-    SetBackgroundColour( colour );
-    
-    //  Also apply color scheme to all known children
-
-    pThisLegText->SetBackgroundColour( colour );
+    m_backBrush = wxBrush( colour, wxBRUSHSTYLE_SOLID );
 
     pRNG->SetColorScheme();
     pTTG->SetColorScheme();
@@ -374,11 +383,10 @@ void RouteCanvas::UpdateFonts( void )
 
     //correct route point name lenght regarding the allowed space
     int w;
-    wxFont font = pThisLegText->GetFont();
-    GetTextExtent( m_pointName, &w, NULL, NULL, NULL, &font );
+    GetTextExtent( m_pointName, &w, NULL, NULL, NULL, m_pThisLegFont );
     int len = m_pointName.Len() * pTTG->GetMinSize().GetX() / w;
     wxString s = m_pointName.Mid(0, wxMin(len, m_pointName.Len()));
-    pThisLegText->SetLabel(s);
+    m_pointName = s;
 
     m_pitemBoxSizerLeg->SetSizeHints( this );
     Layout();
