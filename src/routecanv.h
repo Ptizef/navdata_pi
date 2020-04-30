@@ -115,7 +115,7 @@ private:
                                     double wptprevlat, double wptprevlon,
                                     double glat, double glon,
                                     double *brg, double *nrng);
-      wxFont     *m_pThisLegFont;
+      wxFont     *m_pThisPointFont;
       char       m_speedUsed;
       wxPoint    m_consPosition;
 

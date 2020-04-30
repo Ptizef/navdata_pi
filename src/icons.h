@@ -10,11 +10,7 @@
 extern void initialize_images(void);
 
 extern wxBitmap *_img_active;
-extern wxBitmap *_img_activewpt;
-extern wxBitmap *_img_inactive;
-extern wxBitmap *_img_setting;
 extern wxBitmap *_img_target;
-extern wxBitmap *_img_targetwpt;
 extern wxBitmap *_img_toggled;
 
 #endif /* ICONS_H */

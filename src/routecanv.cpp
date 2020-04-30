@@ -89,11 +89,11 @@ RouteCanvas::RouteCanvas(wxWindow *parent, navdata_pi *ppi)
 
     wxFont *qFont = OCPNGetFont(_("Dialog"), 0);
     
-    m_pThisLegFont = FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
+    m_pThisPointFont = FindOrCreateFont_PlugIn( 10, wxFONTFAMILY_DEFAULT,
                                                           qFont->GetStyle(), wxFONTWEIGHT_BOLD, false,
                                                           qFont->GetFaceName() );
     int h;
-    GetTextExtent( _T("THIS POINT"), NULL, &h, NULL, NULL, m_pThisLegFont );
+    GetTextExtent( _T("THIS POINT"), NULL, &h, NULL, NULL, m_pThisPointFont );
 
     wxFlexGridSizer *pitemFlexSizerLeg;
     pitemFlexSizerLeg = new wxFlexGridSizer( 0, 1, 0, 0 );
@@ -144,8 +144,7 @@ void RouteCanvas::OnPaintEvent( wxPaintEvent &event )
     mdc.SetBackground( m_backBrush );
     mdc.Clear();
 
-   // mdc.SetTextForeground( GetDefaultAttributes().colFg );
-    mdc.SetFont( *m_pThisLegFont );
+    mdc.SetFont( *m_pThisPointFont );
 
     int w;
     mdc.GetTextExtent( m_pointName, &w, NULL );
@@ -383,7 +382,7 @@ void RouteCanvas::UpdateFonts( void )
 
     //correct route point name lenght regarding the allowed space
     int w;
-    GetTextExtent( m_pointName, &w, NULL, NULL, NULL, m_pThisLegFont );
+    GetTextExtent( m_pointName, &w, NULL, NULL, NULL, m_pThisPointFont );
     int len = m_pointName.Len() * pTTG->GetMinSize().GetX() / w;
     wxString s = m_pointName.Mid(0, wxMin(len, m_pointName.Len()));
     m_pointName = s;

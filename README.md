@@ -4,31 +4,31 @@ Is compatible with OpenCPN 5.0.0 (and the current master)
 
 This new version has a completely new designed.
 
-The purpose is to show navigation information about a selected intermediate route point in the current active route. This can be useful
-if you want to keep an eye on a point, for example marking a difficult cap passage, or an entry in a channel with strong current.
+The purpose is to show navigation information about a selected intermediate route point in the current active route. This can be useful if you want to
+keep an eye on a intermediate point, not visible in the ocpn console,for example a point marking a difficult cap, or an entry in a channel with strong current.
 
-Select able point : Any point after the current active point in the route.
-This means that all points already "passed" and the current active point (which is visible in the ocpn console) are not select able.
+Select-able point: Any point after the current active point.
+This means that all points from the start to the current active point(included) are not select-able.
 
-At start the plugin toolbar icon is in inactive state. The plugin itself is deactivated.
+At start the plugin toolbar icon is in active state, the plugin is active but the point selection is deactivated.
 
-To use the plugin, you have to click on the icon to activate the plugin. The icon will be then in active state.
-Off course it is needed to have a route activated.
+To use the plugin, you have to click on the icon to activate the selection.
+The icon shows you that the selection is activated
 
-Now, you can left click on any select able point of this route.
+Verify you have activated your route.
+
+Now, you can left click on any select-able point of this route.
 As a result, you will see a green circle blinking around it and a window looking like the ocpn console will be opened.
 This window  shows RNG  (distance), TTG (time to go) and ETA (estimated time of arrival) to this selected point.
-As the ocpn console, you can toggle TTG and ETA computed with SOG or VMG by left click on it.
+As in the ocpn console, you can toggle TTG and ETA computed with SOG or VMG by left click on inside.
 This window can be moved and it position is memorized.
 
-At any moment, you can select another select able point.
+At any moment, you can select another select-able point.
 
-To suppress selection (thus hide the window and stop the green circle blinking), there are two possibilities.
+The only mean to cancel any selection is to left click on a no select-able point. 
 
-- Left click on any no select able point. The plugin will be still activated and you will be allowed to select again.
+If you want to lock your selection, click on the plugin icon to deactivate selection.
 
-- Click on the plugin toolbar icon. The plugin will be deactivated and if you want to select again, you will have to left click
-the icon again to activate the plugin.
 
 There is no setting.
 

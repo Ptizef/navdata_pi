@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: navdata_pi 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-29 17:08+0200\n"
+"POT-Creation-Date: 2020-04-30 12:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: src/navdata_pi.cpp:135 src/navdata_pi.cpp:138
-msgid "Activate/Deactivate Navdata"
+msgid "Navdata: Lock/Unlock Point Selection"
 msgstr ""
 
 #: src/navdata_pi.cpp:195
@@ -40,26 +40,26 @@ msgstr ""
 msgid "Console Value"
 msgstr ""
 
-#: src/routecanv.cpp:94
+#: src/routecanv.cpp:90
 msgid "Dialog"
 msgstr ""
 
-#: src/routecanv.cpp:102
+#: src/routecanv.cpp:103
 msgid "RNG"
 msgstr ""
 
-#: src/routecanv.cpp:106 src/routecanv.cpp:221
+#: src/routecanv.cpp:107 src/routecanv.cpp:229
 msgid "TTG  @VMG"
 msgstr ""
 
-#: src/routecanv.cpp:110 src/routecanv.cpp:222
+#: src/routecanv.cpp:111 src/routecanv.cpp:230
 msgid "ETA  @VMG"
 msgstr ""
 
-#: src/routecanv.cpp:217
+#: src/routecanv.cpp:225
 msgid "TTG  @SOG"
 msgstr ""
 
-#: src/routecanv.cpp:218
+#: src/routecanv.cpp:226
 msgid "ETA  @SOG"
 msgstr ""

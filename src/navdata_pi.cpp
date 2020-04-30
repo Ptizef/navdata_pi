@@ -91,12 +91,8 @@ navdata_pi::navdata_pi(void *ppimgr)
 navdata_pi::~navdata_pi(void)
 {
     delete _img_active;
-    delete _img_inactive;
     delete _img_toggled;
     delete _img_target;
-    delete _img_activewpt;
-    delete _img_targetwpt;
-    delete _img_setting;
     delete m_vp[0];
     delete m_vp[1];
  }
@@ -128,14 +124,14 @@ int navdata_pi::Init(void){
                     +_T("data") + wxFileName::GetPathSeparator();
 
     //    This PlugIn needs a toolbar icon, so request its insertion
-    wxString inactive = m_shareLocn + _T("inactive.svg");
     wxString active = m_shareLocn + _T("active.svg");
-    if( wxFile::Exists( inactive) && wxFile::Exists( active) )
-        m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), inactive, inactive, active,
-                    wxITEM_CHECK, _("Activate/Deactivate Navdata"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+    wxString toggled = m_shareLocn + _T("toggled.svg");
+    if( wxFile::Exists( active) && wxFile::Exists( toggled) )
+        m_leftclick_tool_id  = InsertPlugInToolSVG(_T(""), active, active, toggled,
+                    wxITEM_CHECK, _("Navdata: Lock/Unlock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
     else
-    m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_inactive, _img_active,
-                    wxITEM_CHECK, _("Activate/Deactivate Navdata"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
+        m_leftclick_tool_id  = InsertPlugInTool(_T(""), _img_active, _img_toggled,
+                    wxITEM_CHECK, _("Navdata: Lock/Unlock Point Selection"), _T(""), NULL, CALCULATOR_TOOL_POSITION, 0, this);
 
     return (WANTS_OVERLAY_CALLBACK          |
             WANTS_ONPAINT_VIEWPORT          |
@@ -451,7 +447,7 @@ bool navdata_pi::MouseEventHook( wxMouseEvent &event )
             }
             if( !m_console )
                 m_console = new RouteCanvas( GetOCPNCanvasWindow(), this);
-            m_console->m_pointName = pointLabel;
+            m_console->m_pointName =  pointLabel;
             m_console->ShowWithFreshFonts();
             m_console->SetColorScheme();
         } else {
@@ -604,16 +600,6 @@ bool navdata_pi::RenderTargetPoint( wxDC *pdc, PlugIn_ViewPort *vp )
 
 void navdata_pi::OnToolbarToolCallback(int id)
 {
-    if( m_isPluginActive ) {
-        if( m_console && m_console->IsShown()){
-            g_selectedPointGuid = wxEmptyString;
-            m_selectablePoint = false;
-            m_console->Show(false);
-        }
-        SetToolbarItemState(m_leftclick_tool_id, false);
-        m_isPluginActive = false;
-    } else {
-        SetToolbarItemState(m_leftclick_tool_id, true);
-        m_isPluginActive = true;
-    }
+    m_isPluginActive = !m_isPluginActive;
+    SetToolbarItemState(m_leftclick_tool_id, m_isPluginActive);
 }
