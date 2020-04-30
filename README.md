@@ -10,7 +10,7 @@ keep an eye on a intermediate point, not visible in the ocpn console,for example
 Select-able point: Any point after the current active point.
 This means that all points from the start to the current active point(included) are not select-able.
 
-At start the plugin toolbar icon is in active state, the plugin is active but the point selection is deactivated.
+At start the plugin toolbar icon is in waiting state, the plugin is active but the point selection is deactivated.
 
 To use the plugin, you have to click on the icon to activate the selection.
 The icon shows you that the selection is activated
@@ -63,6 +63,8 @@ installation
  *   OSX
  
         there is no version for this OS. I have no device to test
+
+ Once installation is done, run ocpn, go to option/plugin and activate navdata_pi        
 
 Compiling
 =========
