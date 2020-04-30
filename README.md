@@ -2,7 +2,7 @@
 
 Is compatible with OpenCPN 5.0.0 (and the current master)
 
-This new version has a completely new designed.
+This new version has a completely new design.
 
 The purpose is to show navigation information about a selected intermediate route point in the current active route. This can be useful if you want to
 keep an eye on a intermediate point, not visible in the ocpn console,for example a point marking a difficult cap, or an entry in a channel with strong current.
@@ -21,16 +21,17 @@ Now, you can left click on any select-able point of this route.
 As a result, you will see a green circle blinking around it and a window looking like the ocpn console will be opened.
 This window  shows RNG  (distance), TTG (time to go) and ETA (estimated time of arrival) to this selected point.
 As in the ocpn console, you can toggle TTG and ETA computed with SOG or VMG by left click on inside.
-This window can be moved and it position is memorized.
+This window can be moved and its new position is memorized.
 
-At any moment, you can select another select-able point.
-
-The only mean to cancel any selection is to left click on a no select-able point. 
+At any moment, you can select another select-able point, but only mean to cancel any selection and close the window is to left click on a no select-able point (for example the current active point).
 
 If you want to lock your selection, click on the plugin icon to deactivate selection.
 
+In any case, when this selected point become the current active point, the selection is canceled and the window is closed.
+
 
 There is no setting.
+The plugin uses ocpn congig parameters. In general, these parameters are apply in live, but it could be necessary to close and reopen ocpn (change langage ...)
 
 For those who had a look at the previous version, there no longer the grid window and no "Trip" data.
 
