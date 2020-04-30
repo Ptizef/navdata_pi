@@ -31,9 +31,9 @@ In any case, when this selected point become the current active point, the selec
 
 
 There is no setting.
-The plugin uses ocpn congig parameters. In general, these parameters are apply in live, but it could be necessary to close and reopen ocpn (change langage ...)
+The plugin uses ocpn configuration parameters. In general, these parameters apply in live, but it could be necessary to close and reopen ocpn for some changes (language …).
 
-For those who had a look at the previous version, there no longer the grid window and no "Trip" data.
+For those who had a look at the previous version, there is no longer neither grid window nor "Trip" data.
 
 installation
 ============

@@ -17,35 +17,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.0.6\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-
 #
 msgid "Console Legend"
 msgstr "Légende de la console"
-
 #
 msgid "Console Value"
 msgstr "Valeur de la console"
-
 #
 msgid "Dialog"
 msgstr "Boite de dialogue"
-
 #
 msgid "ETA  @SOG"
 msgstr "ETA à SOG"
-
 #
 msgid "ETA  @VMG"
 msgstr "ETA à VMG"
-
 #
 msgid "Navdata: Unlock/Lock Point Selection"
 msgstr "Navdata:  Débloquer/Bloquer la Sélection de Point"
-
 #
 msgid "Navigation data plugin for OpenCPN"
 msgstr "Complément  \"Données de navigation\" pour OpenCPN"
-
 #
 msgid ""
 "Navigation data plugin for OpenCPN\n"
@@ -56,27 +48,24 @@ msgstr ""
 "Affiche RNG (distance),  TTG ( temps pour arriver) et ETA (Heure estimée "
 "d'arrivée)\n"
 "à un point intermédiaire de la route active."
-
 #
 #
 #
 msgid "RNG"
 msgstr "RNG"
-
 #
 msgid "TTG  @SOG"
 msgstr "ETA à SOG"
-
 #
 msgid "TTG  @VMG"
 msgstr "ETA à VMG"
-
+#
 #
 #
 #
 #~ msgid "Activate/Deactivate Navdata"
 #~ msgstr "Activer/Désactiver Navdata"
-
+#
 #
 #
 #
@@ -86,7 +75,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Avg.speed"
 #~ msgstr "Vit. Moy."
-
+#
 #
 #
 #
@@ -96,7 +85,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Distance"
 #~ msgstr "Distance"
-
+#
 #
 #
 #
@@ -106,7 +95,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Ended"
 #~ msgstr "Arrivée"
-
+#
 #
 #
 #
@@ -116,7 +105,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Horizontaly (6columns)"
 #~ msgstr "Horizontalement (6 colonnes)"
-
+#
 #
 #
 #
@@ -126,7 +115,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Intermediate (4 columns)"
 #~ msgstr "Intermédiaire (4 colonnes)"
-
+#
 #
 #
 #
@@ -136,7 +125,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Navigation data"
 #~ msgstr "Données de navigation"
-
+#
 #
 #
 #
@@ -146,7 +135,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "OK"
 #~ msgstr "OK"
-
+#
 #
 #
 #
@@ -156,7 +145,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Preferences"
 #~ msgstr "Preferences"
-
+#
 #
 #
 #
@@ -166,7 +155,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Started"
 #~ msgstr "Départ"
-
+#
 #
 #
 #
@@ -176,7 +165,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "The Trip Data Dialog will be displayed"
 #~ msgstr "La fenêtre des données trajet sera affichée"
-
+#
 #
 #
 #
@@ -186,7 +175,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "TimeSpent"
 #~ msgstr "Durée"
-
+#
 #
 #
 #
@@ -196,7 +185,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Trip Data"
 #~ msgstr "Données de Trajet"
-
+#
 #
 #
 #
@@ -206,7 +195,7 @@ msgstr "ETA à VMG"
 #
 #~ msgid "Verticaly (2 columns)"
 #~ msgstr "Verticalement (2 colonnes)"
-
+#
 #
 #
 #
