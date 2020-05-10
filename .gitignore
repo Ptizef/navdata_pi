@@ -1,4 +1,4 @@
-build
+build/
 *~
 *.kdev*
 *.patch
@@ -15,6 +15,5 @@ buildwin/*.dll
 buildwin/*.lib
 buildwin/*.exe
 buildwin/*.crt
-NSIS.template.in
 *.mo
 *.user
